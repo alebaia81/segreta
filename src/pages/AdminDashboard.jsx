@@ -1,0 +1,1275 @@
+import React, { useState, useEffect } from 'react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Check, Lock, Upload, Loader } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
+
+const PRESET_CATEGORIES = [
+  'Abiti',
+  'Camicie e Bluse',
+  'Pantaloni',
+  'Gonne',
+  'Giacche e Cappotti',
+  'T-Shirt',
+  'Maglieria',
+  'Accessori'
+];
+
+const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
+
+export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo }) {
+  const [activeTab, setActiveTab] = useState('ordini');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
+  // Stati locali per gestione CRUD via API PHP
+  const [articoliAPI, setArticoliAPI] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [isAPIAvailable, setIsAPIAvailable] = useState(true);
+
+  // Stati locali per la categoria selezionata
+  const [selectedCategoryOption, setSelectedCategoryOption] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+
+  // Stati locali per la selezione delle taglie tramite checkbox/flag
+  const [selectedSizes, setSelectedSizes] = useState({
+    S: true,
+    M: true,
+    L: true
+  });
+  const [customSizesList, setCustomSizesList] = useState([]);
+  const [newCustomSizeInput, setNewCustomSizeInput] = useState('');
+
+  // Ordini caricati da localStorage (perché gestiti lato client per ora)
+  const [ordini, setOrdini] = useState(() => {
+    const saved = localStorage.getItem('segreta_ordini');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Stato per l'inserimento di un nuovo articolo
+  const [nuovoArticolo, setNuovoArticolo] = useState({
+    titolo: '',
+    descrizione: '',
+    prezzo: '',
+    immagine_url: '',
+    categoria: '',
+    taglie: 'S,M,L'
+  });
+
+  // --- ACCESSIBILITÀ & SEO (noindex/nofollow) ---
+  useEffect(() => {
+    // Aggiungi meta tag noindex, nofollow all'head quando si monta il pannello admin
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    metaRobots.id = 'admin-noindex-meta';
+    document.head.appendChild(metaRobots);
+
+    // Controlla se l'amministratore è già autenticato in questa sessione
+    const authSession = sessionStorage.getItem('segreta_admin_logged');
+    if (authSession === 'true') {
+      setIsLoggedIn(true);
+    }
+
+    // Carica gli articoli dall'API PHP all'avvio dell'admin
+    fetchArticoli();
+
+    return () => {
+      // Pulisci il meta tag robots allo smontaggio del componente
+      const meta = document.getElementById('admin-noindex-meta');
+      if (meta) {
+        document.head.removeChild(meta);
+      }
+    };
+  }, []);
+
+  const fetchArticoli = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api.php?action=list');
+      const json = await response.json();
+      if (json.success) {
+        setArticoliAPI(json.data);
+        setIsAPIAvailable(true);
+      } else {
+        throw new Error('API non riuscita');
+      }
+    } catch (err) {
+      console.warn('Connessione API PHP fallita. Fallback su dati locali/localStorage.', err);
+      setIsAPIAvailable(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- AUTENTICAZIONE ---
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Segreta2026';
+    if (password === correctPassword) {
+      setIsLoggedIn(true);
+      sessionStorage.setItem('segreta_admin_logged', 'true');
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+      setPassword('');
+    }
+  };
+
+  // --- CARICAMENTO E COMPRESSIONE IMMAGINE (WebP, max 1080px) ---
+  const handleImageUpload = async (e) => {
+    const imageFile = e.target.files[0];
+    if (!imageFile) return;
+
+    setUploading(true);
+
+    try {
+      // Opzioni per la compressione delle immagini
+      const options = {
+        maxSizeMB: 1,            // Dimensione massima file compresso
+        maxWidthOrHeight: 1080,  // Dimensione massima pixel per mantenere qualità ed ottimizzare
+        useWebWorker: true,
+        fileType: 'image/webp'   // Forza la conversione in formato WebP
+      };
+
+      // Compressione client-side
+      const compressedFile = await imageCompression(imageFile, options);
+
+      // Conversione del file compresso in FormData per l'upload
+      const formData = new FormData();
+      formData.append('immagine', compressedFile, 'prodotto.webp');
+
+      // Se l'API PHP non è disponibile (sviluppo locale offline), simuliamo l'upload con un URL blob locale
+      if (!isAPIAvailable) {
+        const localBlobUrl = URL.createObjectURL(compressedFile);
+        setNuovoArticolo(prev => ({
+          ...prev,
+          immagine_url: localBlobUrl
+        }));
+        alert('Immagine compressa localmente in WebP (Sviluppo Locale).');
+        return;
+      }
+
+      // Invio al backend PHP
+      const response = await fetch('/api.php?action=upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const json = await response.json();
+
+      if (json.success) {
+        setNuovoArticolo(prev => ({
+          ...prev,
+          immagine_url: json.url
+        }));
+        alert('Immagine caricata e convertita in WebP con successo!');
+      } else {
+        alert('Errore nel caricamento dell\'immagine: ' + json.error);
+      }
+    } catch (error) {
+      console.error('Errore durante la compressione/upload dell\'immagine:', error);
+      alert('Impossibile completare la compressione o il caricamento dell\'immagine.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Aggiunge una taglia personalizzata all'elenco dei flag
+  const handleAddCustomSize = (e) => {
+    e.preventDefault();
+    const size = newCustomSizeInput.trim().toUpperCase();
+    if (size && !PRESET_SIZES.includes(size) && !customSizesList.includes(size)) {
+      setCustomSizesList(prev => [...prev, size]);
+      setSelectedSizes(prev => ({ ...prev, [size]: true }));
+      setNewCustomSizeInput('');
+    }
+  };
+
+  // --- CRUD OPERAZIONI ---
+  const handleCreateArticolo = async (e) => {
+    e.preventDefault();
+    
+    // Rileva la categoria corretta da inviare
+    const categoriaFinale = selectedCategoryOption === '__custom__' 
+      ? customCategory.trim() 
+      : selectedCategoryOption;
+
+    // Calcola la stringa delle taglie finali dai flag selezionati
+    const taglieFinali = Object.keys(selectedSizes)
+      .filter(size => selectedSizes[size])
+      .join(',');
+
+    if (!nuovoArticolo.titolo || !nuovoArticolo.prezzo || !categoriaFinale) {
+      alert('Per favore compila i campi obbligatori (Titolo, Prezzo, Categoria)');
+      return;
+    }
+
+    const articoloDaAggiungere = {
+      ...nuovoArticolo,
+      categoria: categoriaFinale,
+      taglie: taglieFinali,
+      prezzo: parseFloat(nuovoArticolo.prezzo),
+      immagine_url: nuovoArticolo.immagine_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'
+    };
+
+    if (isAPIAvailable) {
+      setLoading(true);
+      try {
+        const response = await fetch('/api.php?action=add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(articoloDaAggiungere)
+        });
+        const json = await response.json();
+        if (json.success) {
+          // Aggiunge allo stato locale degli articoli API
+          setArticoliAPI(prev => [json.data, ...prev]);
+          // Sincronizza anche lo stato dell'app principale passatogli dal padre
+          onAddArticolo(json.data);
+          alert('Articolo salvato sul database MySQL!');
+        } else {
+          alert('Errore dal database: ' + json.error);
+        }
+      } catch (err) {
+        alert('Errore di rete durante il salvataggio.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Fallback locale nel LocalStorage
+      const nuovoId = Math.floor(Math.random() * 10000) + 1;
+      const artConId = { ...articoloDaAggiungere, id: nuovoId, attivo: true, created_at: new Date().toISOString() };
+      onAddArticolo(artConId);
+      alert('Articolo salvato in locale tramite localStorage (sviluppo locale).');
+    }
+
+    // Reset Form
+    setNuovoArticolo({
+      titolo: '',
+      descrizione: '',
+      prezzo: '',
+      immagine_url: '',
+      categoria: '',
+      taglie: 'S,M,L'
+    });
+    setSelectedCategoryOption('');
+    setCustomCategory('');
+    setSelectedSizes({ S: true, M: true, L: true });
+    setCustomSizesList([]);
+    setNewCustomSizeInput('');
+  };
+
+  const handleToggleActive = async (artId) => {
+    // Aggiorna prima lo stato del genitore
+    onToggleArticolo(artId);
+
+    if (isAPIAvailable) {
+      try {
+        const response = await fetch('/api.php?action=toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: artId })
+        });
+        const json = await response.json();
+        if (json.success) {
+          // Aggiorna lo stato locale degli articoli API
+          setArticoliAPI(prev => prev.map(a => 
+            a.id === artId ? { ...a, attivo: json.attivo } : a
+          ));
+        }
+      } catch (err) {
+        console.error('Errore durante l\'aggiornamento dello stato su database.', err);
+      }
+    } else {
+      // Sincronizza lo stato degli articoli API se in fallback
+      setArticoliAPI(prev => prev.map(a => 
+        a.id === artId ? { ...a, attivo: !a.attivo } : a
+      ));
+    }
+  };
+
+  const handleEliminaArticolo = async (artId) => {
+    if (!window.confirm('Sei sicuro di voler eliminare permanentemente questo articolo?')) {
+      return;
+    }
+
+    if (isAPIAvailable) {
+      setLoading(true);
+      try {
+        const response = await fetch('/api.php?action=delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: artId })
+        });
+        const json = await response.json();
+        if (json.success) {
+          setArticoliAPI(prev => prev.filter(a => a.id !== artId));
+          // Ricarica la lista per sicurezza
+          fetchArticoli();
+          alert('Articolo eliminato dal database.');
+        } else {
+          alert('Errore database: ' + json.error);
+        }
+      } catch (err) {
+        alert('Impossibile completare l\'eliminazione.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Fallback locale: rimuove da localStorage resettando la lista articoli
+      const saved = localStorage.getItem('segreta_articoli');
+      if (saved) {
+        const list = JSON.parse(saved).filter(a => a.id !== artId);
+        localStorage.setItem('segreta_articoli', JSON.stringify(list));
+        // Forza l'aggiornamento rinfrescando la pagina o reinizializzando lo stato locale
+        alert('Articolo rimosso localmente. Ricarica la pagina per sincronizzare.');
+        window.location.reload();
+      }
+    }
+  };
+
+  // --- ORDINI CONTROLLI ---
+  const handleUpdateStatoOrdine = (ordineId, nuovoStato) => {
+    const nuoviOrdini = ordini.map(o => 
+      o.id === ordineId ? { ...o, stato: nuovoStato } : o
+    );
+    setOrdini(nuoviOrdini);
+    localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
+  };
+
+  const handleCancellaOrdine = (ordineId) => {
+    if (window.confirm('Sei sicuro di voler eliminare questo ordine?')) {
+      const nuoviOrdini = ordini.filter(o => o.id !== ordineId);
+      setOrdini(nuoviOrdini);
+      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
+    }
+  };
+
+  // Se l'utente non è loggato, mostra la schermata di login Light Mode elegantissima
+  if (!isLoggedIn) {
+    return (
+      <section className="admin-login-section container fade-in">
+        <div className="login-card">
+          <div className="login-icon-box">
+            <Lock size={32} />
+          </div>
+          <h2>Accesso Amministratore</h2>
+          <div className="accent-line"></div>
+          <p className="login-subtitle">Inserisci la password impostata per gestire il negozio.</p>
+
+          <form onSubmit={handleLoginSubmit} className="login-form">
+            <div className="form-group">
+              <label className="form-label" htmlFor="admin_pass">Password di Accesso</label>
+              <input
+                type="password"
+                id="admin_pass"
+                className={`form-control ${loginError ? 'input-error' : ''}`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digita la password..."
+                required
+                autoFocus
+              />
+              {loginError && <p className="error-text">Password errata. Riprova.</p>}
+            </div>
+            <button type="submit" className="btn-primary login-btn">
+              Accedi al Pannello
+            </button>
+          </form>
+        </div>
+
+        <style>{`
+          .admin-login-section {
+            padding: var(--spacing-xxl) var(--spacing-lg);
+            display: flex;
+            justify-content: center;
+          }
+          .login-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .login-icon-box {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            background-color: var(--accent-soft-gold);
+            color: var(--accent-gold-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-md);
+          }
+          .login-card h2 {
+            font-size: 1.8rem;
+          }
+          .accent-line {
+            width: 40px;
+            height: 2px;
+            background-color: var(--accent-gold);
+            margin: var(--spacing-xs) auto var(--spacing-md);
+          }
+          .login-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+          }
+          .login-form {
+            width: 100%;
+            text-align: left;
+          }
+          .login-btn {
+            width: 100%;
+            margin-top: var(--spacing-sm);
+          }
+          .input-error {
+            border-color: var(--error) !important;
+            box-shadow: 0 0 0 3px rgba(201, 42, 42, 0.15) !important;
+          }
+          .error-text {
+            color: var(--error);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            font-weight: 600;
+          }
+        `}</style>
+      </section>
+    );
+  }
+
+  // Lista articoli da mostrare: usa articoliAPI se disponibile, altrimenti fa il fallback sugli articoli passati dal padre
+  const listaArticoliVisualizzati = isAPIAvailable ? articoliAPI : articoli;
+
+  // Unisce le categorie predefinite a quelle ricavate dinamicamente dal catalogo per non duplicarle
+  const categorieOpzioni = Array.from(new Set([
+    ...PRESET_CATEGORIES,
+    ...listaArticoliVisualizzati.map(art => art.categoria)
+  ])).filter(Boolean);
+
+  return (
+    <section className="admin-dashboard-container container fade-in">
+      <div className="dashboard-header">
+        <div className="header-flex-row">
+          <div>
+            <h2>Pannello di Controllo</h2>
+            <div className="accent-line-left"></div>
+            <p className="dashboard-sub">Gestisci il catalogo e gli ordini di Segreta Style.</p>
+          </div>
+          <div className="status-badge-container">
+            {isAPIAvailable ? (
+              <span className="status-badge online" title="Database MySQL Hostinger Connesso">● Database Collegato</span>
+            ) : (
+              <span className="status-badge offline" title="Database MySQL non raggiungibile. Dati salvati in locale.">● Modalità Sviluppo Locale</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs di Navigazione Interna */}
+      <div className="dashboard-tabs" role="tablist">
+        <button
+          className={`tab-btn ${activeTab === 'ordini' ? 'active' : ''}`}
+          onClick={() => setActiveTab('ordini')}
+          role="tab"
+          aria-selected={activeTab === 'ordini'}
+        >
+          <ClipboardList size={18} style={{ marginRight: '8px' }} />
+          Ordini Ricevuti ({ordini.length})
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'articoli' ? 'active' : ''}`}
+          onClick={() => setActiveTab('articoli')}
+          role="tab"
+          aria-selected={activeTab === 'articoli'}
+        >
+          <Package size={18} style={{ marginRight: '8px' }} />
+          Catalogo Articoli ({listaArticoliVisualizzati.length})
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'nuovo' ? 'active' : ''}`}
+          onClick={() => setActiveTab('nuovo')}
+          role="tab"
+          aria-selected={activeTab === 'nuovo'}
+        >
+          <PlusCircle size={18} style={{ marginRight: '8px' }} />
+          Nuovo Articolo
+        </button>
+      </div>
+
+      {/* Loader globale */}
+      {loading && (
+        <div className="global-loader-container">
+          <Loader className="spin-icon" size={32} />
+          <span>Sincronizzazione database...</span>
+        </div>
+      )}
+
+      {/* Tab 1: Ordini Ricevuti */}
+      {activeTab === 'ordini' && !loading && (
+        <div className="dashboard-content fade-in">
+          {ordini.length === 0 ? (
+            <p className="no-data-msg">Nessun ordine ricevuto al momento.</p>
+          ) : (
+            <div className="orders-list">
+              {ordini.map(ordine => {
+                const dettagli = JSON.parse(ordine.dettaglio_articoli);
+                return (
+                  <div key={ordine.id} className="order-admin-card">
+                    <div className="order-admin-header">
+                      <div>
+                        <h4>Ordine #{ordine.id}</h4>
+                        <span className="order-date">{new Date(ordine.created_at).toLocaleString('it-IT')}</span>
+                      </div>
+                      <div className="order-actions-row">
+                        <select
+                          className="form-control state-select"
+                          value={ordine.stato}
+                          onChange={(e) => handleUpdateStatoOrdine(ordine.id, e.target.value)}
+                          aria-label="Stato dell'ordine"
+                        >
+                          <option value="In attesa">In attesa</option>
+                          <option value="Spedito">Spedito / Consegnato</option>
+                          <option value="Annullato">Annullato</option>
+                        </select>
+                        <button
+                          className="delete-order-btn"
+                          onClick={() => handleCancellaOrdine(ordine.id)}
+                          aria-label="Cancella ordine"
+                        >
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="order-admin-body">
+                      <div className="customer-info-box">
+                        <p><strong>Cliente:</strong> {ordine.nome_cliente}</p>
+                        <p><strong>Telefono:</strong> <a href={`tel:${ordine.telefono}`}>{ordine.telefono}</a></p>
+                        <p><strong>Consegna:</strong> {ordine.metodo_consegna}</p>
+                        <p><strong>Indirizzo:</strong> {ordine.indirizzo_spedizione}</p>
+                        <p><strong>Pagamento:</strong> {ordine.metodo_pagamento}</p>
+                      </div>
+
+                      <div className="order-items-box">
+                        <h5>Prodotti Acquistati:</h5>
+                        <ul className="items-list-admin">
+                          {dettagli.map((item, idx) => (
+                            <li key={idx} className="item-li-admin">
+                              <span>{item.titolo} (Taglia {item.taglia}) <strong>x{item.quantita}</strong></span>
+                              <span>€{(item.prezzo * item.quantita).toFixed(2)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="order-total-admin">
+                          <span>Totale Ordine:</span>
+                          <strong>€{ordine.totale.toFixed(2)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Lista Articoli */}
+      {activeTab === 'articoli' && !loading && (
+        <div className="dashboard-content fade-in">
+          <div className="articles-table-container">
+            <table className="articles-table">
+              <thead>
+                <tr>
+                  <th>Prodotto</th>
+                  <th>Categoria</th>
+                  <th>Prezzo</th>
+                  <th>Taglie</th>
+                  <th>Stato</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaArticoliVisualizzati.map(art => (
+                  <tr key={art.id} className={!art.attivo ? 'inactive-row' : ''}>
+                    <td className="art-title-td">
+                      <img 
+                        src={art.immagine_url.startsWith('http') || art.immagine_url.startsWith('blob:') || art.immagine_url.startsWith('uploads/') ? art.immagine_url : `/public/${art.immagine_url}`} 
+                        alt="" 
+                        className="table-art-img"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                        }}
+                      />
+                      <div>
+                        <strong>{art.titolo}</strong>
+                        <span className="art-id-span">ID: {art.id}</span>
+                      </div>
+                    </td>
+                    <td><span className="badge">{art.categoria}</span></td>
+                    <td className="price-td">€{parseFloat(art.prezzo).toFixed(2)}</td>
+                    <td>{art.taglie || 'Unica'}</td>
+                    <td>
+                      <button
+                        className="toggle-active-btn"
+                        onClick={() => handleToggleActive(art.id)}
+                        aria-label={art.attivo ? 'Nascondi articolo' : 'Mostra articolo'}
+                      >
+                        {art.attivo ? (
+                          <span className="active-tag"><ToggleRight size={24} className="icon-active" /> Attivo</span>
+                        ) : (
+                          <span className="inactive-tag"><ToggleLeft size={24} className="icon-inactive" /> Nascosto</span>
+                        )}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className="delete-art-btn"
+                        onClick={() => handleEliminaArticolo(art.id)}
+                        aria-label={`Elimina ${art.titolo}`}
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Nuovo Articolo */}
+      {activeTab === 'nuovo' && !loading && (
+        <div className="dashboard-content fade-in">
+          <form onSubmit={handleCreateArticolo} className="new-article-form">
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label" htmlFor="new_titolo">Titolo Articolo *</label>
+                <input
+                  type="text"
+                  id="new_titolo"
+                  className="form-control"
+                  value={nuovoArticolo.titolo}
+                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, titolo: e.target.value})}
+                  required
+                  placeholder="Es. Gonna Plissé Rosa"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="new_prezzo">Prezzo (€) *</label>
+                <input
+                  type="number"
+                  id="new_prezzo"
+                  step="0.01"
+                  className="form-control"
+                  value={nuovoArticolo.prezzo}
+                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, prezzo: e.target.value})}
+                  required
+                  placeholder="Es. 29.90"
+                />
+              </div>
+            </div>
+
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label" htmlFor="select_categoria">Categoria *</label>
+                <select
+                  id="select_categoria"
+                  className="form-control"
+                  value={selectedCategoryOption}
+                  onChange={(e) => setSelectedCategoryOption(e.target.value)}
+                  required
+                  style={{ minHeight: '44px' }}
+                >
+                  <option value="" disabled>-- Seleziona una Categoria --</option>
+                  {categorieOpzioni.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="__custom__">🔍 Altro... (inserisci manualmente)</option>
+                </select>
+
+                {selectedCategoryOption === '__custom__' && (
+                  <div className="custom-category-input-wrapper fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
+                    <label className="form-label" htmlFor="new_categoria">Nome Nuova Categoria *</label>
+                    <input
+                      type="text"
+                      id="new_categoria"
+                      className="form-control"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      required
+                      placeholder="Es. Gonne, Accessori, Abiti"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ marginBottom: '8px' }}>Taglie Disponibili *</label>
+                <div className="sizes-checkbox-grid">
+                  {[...PRESET_SIZES, ...customSizesList].map(size => {
+                    const isChecked = !!selectedSizes[size];
+                    return (
+                      <label key={size} className="size-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setSelectedSizes(prev => ({ ...prev, [size]: val }));
+                          }}
+                          className="size-checkbox-input"
+                        />
+                        <span className="size-checkbox-box">{size}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="add-custom-size-row" style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Altra taglia (es: 37, XXXL)"
+                    value={newCustomSizeInput}
+                    onChange={(e) => setNewCustomSizeInput(e.target.value)}
+                    style={{ maxWidth: '220px', minHeight: '36px', height: '36px', padding: '0.4rem 0.8rem', fontSize: '0.88rem' }}
+                    aria-label="Aggiungi un'altra taglia personalizzata"
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleAddCustomSize}
+                    style={{ minHeight: '36px', height: '36px', fontSize: '0.85rem', padding: '0 12px' }}
+                  >
+                    Aggiungi
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Foto Prodotto (Converte in WebP prima del caricamento) *</label>
+              <div className="upload-btn-wrapper">
+                <button type="button" className="btn-secondary upload-btn-trigger">
+                  {uploading ? (
+                    <>
+                      <Loader className="spin-icon" size={18} style={{ marginRight: '8px' }} />
+                      Compressione WebP...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} style={{ marginRight: '8px' }} />
+                      Seleziona Foto
+                    </>
+                  )}
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="file-input-hidden"
+                  aria-label="Carica foto prodotto"
+                />
+              </div>
+              
+              {/* Preview dell'immagine caricata */}
+              {nuovoArticolo.immagine_url && (
+                <div className="upload-preview-box fade-in">
+                  <span className="badge preview-badge">Caricata</span>
+                  <img src={nuovoArticolo.immagine_url.startsWith('http') || nuovoArticolo.immagine_url.startsWith('blob:') || nuovoArticolo.immagine_url.startsWith('uploads/') ? nuovoArticolo.immagine_url : `/public/${nuovoArticolo.immagine_url}`} alt="Anteprima prodotto" className="img-preview" />
+                  <p className="preview-path-text">Immagine: {nuovoArticolo.immagine_url}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="new_descrizione">Descrizione Articolo</label>
+              <textarea
+                id="new_descrizione"
+                className="form-control"
+                rows="4"
+                value={nuovoArticolo.descrizione}
+                onChange={(e) => setNuovoArticolo({...nuovoArticolo, descrizione: e.target.value})}
+                placeholder="Inserisci i dettagli del materiale, vestibilità..."
+              ></textarea>
+            </div>
+
+            <button type="submit" className="btn-primary" disabled={uploading}>
+              Salva Articolo
+            </button>
+          </form>
+        </div>
+      )}
+
+      <style>{`
+        .admin-dashboard-container {
+          padding: var(--spacing-xl) var(--spacing-lg);
+          margin-bottom: var(--spacing-xxl);
+        }
+
+        .dashboard-header {
+          margin-bottom: var(--spacing-xl);
+        }
+
+        .header-flex-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: var(--spacing-md);
+        }
+
+        .status-badge-container {
+          display: flex;
+        }
+
+        .status-badge {
+          font-size: 0.8rem;
+          font-weight: 700;
+          padding: 0.35rem 0.75rem;
+          border-radius: var(--radius-full);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .status-badge.online {
+          background-color: rgba(46, 125, 50, 0.1);
+          color: var(--success);
+        }
+
+        .status-badge.offline {
+          background-color: rgba(197, 168, 128, 0.1);
+          color: var(--accent-gold-hover);
+        }
+
+        .dashboard-sub {
+          color: var(--text-secondary);
+        }
+
+        .dashboard-tabs {
+          display: flex;
+          border-bottom: 1px solid var(--border-color);
+          margin-bottom: var(--spacing-lg);
+          gap: var(--spacing-xs);
+          flex-wrap: wrap;
+        }
+
+        .tab-btn {
+          padding: 0.8rem 1.4rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          border-bottom: 2px solid transparent;
+          border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+          min-height: 44px;
+        }
+
+        .tab-btn:hover {
+          color: var(--text-primary);
+          background-color: var(--bg-tertiary);
+        }
+
+        .tab-btn.active {
+          color: var(--text-primary);
+          border-bottom-color: var(--accent-gold);
+          background-color: var(--bg-secondary);
+        }
+
+        .dashboard-content {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: var(--spacing-lg);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .global-loader-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--spacing-xxl);
+          color: var(--text-secondary);
+          gap: var(--spacing-md);
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+        }
+
+        .spin-icon {
+          animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .no-data-msg {
+          text-align: center;
+          padding: var(--spacing-xl) 0;
+          color: var(--text-secondary);
+        }
+
+        /* Order Admin Cards */
+        .orders-list {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-md);
+        }
+
+        .order-admin-card {
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          background-color: var(--bg-primary);
+        }
+
+        .order-admin-header {
+          background-color: var(--bg-secondary);
+          padding: var(--spacing-md);
+          border-bottom: 1px solid var(--border-color);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: var(--spacing-sm);
+        }
+
+        .order-admin-header h4 {
+          font-family: var(--font-sans);
+          font-weight: 700;
+        }
+
+        .order-date {
+          font-size: 0.8rem;
+          color: var(--text-secondary);
+        }
+
+        .order-actions-row {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+        }
+
+        .state-select {
+          min-height: 44px;
+          padding: 0.4rem var(--spacing-md);
+          font-size: 0.85rem;
+          background-color: var(--bg-secondary);
+        }
+
+        .delete-order-btn {
+          width: 44px;
+          height: 44px;
+          color: var(--text-secondary);
+          border-radius: var(--radius-sm);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .delete-order-btn:hover {
+          color: var(--error);
+          background-color: rgba(201, 42, 42, 0.05);
+        }
+
+        .order-admin-body {
+          padding: var(--spacing-md);
+          display: grid;
+          grid-template-columns: 1fr 1.2fr;
+          gap: var(--spacing-lg);
+        }
+
+        .customer-info-box {
+          font-size: 0.9rem;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .customer-info-box a {
+          color: var(--accent-gold-hover);
+          text-decoration: underline;
+        }
+
+        .order-items-box h5 {
+          font-family: var(--font-sans);
+          font-weight: 600;
+          font-size: 0.9rem;
+          margin-bottom: var(--spacing-sm);
+        }
+
+        .items-list-admin {
+          list-style: none;
+          font-size: 0.85rem;
+          margin-bottom: var(--spacing-md);
+        }
+
+        .item-li-admin {
+          display: flex;
+          justify-content: space-between;
+          border-bottom: 1px dashed var(--border-color);
+          padding: 4px 0;
+        }
+
+        .order-total-admin {
+          display: flex;
+          justify-content: space-between;
+          font-size: 1rem;
+          font-weight: 700;
+          border-top: 1px solid var(--border-color);
+          padding-top: var(--spacing-sm);
+        }
+
+        /* Articles Table */
+        .articles-table-container {
+          overflow-x: auto;
+        }
+
+        .articles-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.9rem;
+          text-align: left;
+        }
+
+        .articles-table th {
+          border-bottom: 2px solid var(--border-color);
+          padding: var(--spacing-sm) var(--spacing-md);
+          color: var(--text-secondary);
+          font-weight: 600;
+        }
+
+        .articles-table td {
+          border-bottom: 1px solid var(--border-color);
+          padding: var(--spacing-md);
+          color: var(--text-primary);
+        }
+
+        .art-title-td {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+        }
+
+        .table-art-img {
+          width: 50px;
+          height: 60px;
+          object-fit: cover;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-color);
+        }
+
+        .art-id-span {
+          display: block;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+
+        .price-td {
+          font-weight: 700;
+          font-family: var(--font-serif);
+        }
+
+        .toggle-active-btn {
+          min-height: 44px;
+          min-width: 80px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        .active-tag {
+          color: var(--success);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-weight: 600;
+        }
+
+        .inactive-tag {
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .icon-active {
+          color: var(--success);
+        }
+        
+        .icon-inactive {
+          color: var(--text-muted);
+        }
+
+        .delete-art-btn {
+          width: 44px;
+          height: 44px;
+          color: var(--text-secondary);
+          border-radius: var(--radius-sm);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        .delete-art-btn:hover {
+          color: var(--error);
+          background-color: rgba(201, 42, 42, 0.05);
+        }
+
+        .inactive-row {
+          opacity: 0.6;
+          background-color: rgba(0,0,0,0.02);
+        }
+
+        /* New Article Form */
+        .new-article-form {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-md);
+          max-width: 700px;
+        }
+
+        .form-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--spacing-md);
+        }
+
+        /* Size Checkbox Styles */
+        .sizes-checkbox-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .size-checkbox-label {
+          position: relative;
+          cursor: pointer;
+          user-select: none;
+        }
+        .size-checkbox-input {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+          height: 0;
+          width: 0;
+        }
+        .size-checkbox-box {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 44px;
+          height: 44px;
+          padding: 0 10px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          font-size: 0.85rem;
+          font-weight: 600;
+          transition: var(--transition-fast);
+        }
+        .size-checkbox-label:hover .size-checkbox-box {
+          border-color: var(--text-primary);
+          background-color: var(--bg-tertiary);
+        }
+        .size-checkbox-input:checked + .size-checkbox-box {
+          background-color: var(--text-primary);
+          color: var(--bg-secondary);
+          border-color: var(--text-primary);
+        }
+        .size-checkbox-input:focus-visible + .size-checkbox-box {
+          outline: 2px solid var(--accent-gold);
+          outline-offset: 2px;
+        }
+
+        /* Upload Image Area styles */
+        .upload-btn-wrapper {
+          position: relative;
+          overflow: hidden;
+          display: inline-block;
+        }
+
+        .upload-btn-trigger {
+          min-height: 44px;
+        }
+
+        .file-input-hidden {
+          font-size: 100px;
+          position: absolute;
+          left: 0;
+          top: 0;
+          opacity: 0;
+          cursor: pointer;
+          height: 100%;
+          width: 100%;
+        }
+
+        .upload-preview-box {
+          margin-top: var(--spacing-md);
+          padding: var(--spacing-md);
+          border: 1px dashed var(--border-color);
+          border-radius: var(--radius-md);
+          background-color: var(--bg-primary);
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--spacing-sm);
+          position: relative;
+        }
+
+        .preview-badge {
+          position: absolute;
+          top: var(--spacing-sm);
+          left: var(--spacing-sm);
+        }
+
+        .img-preview {
+          width: 120px;
+          height: 150px;
+          object-fit: cover;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-color);
+          margin-top: var(--spacing-md);
+        }
+
+        .preview-path-text {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          word-break: break-all;
+          margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+          .order-admin-body {
+            grid-template-columns: 1fr;
+          }
+          
+          .form-grid-2 {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}

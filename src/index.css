@@ -1,0 +1,276 @@
+/* Design System per Segreta Style - Monticelli d'Ongina */
+/* Tema Chiaro Premium e Accessibile */
+
+:root {
+  --bg-primary: #FAF8F5;       /* Warm cream background */
+  --bg-secondary: #FFFFFF;     /* Pure white for cards, panels */
+  --bg-tertiary: #F3EFEA;      /* Light gray-beige for subtle sections */
+  
+  --text-primary: #2C2520;     /* Deep charcoal brown, high contrast (ratio > 7:1) */
+  --text-secondary: #5E534C;   /* Medium brown-gray, high contrast (ratio > 4.5:1) */
+  --text-muted: #8A7E77;       /* Muted brown for borders/placeholders */
+  
+  --accent-gold: #C5A880;      /* Warm golden accent */
+  --accent-gold-hover: #B49469;/* Darker gold for interactive states */
+  --accent-soft-gold: #F6F1EB; /* Very light gold tint for badges, tags */
+  
+  --success: #2E7D32;          /* Forest green for successful checkout/feedback */
+  --error: #C92A2A;            /* Crimson red for errors/warnings */
+  --border-color: #E6DFD7;     /* Elegant soft beige borders */
+  
+  /* Font Families */
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  
+  /* Spacings */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2.5rem;
+  --spacing-xxl: 4rem;
+
+  /* Border Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  /* Box Shadows */
+  --shadow-sm: 0 2px 8px rgba(44, 37, 32, 0.04);
+  --shadow-md: 0 8px 24px rgba(44, 37, 32, 0.06);
+  --shadow-lg: 0 16px 48px rgba(44, 37, 32, 0.1);
+  --shadow-glass: 0 8px 32px 0 rgba(197, 168, 128, 0.08);
+
+  /* Transitions */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tipografia */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  margin-bottom: var(--spacing-md);
+}
+
+h2 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+}
+
+h3 {
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  line-height: 1.3;
+}
+
+p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Link e Bottoni Accessibili (WCAG 2.2 Target Size >= 24x24px, optimized to 44x44px where possible) */
+a, button, input, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+a {
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+/* Bottoni primari */
+.btn-primary {
+  background-color: var(--text-primary);
+  color: var(--bg-secondary);
+  padding: 0.8rem 1.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  min-height: 44px; /* WCAG 2.2 Target Size */
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--text-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Bottoni secondari */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.8rem 1.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  min-height: 44px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+/* Badge ed Etichette */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--accent-soft-gold);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Form e Inputs */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: var(--transition-fast);
+  min-height: 44px; /* Accessibilità */
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.15);
+}
+
+/* Struttura Layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* Utility per Griglie e Flex */
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.flex {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Animazioni e Transizioni */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold);
+}
+
+/* Promo Banner Top */
+.promo-banner-top {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--accent-gold);
+  z-index: 101;
+  position: relative;
+}
+
+.promo-banner-top span {
+  display: inline-block;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); color: var(--accent-gold); }
+  100% { transform: scale(1); }
+}
