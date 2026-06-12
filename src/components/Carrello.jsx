@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCart } from '../context/CartContext';
 import { X, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 
@@ -64,7 +63,7 @@ export default function Carrello({ isOpen, onClose, onCheckout }) {
               {cartItems.map((item) => (
                 <li key={`${item.id}-${item.size}`} className="cart-item">
                   <img
-                    src={item.immagine_url.startsWith('http') || item.immagine_url.startsWith('blob:') ? item.immagine_url : `/public/${item.immagine_url}`}
+                    src={item.immagine_url.startsWith('http') || item.immagine_url.startsWith('blob:') ? item.immagine_url : (item.immagine_url.startsWith('/') ? item.immagine_url : `/${item.immagine_url}`)}
                     alt={item.titolo}
                     className="cart-item-image"
                     onError={(e) => {

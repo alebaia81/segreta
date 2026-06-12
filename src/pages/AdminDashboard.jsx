@@ -1,23 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Check, Lock, Upload, Loader } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, RotateCcw } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
-const PRESET_CATEGORIES = [
-  'Abiti',
-  'Camicie e Bluse',
-  'Pantaloni',
-  'Gonne',
-  'Giacche e Cappotti',
-  'T-Shirt',
-  'Maglieria',
-  'Accessori'
-];
+const TARGET_CATEGORIES = {
+  Donna: [
+    'Abiti',
+    'Accessori',
+    'Camicie e Bluse',
+    'Giacche e Cappotti',
+    'Gonne',
+    'Maglieria',
+    'Pantaloni',
+    'T-Shirt'
+  ],
+  Uomo: [
+    'Accessori',
+    'Camicie',
+    'Giacche e Cappotti',
+    'Maglieria',
+    'Pantaloni',
+    'T-Shirt'
+  ]
+};
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
 export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo }) {
   const [activeTab, setActiveTab] = useState('ordini');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('segreta_admin_logged') === 'true');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(false);
 
@@ -27,9 +37,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [uploading, setUploading] = useState(false);
   const [isAPIAvailable, setIsAPIAvailable] = useState(true);
 
-  // Stati locali per la categoria selezionata
-  const [selectedCategoryOption, setSelectedCategoryOption] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
+
 
   // Stati locali per la selezione delle taglie tramite checkbox/flag
   const [selectedSizes, setSelectedSizes] = useState({
@@ -40,11 +48,9 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [customSizesList, setCustomSizesList] = useState([]);
   const [newCustomSizeInput, setNewCustomSizeInput] = useState('');
 
-  // Ordini caricati da localStorage (perché gestiti lato client per ora)
-  const [ordini, setOrdini] = useState(() => {
-    const saved = localStorage.getItem('segreta_ordini');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Ordini caricati dall'API Node (o localStorage in caso di fallback offline)
+  const [ordini, setOrdini] = useState([]);
+  const [mostraArchivio, setMostraArchivio] = useState(false);
 
   // Stato per l'inserimento di un nuovo articolo
   const [nuovoArticolo, setNuovoArticolo] = useState({
@@ -52,6 +58,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     descrizione: '',
     prezzo: '',
     immagine_url: '',
+    target: 'Donna',
     categoria: '',
     taglie: 'S,M,L'
   });
@@ -65,15 +72,6 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     metaRobots.id = 'admin-noindex-meta';
     document.head.appendChild(metaRobots);
 
-    // Controlla se l'amministratore è già autenticato in questa sessione
-    const authSession = sessionStorage.getItem('segreta_admin_logged');
-    if (authSession === 'true') {
-      setIsLoggedIn(true);
-    }
-
-    // Carica gli articoli dall'API PHP all'avvio dell'admin
-    fetchArticoli();
-
     return () => {
       // Pulisci il meta tag robots allo smontaggio del componente
       const meta = document.getElementById('admin-noindex-meta');
@@ -83,10 +81,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     };
   }, []);
 
-  const fetchArticoli = async () => {
+  const fetchArticoli = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api.php?action=list');
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
+      const response = await fetch('/api/admin/prodotti', {
+        headers: {
+          'x-admin-password': pass
+        }
+      });
+      if (response.status === 401) {
+        setIsAPIAvailable(true);
+        return;
+      }
       const json = await response.json();
       if (json.success) {
         setArticoliAPI(json.data);
@@ -95,25 +102,92 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         throw new Error('API non riuscita');
       }
     } catch (err) {
-      console.warn('Connessione API PHP fallita. Fallback su dati locali/localStorage.', err);
+      console.warn('Connessione API fallita. Fallback su dati locali/localStorage.', err);
       setIsAPIAvailable(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [password]);
+
+  const fetchOrdini = useCallback(async (archivio = false) => {
+    try {
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
+      const url = `/api/admin/ordini${archivio ? '?archivio=true' : ''}`;
+      const response = await fetch(url, {
+        headers: {
+          'x-admin-password': pass
+        }
+      });
+      if (response.status === 401) {
+        return;
+      }
+      const json = await response.json();
+      if (json.success) {
+        setOrdini(json.data);
+      }
+    } catch (err) {
+      console.warn('Connessione API per ordini fallita. Fallback su localStorage.', err);
+      const saved = localStorage.getItem('segreta_ordini');
+      setOrdini(saved ? JSON.parse(saved) : []);
+    }
+  }, [password]);
+
+  // Effetto per caricare i dati non appena si è loggati
+  useEffect(() => {
+    if (isLoggedIn) {
+      const timer = setTimeout(() => {
+        fetchArticoli();
+        fetchOrdini(mostraArchivio);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoggedIn, fetchArticoli, fetchOrdini, mostraArchivio]);
+
+  // --- AUTENTICAZIONE ---
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/prodotti', {
+        headers: {
+          'x-admin-password': password
+        }
+      });
+      if (response.ok) {
+        setIsLoggedIn(true);
+        sessionStorage.setItem('segreta_admin_logged', 'true');
+        sessionStorage.setItem('segreta_admin_password', password);
+        setLoginError(false);
+        const json = await response.json();
+        setArticoliAPI(json.data);
+        setIsAPIAvailable(true);
+      } else {
+        setLoginError(true);
+        setPassword('');
+      }
+    } catch (err) {
+      console.warn('Connessione al server fallita durante login. Fallback locale.', err);
+      const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Segreta2026';
+      if (password === correctPassword) {
+        setIsLoggedIn(true);
+        sessionStorage.setItem('segreta_admin_logged', 'true');
+        sessionStorage.setItem('segreta_admin_password', password);
+        setLoginError(false);
+        setIsAPIAvailable(false);
+      } else {
+        setLoginError(true);
+        setPassword('');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // --- AUTENTICAZIONE ---
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Segreta2026';
-    if (password === correctPassword) {
-      setIsLoggedIn(true);
-      sessionStorage.setItem('segreta_admin_logged', 'true');
-      setLoginError(false);
-    } else {
-      setLoginError(true);
-      setPassword('');
-    }
+  const handleLogout = () => {
+    sessionStorage.removeItem('segreta_admin_logged');
+    sessionStorage.removeItem('segreta_admin_password');
+    setIsLoggedIn(false);
+    setPassword('');
   };
 
   // --- CARICAMENTO E COMPRESSIONE IMMAGINE (WebP, max 1080px) ---
@@ -139,7 +213,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       const formData = new FormData();
       formData.append('immagine', compressedFile, 'prodotto.webp');
 
-      // Se l'API PHP non è disponibile (sviluppo locale offline), simuliamo l'upload con un URL blob locale
+      // Se l'API non è disponibile (sviluppo locale offline), simuliamo l'upload con un URL blob locale
       if (!isAPIAvailable) {
         const localBlobUrl = URL.createObjectURL(compressedFile);
         setNuovoArticolo(prev => ({
@@ -150,9 +224,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         return;
       }
 
-      // Invio al backend PHP
-      const response = await fetch('/api.php?action=upload', {
+      // Invio al backend Express
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
+      const response = await fetch('/api/admin/upload', {
         method: 'POST',
+        headers: {
+          'x-admin-password': pass
+        },
         body: formData
       });
 
@@ -190,24 +268,18 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const handleCreateArticolo = async (e) => {
     e.preventDefault();
     
-    // Rileva la categoria corretta da inviare
-    const categoriaFinale = selectedCategoryOption === '__custom__' 
-      ? customCategory.trim() 
-      : selectedCategoryOption;
-
     // Calcola la stringa delle taglie finali dai flag selezionati
     const taglieFinali = Object.keys(selectedSizes)
       .filter(size => selectedSizes[size])
       .join(',');
 
-    if (!nuovoArticolo.titolo || !nuovoArticolo.prezzo || !categoriaFinale) {
-      alert('Per favore compila i campi obbligatori (Titolo, Prezzo, Categoria)');
+    if (!nuovoArticolo.titolo || !nuovoArticolo.prezzo || !nuovoArticolo.categoria || !nuovoArticolo.target) {
+      alert('Per favore compila i campi obbligatori (Titolo, Prezzo, Target, Categoria)');
       return;
     }
 
     const articoloDaAggiungere = {
       ...nuovoArticolo,
-      categoria: categoriaFinale,
       taglie: taglieFinali,
       prezzo: parseFloat(nuovoArticolo.prezzo),
       immagine_url: nuovoArticolo.immagine_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'
@@ -216,9 +288,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     if (isAPIAvailable) {
       setLoading(true);
       try {
-        const response = await fetch('/api.php?action=add', {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch('/api/admin/prodotti', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          },
           body: JSON.stringify(articoloDaAggiungere)
         });
         const json = await response.json();
@@ -227,11 +303,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           setArticoliAPI(prev => [json.data, ...prev]);
           // Sincronizza anche lo stato dell'app principale passatogli dal padre
           onAddArticolo(json.data);
-          alert('Articolo salvato sul database MySQL!');
+          alert('Articolo salvato sul database SQLite!');
         } else {
           alert('Errore dal database: ' + json.error);
         }
-      } catch (err) {
+      } catch {
         alert('Errore di rete durante il salvataggio.');
       } finally {
         setLoading(false);
@@ -250,11 +326,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       descrizione: '',
       prezzo: '',
       immagine_url: '',
+      target: 'Donna',
       categoria: '',
       taglie: 'S,M,L'
     });
-    setSelectedCategoryOption('');
-    setCustomCategory('');
     setSelectedSizes({ S: true, M: true, L: true });
     setCustomSizesList([]);
     setNewCustomSizeInput('');
@@ -266,10 +341,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
     if (isAPIAvailable) {
       try {
-        const response = await fetch('/api.php?action=toggle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: artId })
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/prodotti/${artId}/toggle`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          }
         });
         const json = await response.json();
         if (json.success) {
@@ -297,10 +375,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     if (isAPIAvailable) {
       setLoading(true);
       try {
-        const response = await fetch('/api.php?action=delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: artId })
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/prodotti/${artId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          }
         });
         const json = await response.json();
         if (json.success) {
@@ -311,7 +392,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         } else {
           alert('Errore database: ' + json.error);
         }
-      } catch (err) {
+      } catch {
         alert('Impossibile completare l\'eliminazione.');
       } finally {
         setLoading(false);
@@ -322,7 +403,6 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       if (saved) {
         const list = JSON.parse(saved).filter(a => a.id !== artId);
         localStorage.setItem('segreta_articoli', JSON.stringify(list));
-        // Forza l'aggiornamento rinfrescando la pagina o reinizializzando lo stato locale
         alert('Articolo rimosso localmente. Ricarica la pagina per sincronizzare.');
         window.location.reload();
       }
@@ -330,20 +410,146 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   };
 
   // --- ORDINI CONTROLLI ---
-  const handleUpdateStatoOrdine = (ordineId, nuovoStato) => {
-    const nuoviOrdini = ordini.map(o => 
-      o.id === ordineId ? { ...o, stato: nuovoStato } : o
-    );
-    setOrdini(nuoviOrdini);
-    localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
+  const handleUpdateStatoOrdine = async (ordineId, nuovoStato) => {
+    if (isAPIAvailable) {
+      try {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/ordini/${ordineId}/stato`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          },
+          body: JSON.stringify({ stato: nuovoStato })
+        });
+        const json = await response.json();
+        if (json.success) {
+          setOrdini(prev => prev.map(o => 
+            o.id === ordineId ? { ...o, stato: nuovoStato } : o
+          ));
+        }
+      } catch (err) {
+        console.error('Errore durante l\'aggiornamento dello stato dell\'ordine su database.', err);
+      }
+    } else {
+      const nuoviOrdini = ordini.map(o => 
+        o.id === ordineId ? { ...o, stato: nuovoStato } : o
+      );
+      setOrdini(nuoviOrdini);
+      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
+    }
   };
 
-  const handleCancellaOrdine = (ordineId) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo ordine?')) {
+  const handleCancellaOrdine = async (ordineId) => {
+    if (!window.confirm('Sei sicuro di voler eliminare questo ordine?')) {
+      return;
+    }
+
+    if (isAPIAvailable) {
+      try {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          }
+        });
+        const json = await response.json();
+        if (json.success) {
+          setOrdini(prev => prev.filter(o => o.id !== ordineId));
+        }
+      } catch (err) {
+        console.error('Errore durante l\'eliminazione dell\'ordine su database.', err);
+      }
+    } else {
       const nuoviOrdini = ordini.filter(o => o.id !== ordineId);
       setOrdini(nuoviOrdini);
       localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
     }
+  };
+
+  const handleArchivia = async (ordineId) => {
+    if (!window.confirm('Archiviare questo ordine? Sarà visibile nella cronologia.')) return;
+    if (isAPIAvailable) {
+      try {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/ordini/${ordineId}/archiviare`, {
+          method: 'PUT',
+          headers: { 'x-admin-password': pass }
+        });
+        const json = await response.json();
+        if (json.success) {
+          setOrdini(prev => prev.filter(o => o.id !== ordineId));
+        }
+      } catch (err) {
+        console.error('Errore durante l\'archiviazione dell\'ordine.', err);
+      }
+    } else {
+      const updated = ordini.map(o => o.id === ordineId ? { ...o, stato: 'Archiviato' } : o);
+      setOrdini(updated.filter(o => o.stato !== 'Archiviato'));
+      localStorage.setItem('segreta_ordini', JSON.stringify(updated));
+    }
+  };
+
+  const handleToggleArchivio = () => {
+    const nuovoValore = !mostraArchivio;
+    setMostraArchivio(nuovoValore);
+    fetchOrdini(nuovoValore);
+  };
+
+  const handleDownloadCSV = () => {
+    if (ordini.length === 0) return;
+    const headers = ['ID','Cliente','Telefono','Consegna','Indirizzo','Pagamento','Totale','Stato','Data'];
+    const rows = ordini.map(o => [
+      o.id,
+      `"${o.nome_cliente}"`,
+      `"${o.telefono}"`,
+      `"${o.metodo_consegna}"`,
+      `"${o.indirizzo_spedizione}"`,
+      `"${o.metodo_pagamento}"`,
+      o.totale,
+      `"${o.stato}"`,
+      `"${new Date(o.created_at).toLocaleString('it-IT')}"`
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ordini_${mostraArchivio ? 'archivio' : 'attivi'}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPDF = () => {
+    if (ordini.length === 0) return;
+    const win = window.open('', '_blank');
+    const titolo = mostraArchivio ? 'Archivio Ordini' : 'Ordini Attivi';
+    const righe = ordini.map(o => {
+      let items = [];
+      try { items = JSON.parse(o.dettaglio_articoli); } catch { items = []; }
+      return `
+        <tr style="border-bottom:1px solid #eee">
+          <td style="padding:8px">#${o.id}</td>
+          <td style="padding:8px">${o.nome_cliente}</td>
+          <td style="padding:8px">${o.telefono}</td>
+          <td style="padding:8px">${o.metodo_consegna}</td>
+          <td style="padding:8px">${items.map(i => `${i.titolo} x${i.quantita}`).join(', ')}</td>
+          <td style="padding:8px">€${parseFloat(o.totale).toFixed(2)}</td>
+          <td style="padding:8px">${o.stato}</td>
+          <td style="padding:8px">${new Date(o.created_at).toLocaleString('it-IT')}</td>
+        </tr>`;
+    }).join('');
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${titolo} - Segreta Style</title>
+      <style>body{font-family:sans-serif;padding:20px;color:#333}table{width:100%;border-collapse:collapse}th{background:#1a1a2e;color:#fff;padding:10px;text-align:left}</style>
+      </head><body>
+      <h1 style="color:#1a1a2e">Segreta Style — ${titolo}</h1>
+      <p>Data export: ${new Date().toLocaleString('it-IT')}</p>
+      <table><thead><tr><th>#</th><th>Cliente</th><th>Telefono</th><th>Consegna</th><th>Articoli</th><th>Totale</th><th>Stato</th><th>Data</th></tr></thead>
+      <tbody>${righe}</tbody></table></body></html>`);
+    win.document.close();
+    win.print();
   };
 
   // Se l'utente non è loggato, mostra la schermata di login Light Mode elegantissima
@@ -449,11 +655,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   // Lista articoli da mostrare: usa articoliAPI se disponibile, altrimenti fa il fallback sugli articoli passati dal padre
   const listaArticoliVisualizzati = isAPIAvailable ? articoliAPI : articoli;
 
-  // Unisce le categorie predefinite a quelle ricavate dinamicamente dal catalogo per non duplicarle
-  const categorieOpzioni = Array.from(new Set([
-    ...PRESET_CATEGORIES,
-    ...listaArticoliVisualizzati.map(art => art.categoria)
-  ])).filter(Boolean);
+
 
   return (
     <section className="admin-dashboard-container container fade-in">
@@ -464,12 +666,16 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
             <div className="accent-line-left"></div>
             <p className="dashboard-sub">Gestisci il catalogo e gli ordini di Segreta Style.</p>
           </div>
-          <div className="status-badge-container">
+          <div className="header-actions">
             {isAPIAvailable ? (
-              <span className="status-badge online" title="Database MySQL Hostinger Connesso">● Database Collegato</span>
+              <span className="status-badge online" title="Database SQLite Connesso">● Database Collegato</span>
             ) : (
-              <span className="status-badge offline" title="Database MySQL non raggiungibile. Dati salvati in locale.">● Modalità Sviluppo Locale</span>
+              <span className="status-badge offline" title="Database SQLite non raggiungibile. Dati salvati in locale.">● Modalità Sviluppo Locale</span>
             )}
+            <button className="btn-logout" onClick={handleLogout} aria-label="Scollegati dalla dashboard">
+              <LogOut size={16} style={{ marginRight: '6px' }} />
+              Scollegati
+            </button>
           </div>
         </div>
       </div>
@@ -478,7 +684,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       <div className="dashboard-tabs" role="tablist">
         <button
           className={`tab-btn ${activeTab === 'ordini' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ordini')}
+          onClick={() => {
+            setActiveTab('ordini');
+            fetchOrdini(false);
+          }}
           role="tab"
           aria-selected={activeTab === 'ordini'}
         >
@@ -503,6 +712,18 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           <PlusCircle size={18} style={{ marginRight: '8px' }} />
           Nuovo Articolo
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'archivio' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('archivio');
+            fetchOrdini(true);
+          }}
+          role="tab"
+          aria-selected={activeTab === 'archivio'}
+        >
+          <Archive size={18} style={{ marginRight: '8px' }} />
+          Archivio Ordini
+        </button>
       </div>
 
       {/* Loader globale */}
@@ -516,12 +737,36 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       {/* Tab 1: Ordini Ricevuti */}
       {activeTab === 'ordini' && !loading && (
         <div className="dashboard-content fade-in">
+          {/* Download rapido */}
+          <div className="orders-toolbar">
+            <span className="orders-toolbar-title">Ordini attivi</span>
+            <div className="orders-download-group">
+              <button
+                className="download-btn"
+                onClick={handleDownloadCSV}
+                disabled={ordini.length === 0}
+                title="Scarica CSV"
+              >
+                <Download size={14} /> CSV
+              </button>
+              <button
+                className="download-btn"
+                onClick={handleDownloadPDF}
+                disabled={ordini.length === 0}
+                title="Stampa / Salva PDF"
+              >
+                <Download size={14} /> PDF
+              </button>
+            </div>
+          </div>
+
           {ordini.length === 0 ? (
             <p className="no-data-msg">Nessun ordine ricevuto al momento.</p>
           ) : (
             <div className="orders-list">
               {ordini.map(ordine => {
-                const dettagli = JSON.parse(ordine.dettaglio_articoli);
+                let dettagli = [];
+                try { dettagli = JSON.parse(ordine.dettaglio_articoli); } catch { dettagli = []; }
                 return (
                   <div key={ordine.id} className="order-admin-card">
                     <div className="order-admin-header">
@@ -540,10 +785,105 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                           <option value="Spedito">Spedito / Consegnato</option>
                           <option value="Annullato">Annullato</option>
                         </select>
+                        {ordine.stato !== 'In attesa' && (
+                          <button
+                            className="archive-order-btn"
+                            onClick={() => handleArchivia(ordine.id)}
+                            aria-label={`Archivia ordine #${ordine.id}`}
+                            title="Sposta in Archivio"
+                          >
+                            <Archive size={15} />
+                            <span>Archivia</span>
+                          </button>
+                        )}
                         <button
                           className="delete-order-btn"
                           onClick={() => handleCancellaOrdine(ordine.id)}
                           aria-label="Cancella ordine"
+                        >
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="order-admin-body">
+                      <div className="customer-info-box">
+                        <p><strong>Cliente:</strong> {ordine.nome_cliente}</p>
+                        <p><strong>Telefono:</strong> <a href={`tel:${ordine.telefono}`}>{ordine.telefono}</a></p>
+                        <p><strong>Consegna:</strong> {ordine.metodo_consegna}</p>
+                        <p><strong>Indirizzo:</strong> {ordine.indirizzo_spedizione}</p>
+                        <p><strong>Pagamento:</strong> {ordine.metodo_pagamento}</p>
+                      </div>
+
+                      <div className="order-items-box">
+                        <h5>Prodotti Acquistati:</h5>
+                        <ul className="items-list-admin">
+                          {dettagli.map((item, idx) => (
+                            <li key={idx} className="item-li-admin">
+                              <span>{item.titolo} (Taglia {item.taglia}) <strong>x{item.quantita}</strong></span>
+                              <span>€{(item.prezzo * item.quantita).toFixed(2)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="order-total-admin">
+                          <span>Totale Ordine:</span>
+                          <strong>€{ordine.totale.toFixed(2)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Archivio Ordini */}
+      {activeTab === 'archivio' && !loading && (
+        <div className="dashboard-content fade-in">
+          <div className="orders-toolbar">
+            <span className="orders-toolbar-title">Cronologia ordini archiviati</span>
+            <div className="orders-download-group">
+              <button
+                className="download-btn"
+                onClick={handleDownloadCSV}
+                disabled={ordini.length === 0}
+                title="Scarica CSV archivio"
+              >
+                <Download size={14} /> CSV
+              </button>
+              <button
+                className="download-btn"
+                onClick={handleDownloadPDF}
+                disabled={ordini.length === 0}
+                title="Stampa / Salva PDF archivio"
+              >
+                <Download size={14} /> PDF
+              </button>
+            </div>
+          </div>
+
+          {ordini.length === 0 ? (
+            <p className="no-data-msg">Nessun ordine archiviato.</p>
+          ) : (
+            <div className="orders-list">
+              {ordini.map(ordine => {
+                let dettagli = [];
+                try { dettagli = JSON.parse(ordine.dettaglio_articoli); } catch { dettagli = []; }
+                return (
+                  <div key={ordine.id} className="order-admin-card archived-card">
+                    <div className="order-admin-header">
+                      <div>
+                        <h4>Ordine #{ordine.id}</h4>
+                        <span className="order-date">{new Date(ordine.created_at).toLocaleString('it-IT')}</span>
+                      </div>
+                      <div className="order-actions-row">
+                        <span className="badge badge-archived">Archiviato</span>
+                        <button
+                          className="delete-order-btn"
+                          onClick={() => handleCancellaOrdine(ordine.id)}
+                          aria-label="Elimina ordine archiviato"
                         >
                           <Trash size={16} />
                         </button>
@@ -591,6 +931,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               <thead>
                 <tr>
                   <th>Prodotto</th>
+                  <th>Target</th>
                   <th>Categoria</th>
                   <th>Prezzo</th>
                   <th>Taglie</th>
@@ -603,7 +944,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   <tr key={art.id} className={!art.attivo ? 'inactive-row' : ''}>
                     <td className="art-title-td">
                       <img 
-                        src={art.immagine_url.startsWith('http') || art.immagine_url.startsWith('blob:') || art.immagine_url.startsWith('uploads/') ? art.immagine_url : `/public/${art.immagine_url}`} 
+                        src={art.immagine_url.startsWith('http') || art.immagine_url.startsWith('blob:') ? art.immagine_url : (art.immagine_url.startsWith('/') ? art.immagine_url : `/${art.immagine_url}`)} 
                         alt="" 
                         className="table-art-img"
                         onError={(e) => {
@@ -614,6 +955,18 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <strong>{art.titolo}</strong>
                         <span className="art-id-span">ID: {art.id}</span>
                       </div>
+                    </td>
+                    <td>
+                      <span 
+                        className="badge" 
+                        style={{ 
+                          backgroundColor: art.target === 'Uomo' ? 'rgba(30, 136, 229, 0.1)' : 'rgba(216, 27, 96, 0.1)', 
+                          color: art.target === 'Uomo' ? '#1E88E5' : '#D81B60',
+                          border: art.target === 'Uomo' ? '1px solid rgba(30, 136, 229, 0.2)' : '1px solid rgba(216, 27, 96, 0.2)'
+                        }}
+                      >
+                        {art.target || 'Donna'}
+                      </span>
                     </td>
                     <td><span className="badge">{art.categoria}</span></td>
                     <td className="price-td">€{parseFloat(art.prezzo).toFixed(2)}</td>
@@ -683,37 +1036,37 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
             <div className="form-grid-2">
               <div className="form-group">
+                <label className="form-label" htmlFor="select_target">Target *</label>
+                <select
+                  id="select_target"
+                  className="form-control"
+                  value={nuovoArticolo.target}
+                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, target: e.target.value, categoria: ''})}
+                  required
+                  style={{ minHeight: '44px' }}
+                >
+                  <option value="Donna">Donna</option>
+                  <option value="Uomo">Uomo</option>
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label" htmlFor="select_categoria">Categoria *</label>
                 <select
                   id="select_categoria"
                   className="form-control"
-                  value={selectedCategoryOption}
-                  onChange={(e) => setSelectedCategoryOption(e.target.value)}
+                  value={nuovoArticolo.categoria}
+                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, categoria: e.target.value})}
                   required
                   style={{ minHeight: '44px' }}
                 >
                   <option value="" disabled>-- Seleziona una Categoria --</option>
-                  {categorieOpzioni.map(cat => (
+                  {(TARGET_CATEGORIES[nuovoArticolo.target] || []).map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                  <option value="__custom__">🔍 Altro... (inserisci manualmente)</option>
                 </select>
-
-                {selectedCategoryOption === '__custom__' && (
-                  <div className="custom-category-input-wrapper fade-in" style={{ marginTop: 'var(--spacing-sm)' }}>
-                    <label className="form-label" htmlFor="new_categoria">Nome Nuova Categoria *</label>
-                    <input
-                      type="text"
-                      id="new_categoria"
-                      className="form-control"
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      required
-                      placeholder="Es. Gonne, Accessori, Abiti"
-                    />
-                  </div>
-                )}
               </div>
+            </div>
 
               <div className="form-group">
                 <label className="form-label" style={{ marginBottom: '8px' }}>Taglie Disponibili *</label>
@@ -757,7 +1110,6 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   </button>
                 </div>
               </div>
-            </div>
 
             <div className="form-group">
               <label className="form-label">Foto Prodotto (Converte in WebP prima del caricamento) *</label>
@@ -789,7 +1141,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               {nuovoArticolo.immagine_url && (
                 <div className="upload-preview-box fade-in">
                   <span className="badge preview-badge">Caricata</span>
-                  <img src={nuovoArticolo.immagine_url.startsWith('http') || nuovoArticolo.immagine_url.startsWith('blob:') || nuovoArticolo.immagine_url.startsWith('uploads/') ? nuovoArticolo.immagine_url : `/public/${nuovoArticolo.immagine_url}`} alt="Anteprima prodotto" className="img-preview" />
+                  <img src={nuovoArticolo.immagine_url.startsWith('http') || nuovoArticolo.immagine_url.startsWith('blob:') ? nuovoArticolo.immagine_url : (nuovoArticolo.immagine_url.startsWith('/') ? nuovoArticolo.immagine_url : `/${nuovoArticolo.immagine_url}`)} alt="Anteprima prodotto" className="img-preview" />
                   <p className="preview-path-text">Immagine: {nuovoArticolo.immagine_url}</p>
                 </div>
               )}
@@ -830,6 +1182,39 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           align-items: center;
           flex-wrap: wrap;
           gap: var(--spacing-md);
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+          flex-wrap: wrap;
+        }
+
+        .btn-logout {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background-color: transparent;
+          color: var(--text-secondary);
+          border: 1.5px solid var(--border-color);
+          padding: 0.45rem 0.9rem;
+          border-radius: var(--radius-md);
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.20s ease;
+          min-height: 38px;
+        }
+
+        .btn-logout:hover {
+          background-color: var(--border-color);
+          color: var(--text-primary);
+        }
+
+        .btn-logout:focus-visible {
+          outline: 2px solid var(--accent-gold);
+          outline-offset: 2px;
         }
 
         .status-badge-container {
@@ -1260,6 +1645,105 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           margin-bottom: 0;
         }
 
+        /* Orders Toolbar */
+        .orders-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: var(--spacing-sm);
+          margin-bottom: var(--spacing-md);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+        }
+
+        .orders-toolbar-title {
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .orders-download-group {
+          display: flex;
+          gap: var(--spacing-sm);
+        }
+
+        .download-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          min-height: 44px;
+          padding: 0 var(--spacing-md);
+          border: 1.5px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          background: var(--bg-primary);
+          color: var(--text-secondary);
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .download-btn:hover:not(:disabled) {
+          border-color: var(--text-primary);
+          color: var(--text-primary);
+        }
+
+        .download-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        /* Archive order action button */
+        .archive-order-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          min-height: 44px;
+          min-width: 44px;
+          padding: 0 var(--spacing-sm);
+          border: 1.5px solid transparent;
+          border-radius: var(--radius-sm);
+          background: transparent;
+          color: var(--text-secondary);
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .archive-order-btn:hover {
+          border-color: var(--accent-gold);
+          color: var(--accent-gold);
+          background-color: rgba(var(--accent-gold-rgb, 180, 141, 92), 0.07);
+        }
+
+        /* Archived card visual state */
+        .archived-card {
+          opacity: 0.75;
+          border-style: dashed;
+        }
+
+        .archived-card .order-admin-header {
+          background-color: rgba(0,0,0,0.04);
+        }
+
+        .badge-archived {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: var(--radius-sm);
+          font-size: 0.75rem;
+          font-weight: 700;
+          background-color: rgba(120,120,120,0.12);
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+          letter-spacing: 0.04em;
+        }
+
         @media (max-width: 768px) {
           .order-admin-body {
             grid-template-columns: 1fr;
@@ -1267,6 +1751,20 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           
           .form-grid-2 {
             grid-template-columns: 1fr;
+          }
+
+          .orders-toolbar {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .orders-download-group {
+            width: 100%;
+          }
+
+          .download-btn {
+            flex: 1;
+            justify-content: center;
           }
         }
       `}</style>

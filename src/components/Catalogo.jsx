@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Eye, Check } from 'lucide-react';
+import { ShoppingBag, Check } from 'lucide-react';
 
 export default function Catalogo({ articoli }) {
   const { addToCart } = useCart();
@@ -40,6 +40,8 @@ export default function Catalogo({ articoli }) {
       setAddedAnimation(prev => ({ ...prev, [articolo.id]: false }));
     }, 1500);
   };
+
+
 
   return (
     <section id="catalogo" className="catalogo-section container fade-in">
@@ -82,7 +84,16 @@ export default function Catalogo({ articoli }) {
               <article key={articolo.id} className="prodotto-card">
                 <div className="prodotto-image-wrapper">
                   <img
-                    src={articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:') ? articolo.immagine_url : `/public/${articolo.immagine_url}`}
+                    src={articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:') ? articolo.immagine_url : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)}
+                    alt=""
+                    className="prodotto-image-blur-bg"
+                    aria-hidden="true"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                    }}
+                  />
+                  <img
+                    src={articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:') ? articolo.immagine_url : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)}
                     alt={articolo.titolo}
                     className="prodotto-image"
                     onError={(e) => {
@@ -152,6 +163,8 @@ export default function Catalogo({ articoli }) {
           })}
         </div>
       )}
+
+
 
       <style>{`
         .catalogo-section {
@@ -252,18 +265,30 @@ export default function Catalogo({ articoli }) {
           overflow: hidden;
         }
 
+        .prodotto-image-blur-bg {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          object-fit: cover;
+          filter: blur(20px) brightness(0.95);
+          opacity: 0.55;
+          transform: scale(1.1);
+          pointer-events: none;
+        }
+
         .prodotto-image {
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          z-index: 1;
           transition: var(--transition-smooth);
         }
 
         .prodotto-card:hover .prodotto-image {
-          transform: scale(1.05);
+          transform: scale(1.03);
         }
 
         .prodotto-category-tag {
@@ -280,6 +305,7 @@ export default function Catalogo({ articoli }) {
           border-radius: var(--radius-sm);
           color: var(--text-primary);
           border: 1px solid var(--border-color);
+          z-index: 10;
         }
 
         .prodotto-details {
@@ -388,6 +414,8 @@ export default function Catalogo({ articoli }) {
           color: var(--bg-secondary);
           cursor: default;
         }
+
+
       `}</style>
     </section>
   );

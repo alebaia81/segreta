@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { CheckCircle, ShoppingBag, CreditCard, Truck, Landmark, Store } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 export default function Checkout({ onBackToShopping }) {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -37,39 +37,57 @@ export default function Checkout({ onBackToShopping }) {
       return;
     }
 
-    const nuovoOrdine = {
-      id: Math.floor(Math.random() * 10000) + 1,
-      nome_cliente: formData.nome_cliente,
-      telefono: formData.telefono,
-      indirizzo_spedizione: formData.metodo_consegna === 'Ritiro in negozio' 
-        ? 'Ritiro in negozio (Monticelli d\'Ongina)' 
-        : formData.indirizzo_spedizione,
-      metodo_pagamento: formData.metodo_pagamento,
-      metodo_consegna: formData.metodo_consegna,
-      totale: cartTotal,
-      dettaglio_articoli: JSON.stringify(cartItems.map(item => ({
-        id: item.id,
-        titolo: item.titolo,
-        prezzo: item.prezzo,
-        taglia: item.size,
-        quantita: item.quantity
-      }))),
-      stato: 'In attesa',
-      created_at: new Date().toISOString()
+    const submitOrder = async () => {
+      const ordineDaInviare = {
+        nome_cliente: formData.nome_cliente,
+        telefono: formData.telefono,
+        indirizzo_spedizione: formData.metodo_consegna === 'Ritiro in negozio' 
+          ? 'Ritiro in negozio (Monticelli d\'Ongina)' 
+          : formData.indirizzo_spedizione,
+        metodo_pagamento: formData.metodo_pagamento,
+        metodo_consegna: formData.metodo_consegna,
+        totale: parseFloat(cartTotal),
+        dettaglio_articoli: JSON.stringify(cartItems.map(item => ({
+          id: item.id,
+          titolo: item.titolo,
+          prezzo: item.prezzo,
+          taglia: item.size,
+          quantita: item.quantity
+        })))
+      };
+
+      try {
+        const response = await fetch('/api/ordini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ordineDaInviare)
+        });
+        const json = await response.json();
+        if (json.success) {
+          setCompletedOrderDetails(json.data);
+        } else {
+          throw new Error(json.error || 'Errore durante il salvataggio');
+        }
+      } catch (err) {
+        console.warn('Connessione al server fallita. Salvataggio ordine in localStorage di fallback.', err);
+        const ordineFallback = {
+          ...ordineDaInviare,
+          id: Math.floor(Math.random() * 10000) + 1,
+          stato: 'In attesa',
+          created_at: new Date().toISOString()
+        };
+        const ordiniSalvati = localStorage.getItem('segreta_ordini');
+        const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
+        ordiniList.unshift(ordineFallback);
+        localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
+        setCompletedOrderDetails(ordineFallback);
+      } finally {
+        clearCart();
+        setOrderComplete(true);
+      }
     };
 
-    // Salvataggio nel Local Storage per far sì che la Dashboard Amministratore lo veda
-    const ordiniSalvati = localStorage.getItem('segreta_ordini');
-    const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
-    ordiniList.unshift(nuovoOrdine); // Aggiunge all'inizio
-    localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-
-    // Salva i dettagli per visualizzarli nella schermata finale
-    setCompletedOrderDetails(nuovoOrdine);
-    
-    // Pulisce il carrello
-    clearCart();
-    setOrderComplete(true);
+    submitOrder();
   };
 
   if (orderComplete && completedOrderDetails) {

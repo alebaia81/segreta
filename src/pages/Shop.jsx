@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useCookie } from '../context/CookieContext';
 import { ShoppingBag, Check } from 'lucide-react';
@@ -9,10 +9,11 @@ import { ShoppingBag, Check } from 'lucide-react';
  * Catalogo completo con filtri per categoria.
  * SEO: meta tag differenziati da Home (catalogo + shopping).
  */
-export default function Shop({ articoli, onNavigateToHome }) {
+export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) {
   const { addToCart } = useCart();
   const { openCookieSettings } = useCookie();
 
+  const [selectedTarget, setSelectedTarget] = useState('Donna');
   const [selectedCategory, setSelectedCategory] = useState('Tutti');
   const [selectedSizes, setSelectedSizes] = useState({});
   const [addedAnimation, setAddedAnimation] = useState({});
@@ -20,13 +21,13 @@ export default function Shop({ articoli, onNavigateToHome }) {
   // --- Meta tag SEO specifici per /shop ---
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "Shop Abbigliamento Donna | Segreta Style — Monticelli d'Ongina";
+    document.title = "Shop Abbigliamento Donna & Uomo | Segreta Style — Monticelli d'Ongina";
 
     // Description
     let metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
     if (metaDesc) {
-      metaDesc.setAttribute('content', "Esplora il catalogo completo di Segreta Style: abiti, gonne, bluse, giacche e accessori moda donna. Acquista online con spedizione in tutta Italia o ritira in boutique a Monticelli d'Ongina (PC).");
+      metaDesc.setAttribute('content', "Esplora il catalogo completo di Segreta Style: abiti, gonne, bluse, giacche e accessori moda donna e uomo. Acquista online o ritira in boutique a Monticelli d'Ongina (PC).");
     }
 
     // OG
@@ -34,8 +35,8 @@ export default function Shop({ articoli, onNavigateToHome }) {
       const el = document.querySelector(`meta[property="${property}"]`);
       if (el) el.setAttribute('content', content);
     };
-    updateOG('og:title', "Shop Moda Donna | Segreta Style — Abbigliamento Online");
-    updateOG('og:description', "Scopri tutti i capi disponibili: abiti, gonne, bluse, giacche, T-shirt e accessori. Qualità, tendenze e prezzi accessibili da Segreta Style.");
+    updateOG('og:title', "Shop Moda Donna & Uomo | Segreta Style — Abbigliamento Online");
+    updateOG('og:description', "Scopri tutti i capi disponibili per donna e uomo: abiti, bluse, giacche, pantaloni, T-shirt e accessori. Qualità e prezzi accessibili da Segreta Style.");
     updateOG('og:url', 'https://www.segretastylemonticelli.it/shop');
 
     return () => {
@@ -48,11 +49,16 @@ export default function Shop({ articoli, onNavigateToHome }) {
   }, []);
 
   const articoliAttivi = articoli.filter(a => a.attivo);
-  const categorie = ['Tutti', ...new Set(articoliAttivi.map(a => a.categoria))];
+  const articoliTarget = articoliAttivi.filter(a => a.target === selectedTarget);
+  const categorie = ['Tutti', ...new Set(articoliTarget.map(a => a.categoria))].sort((a, b) => {
+    if (a === 'Tutti') return -1;
+    if (b === 'Tutti') return 1;
+    return a.localeCompare(b);
+  });
 
   const articoliFiltrati = selectedCategory === 'Tutti'
-    ? articoliAttivi
-    : articoliAttivi.filter(a => a.categoria === selectedCategory);
+    ? articoliTarget
+    : articoliTarget.filter(a => a.categoria === selectedCategory);
 
   const handleSelectSize = (articoloId, size) => {
     setSelectedSizes(prev => ({ ...prev, [articoloId]: size }));
@@ -70,6 +76,8 @@ export default function Shop({ articoli, onNavigateToHome }) {
     setTimeout(() => setAddedAnimation(prev => ({ ...prev, [articolo.id]: false })), 1500);
   };
 
+
+
   return (
     <div className="shop-page fade-in">
 
@@ -80,10 +88,40 @@ export default function Shop({ articoli, onNavigateToHome }) {
           <h1>Il Nostro Shop</h1>
           <div className="accent-line" style={{ margin: '1rem auto 1.25rem' }}></div>
           <p className="shop-hero-subtitle">
-            Tutti i capi disponibili, aggiornati in tempo reale. Filtra per categoria e trova il tuo stile.
+            Tutti i capi disponibili, aggiornati in tempo reale. Seleziona il genere e trova la categoria adatta.
           </p>
         </div>
       </header>
+
+      {/* Macro Target Tab Selectors */}
+      <div className="shop-macro-wrapper container">
+        <div className="shop-macro-bar" role="tablist" aria-label="Seleziona collezione">
+          <button
+            role="tab"
+            aria-selected={selectedTarget === 'Donna'}
+            className={`shop-macro-btn ${selectedTarget === 'Donna' ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedTarget('Donna');
+              setSelectedCategory('Tutti');
+            }}
+            style={{ minHeight: '44px' }}
+          >
+            Collezione Donna
+          </button>
+          <button
+            role="tab"
+            aria-selected={selectedTarget === 'Uomo'}
+            className={`shop-macro-btn ${selectedTarget === 'Uomo' ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedTarget('Uomo');
+              setSelectedCategory('Tutti');
+            }}
+            style={{ minHeight: '44px' }}
+          >
+            Collezione Uomo
+          </button>
+        </div>
+      </div>
 
       {/* Filter Bar */}
       <div className="shop-filter-wrapper container">
@@ -126,7 +164,20 @@ export default function Shop({ articoli, onNavigateToHome }) {
                       src={
                         articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
                           ? articolo.immagine_url
-                          : `/public/${articolo.immagine_url}`
+                          : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
+                      }
+                      alt=""
+                      className="prodotto-image-blur-bg"
+                      aria-hidden="true"
+                      onError={e => {
+                        e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                      }}
+                    />
+                    <img
+                      src={
+                        articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
+                          ? articolo.immagine_url
+                          : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
                       }
                       alt={articolo.titolo}
                       className="prodotto-image"
@@ -194,7 +245,7 @@ export default function Shop({ articoli, onNavigateToHome }) {
             >
               <img src="/logo.png" alt="Segreta Style Logo" className="footer-logo-img" />
             </button>
-            <span className="footer-subtitle">di Greta Righi</span>
+            <span className="footer-subtitle">DI GRETA RIGHI</span>
             <div className="footer-social-links">
               <a href="https://www.facebook.com/SegretaAbbigliamento" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-footer-icon-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
@@ -207,18 +258,32 @@ export default function Shop({ articoli, onNavigateToHome }) {
 
           {/* Destra: policy + copyright */}
           <div className="footer-right">
-            <div className="footer-links">
+            <div className="footer-links-row">
               <a href="https://www.iubenda.com/privacy-policy/68426130" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
               <a href="https://www.iubenda.com/privacy-policy/68426130/cookie-policy" target="_blank" rel="noopener noreferrer">Cookie Policy</a>
               <button className="footer-cookie-btn" onClick={openCookieSettings}>Gestisci preferenze Privacy</button>
             </div>
-            <p className="footer-copyright">
-              © 2026 Segreta Style — <a href="https://presenzadigitale.com" target="_blank" rel="noopener noreferrer">Presenzadigitale.com</a>
-            </p>
-            <p className="footer-copyright">C.F. RGHGRT79R66D150Y — P.IVA 01563960333</p>
+            <div className="footer-info-row">
+              <span>© 2026 Segreta Style — <a href="https://presenzadigitale.com" target="_blank" rel="noopener noreferrer">Presenzadigitale.com</a></span>
+              <span className="footer-separator"> | </span>
+              <span>C.F. RGHGRT79R66D15OY — P.IVA 01563960333</span>
+              <button 
+                onClick={onNavigateToAdmin} 
+                className="footer-lock-btn"
+                aria-label="Accesso Area Riservata Amministratore"
+                title="Area Riservata"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </footer>
+
+
 
       <style>{`
         .shop-page {
@@ -249,6 +314,47 @@ export default function Shop({ articoli, onNavigateToHome }) {
           font-size: 1rem;
           max-width: 480px;
           margin: 0 auto;
+        }
+
+        /* Macro Selectors (Uomo/Donna) */
+        .shop-macro-wrapper {
+          padding: var(--spacing-lg) var(--spacing-lg) 0;
+          display: flex;
+          justify-content: center;
+        }
+
+        .shop-macro-bar {
+          display: flex;
+          background-color: var(--bg-tertiary);
+          padding: 4px;
+          border-radius: var(--radius-full);
+          border: 1px solid var(--border-color);
+        }
+
+        .shop-macro-btn {
+          font-family: var(--font-sans);
+          font-size: 0.9rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: var(--text-secondary);
+          padding: 0.6rem 2.2rem;
+          border-radius: var(--radius-full);
+          transition: var(--transition-smooth);
+          min-height: 44px; /* WCAG 2.2 touch target */
+          cursor: pointer;
+          background: transparent;
+          border: none;
+        }
+
+        .shop-macro-btn:hover {
+          color: var(--text-primary);
+        }
+
+        .shop-macro-btn.active {
+          background-color: var(--text-primary);
+          color: var(--bg-secondary);
+          box-shadow: var(--shadow-sm);
         }
 
         /* Filter Bar */
@@ -324,35 +430,49 @@ export default function Shop({ articoli, onNavigateToHome }) {
           box-shadow: var(--shadow-md);
           border-color: var(--accent-gold);
         }
-        .prodotto-image-wrapper {
-          position: relative;
-          width: 100%;
-          padding-top: 125%;
-          background-color: var(--bg-tertiary);
-          overflow: hidden;
-        }
-        .prodotto-image {
-          position: absolute;
-          top: 0; left: 0;
-          width: 100%; height: 100%;
-          object-fit: cover;
-          transition: var(--transition-smooth);
-        }
-        .prodotto-card:hover .prodotto-image { transform: scale(1.05); }
-        .prodotto-category-tag {
-          position: absolute;
-          top: var(--spacing-sm); left: var(--spacing-sm);
-          background-color: rgba(255,255,255,0.9);
-          backdrop-filter: blur(4px);
-          padding: 0.2rem 0.6rem;
-          font-size: 0.7rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          border: 1px solid var(--border-color);
-        }
+         .prodotto-image-wrapper {
+           position: relative;
+           width: 100%;
+           padding-top: 125%;
+           background-color: var(--bg-tertiary);
+           overflow: hidden;
+         }
+         .prodotto-image-blur-bg {
+           position: absolute;
+           top: 0; left: 0;
+           width: 100%; height: 100%;
+           object-fit: cover;
+           filter: blur(20px) brightness(0.95);
+           opacity: 0.55;
+           transform: scale(1.1);
+           pointer-events: none;
+         }
+         .prodotto-image {
+           position: absolute;
+           top: 0; left: 0;
+           width: 100%; height: 100%;
+           object-fit: contain;
+           z-index: 1;
+           transition: var(--transition-smooth);
+         }
+         .prodotto-card:hover .prodotto-image {
+           transform: scale(1.03);
+         }
+         .prodotto-category-tag {
+           position: absolute;
+           top: var(--spacing-sm); left: var(--spacing-sm);
+           background-color: rgba(255,255,255,0.9);
+           backdrop-filter: blur(4px);
+           padding: 0.2rem 0.6rem;
+           font-size: 0.7rem;
+           font-weight: 600;
+           text-transform: uppercase;
+           letter-spacing: 0.05em;
+           border-radius: var(--radius-sm);
+           color: var(--text-primary);
+           border: 1px solid var(--border-color);
+           z-index: 10;
+         }
         .prodotto-details {
           padding: var(--spacing-md);
           display: flex;
@@ -481,11 +601,12 @@ export default function Shop({ articoli, onNavigateToHome }) {
           gap: 4px;
         }
         .footer-logo-img {
-          max-height: 40px;
+          max-height: 48px;
           object-fit: contain;
           display: block;
-          /* Il logo su sfondo scuro: usa filter se necessario */
-          filter: brightness(0) invert(1);
+          background-color: var(--bg-secondary);
+          padding: 6px 12px;
+          border-radius: var(--radius-md);
         }
 
         .footer-subtitle {
@@ -566,15 +687,114 @@ export default function Shop({ articoli, onNavigateToHome }) {
           color: var(--accent-gold);
           background-color: rgba(255,255,255,0.05);
         }
+        .footer-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: var(--spacing-xs);
+          text-align: right;
+        }
+        .footer-links-row {
+          display: flex;
+          gap: var(--spacing-md);
+          font-size: 0.85rem;
+          color: var(--border-color);
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        .footer-links-row a {
+          color: var(--border-color);
+          opacity: 0.8;
+          transition: var(--transition-fast);
+        }
+        .footer-links-row a:hover {
+          opacity: 1;
+          color: var(--accent-gold);
+        }
+        .footer-cookie-btn {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          color: var(--border-color);
+          opacity: 0.8;
+          font-size: 0.85rem;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+          font-family: inherit;
+          transition: var(--transition-fast);
+        }
+        .footer-cookie-btn:hover {
+          opacity: 1;
+          color: var(--accent-gold);
+        }
+        .footer-info-row {
+          font-size: 0.75rem;
+          color: var(--border-color);
+          opacity: 0.7;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .footer-info-row a {
+          color: inherit;
+          text-decoration: underline;
+        }
+        .footer-separator {
+          opacity: 0.5;
+        }
+        .footer-lock-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          opacity: 0.4;
+          transition: opacity 0.2s ease;
+          vertical-align: middle;
+          cursor: pointer;
+          background: none;
+          border: none;
+          color: inherit;
+        }
+        .footer-lock-btn:hover {
+          opacity: 0.9;
+        }
 
         @media (max-width: 768px) {
           .shop-filter-wrapper {
             flex-direction: column;
             align-items: flex-start;
           }
+          /* Responsive Footer */
           .footer-content {
             flex-direction: column;
-            align-items: flex-start;
+            gap: var(--spacing-md);
+            text-align: center;
+            align-items: center;
+          }
+          .footer-left {
+            flex-direction: column;
+            gap: var(--spacing-xs);
+            align-items: center;
+          }
+          .footer-right {
+            align-items: center;
+            text-align: center;
+            gap: var(--spacing-sm);
+          }
+          .footer-links-row {
+            justify-content: center;
+            gap: var(--spacing-xs) var(--spacing-md);
+          }
+          .footer-info-row {
+            justify-content: center;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .footer-separator {
+            display: none;
           }
         }
       `}</style>

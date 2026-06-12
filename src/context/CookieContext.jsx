@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useCallback } from 'react';
 
 const CookieContext = createContext(null);
 
@@ -13,27 +14,37 @@ const defaultPreferences = {
 };
 
 export function CookieProvider({ children }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [preferences, setPreferences] = useState(defaultPreferences);
-
-  // Controlla al mount se il consenso è già salvato e non scaduto
-  useEffect(() => {
+  const [preferences, setPreferences] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         const isExpired = Date.now() > parsed.expiresAt;
         if (!isExpired) {
-          setPreferences(parsed.preferences);
-          return; // Non mostrare il banner
+          return parsed.preferences;
         }
       }
-    } catch (_) {
-      // localStorage non accessibile — ignora
+    } catch {
+      // ignore
     }
-    // Nessun consenso valido: mostra il banner
-    setIsOpen(true);
-  }, []);
+    return defaultPreferences;
+  });
+
+  const [isOpen, setIsOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const isExpired = Date.now() > parsed.expiresAt;
+        if (!isExpired) {
+          return false;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  });
 
   const savePreferences = useCallback((prefs) => {
     const payload = {
@@ -43,7 +54,9 @@ export function CookieProvider({ children }) {
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch (_) {}
+    } catch {
+      // ignore
+    }
     setPreferences(payload.preferences);
     setIsOpen(false);
   }, []);

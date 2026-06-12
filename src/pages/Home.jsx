@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { MapPin, Phone, Clock, ShieldCheck, Heart, Sparkles, Mail, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCookie } from '../context/CookieContext';
 
 
-export default function Home({ articoli, onNavigateToShop }) {
+export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) {
   const { openCookieSettings } = useCookie();
 
   // --- Meta tag SEO specifici per Home (Brand + Local) ---
@@ -12,6 +12,8 @@ export default function Home({ articoli, onNavigateToShop }) {
     document.title = "Segreta Style | Abbigliamento Donna a Monticelli d'Ongina — Boutique di Greta Righi";
     return () => { document.title = prevTitle; };
   }, []);
+
+
 
   // Ultimi 8 articoli attivi (ordinati per id decrescente come proxy per data)
   const ultimiArrivi = articoli
@@ -81,7 +83,20 @@ export default function Home({ articoli, onNavigateToShop }) {
                     src={
                       articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
                         ? articolo.immagine_url
-                        : `/public/${articolo.immagine_url}`
+                        : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
+                    }
+                    alt=""
+                    className="arrivo-img-blur-bg"
+                    aria-hidden="true"
+                    onError={e => {
+                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                    }}
+                  />
+                  <img
+                    src={
+                      articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
+                        ? articolo.immagine_url
+                        : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
                     }
                     alt={articolo.titolo}
                     className="arrivo-img"
@@ -233,7 +248,7 @@ export default function Home({ articoli, onNavigateToShop }) {
                 className="footer-logo-img"
               />
             </button>
-            <span className="footer-subtitle">di Greta Righi</span>
+            <span className="footer-subtitle">DI GRETA RIGHI</span>
             <div className="footer-social-links">
               <a href="https://www.facebook.com/SegretaAbbigliamento" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-footer-icon-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
@@ -246,18 +261,31 @@ export default function Home({ articoli, onNavigateToShop }) {
 
           {/* Destra: policy + copyright */}
           <div className="footer-right">
-            <div className="footer-links">
+            <div className="footer-links-row">
               <a href="https://www.iubenda.com/privacy-policy/68426130" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
               <a href="https://www.iubenda.com/privacy-policy/68426130/cookie-policy" target="_blank" rel="noopener noreferrer">Cookie Policy</a>
               <button className="footer-cookie-btn" onClick={openCookieSettings}>Gestisci preferenze Privacy</button>
             </div>
-            <p className="footer-copyright">
-              © 2026 Segreta Style — <a href="https://presenzadigitale.com" target="_blank" rel="noopener noreferrer">Presenzadigitale.com</a>
-            </p>
-            <p className="footer-copyright">C.F. RGHGRT79R66D150Y — P.IVA 01563960333</p>
+            <div className="footer-info-row">
+              <span>© 2026 Segreta Style — <a href="https://presenzadigitale.com" target="_blank" rel="noopener noreferrer">Presenzadigitale.com</a></span>
+              <span className="footer-separator"> | </span>
+              <span>C.F. RGHGRT79R66D15OY — P.IVA 01563960333</span>
+              <button 
+                onClick={onNavigateToAdmin} 
+                className="footer-lock-btn"
+                aria-label="Accesso Area Riservata Amministratore"
+                title="Area Riservata"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </footer>
+
 
       <style>{`
         /* Hero Section Styling */
@@ -477,7 +505,7 @@ export default function Home({ articoli, onNavigateToShop }) {
         .store-footer {
           background-color: var(--text-primary);
           color: var(--bg-primary);
-          padding: var(--spacing-md) 0;
+          padding: var(--spacing-lg) 0;
           border-top: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -486,20 +514,13 @@ export default function Home({ articoli, onNavigateToShop }) {
           justify-content: space-between;
           align-items: center;
           gap: var(--spacing-lg);
+          flex-wrap: wrap;
         }
 
         .footer-left {
           display: flex;
           align-items: center;
           gap: var(--spacing-md);
-          flex-wrap: wrap;
-        }
-
-        .footer-right {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 4px;
         }
 
         .footer-logo-btn {
@@ -508,7 +529,6 @@ export default function Home({ articoli, onNavigateToShop }) {
           padding: 0;
           cursor: pointer;
           display: block;
-          margin-bottom: var(--spacing-xs);
           opacity: 0.9;
           transition: opacity 0.2s ease;
         }
@@ -518,10 +538,12 @@ export default function Home({ articoli, onNavigateToShop }) {
         }
 
         .footer-logo-img {
-          max-height: 52px;
+          max-height: 48px;
           object-fit: contain;
           display: block;
-          filter: brightness(0) invert(1);
+          background-color: var(--bg-secondary);
+          padding: 6px 12px;
+          border-radius: var(--radius-md);
         }
 
         .footer-subtitle {
@@ -529,72 +551,14 @@ export default function Home({ articoli, onNavigateToShop }) {
           font-size: 0.85rem;
           font-weight: 500;
           color: var(--accent-gold);
-          display: block;
-          margin-bottom: var(--spacing-sm);
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
 
-        .footer-info {
-          font-size: 0.8rem;
-          color: var(--border-color);
-          opacity: 0.8;
-          line-height: 1.6;
-          margin-bottom: var(--spacing-sm);
-        }
-
-        .footer-info a {
-          color: inherit;
-          text-decoration: underline;
-        }
-
-        .footer-copyright {
-          font-size: 0.75rem;
-          color: var(--border-color);
-          opacity: 0.6;
-          margin-top: var(--spacing-sm);
-        }
-
-        .footer-copyright a {
-          color: inherit;
-          text-decoration: underline;
-        }
-
-        .footer-links {
+        .footer-social-links {
           display: flex;
-          gap: var(--spacing-md);
-          font-size: 0.85rem;
-          color: var(--border-color);
+          gap: var(--spacing-xs);
           align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .footer-links a {
-          color: var(--border-color);
-          opacity: 0.8;
-        }
-
-        .footer-links a:hover {
-          opacity: 1;
-          color: var(--accent-gold);
-        }
-
-        .footer-cookie-btn {
-          background: none;
-          border: none;
-          padding: 0;
-          cursor: pointer;
-          color: var(--border-color);
-          opacity: 0.8;
-          font-size: 0.85rem;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-          font-family: inherit;
-        }
-
-        .footer-cookie-btn:hover {
-          opacity: 1;
-          color: var(--accent-gold);
         }
 
         .social-footer-icon-btn {
@@ -613,6 +577,91 @@ export default function Home({ articoli, onNavigateToShop }) {
           opacity: 1;
           color: var(--accent-gold);
           background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: var(--spacing-xs);
+          text-align: right;
+        }
+
+        .footer-links-row {
+          display: flex;
+          gap: var(--spacing-md);
+          font-size: 0.85rem;
+          color: var(--border-color);
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .footer-links-row a {
+          color: var(--border-color);
+          opacity: 0.8;
+          transition: var(--transition-fast);
+        }
+
+        .footer-links-row a:hover {
+          opacity: 1;
+          color: var(--accent-gold);
+        }
+
+        .footer-cookie-btn {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          color: var(--border-color);
+          opacity: 0.8;
+          font-size: 0.85rem;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+          font-family: inherit;
+          transition: var(--transition-fast);
+        }
+
+        .footer-cookie-btn:hover {
+          opacity: 1;
+          color: var(--accent-gold);
+        }
+
+        .footer-info-row {
+          font-size: 0.75rem;
+          color: var(--border-color);
+          opacity: 0.7;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .footer-info-row a {
+          color: inherit;
+          text-decoration: underline;
+        }
+
+        .footer-separator {
+          opacity: 0.5;
+        }
+
+        .footer-lock-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          opacity: 0.4;
+          transition: opacity 0.2s ease;
+          vertical-align: middle;
+          cursor: pointer;
+          background: none;
+          border: none;
+          color: inherit;
+        }
+
+        .footer-lock-btn:hover {
+          opacity: 0.9;
         }
 
         /* Ultimi Arrivi Section */
@@ -676,15 +725,27 @@ export default function Home({ articoli, onNavigateToShop }) {
           overflow: hidden;
         }
 
-        .arrivo-img {
+        .arrivo-img-blur-bg {
           position: absolute;
           top: 0; left: 0;
           width: 100%; height: 100%;
           object-fit: cover;
+          filter: blur(20px) brightness(0.95);
+          opacity: 0.55;
+          transform: scale(1.1);
+          pointer-events: none;
+        }
+
+        .arrivo-img {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          object-fit: contain;
+          z-index: 1;
           transition: var(--transition-smooth);
         }
 
-        .arrivo-card:hover .arrivo-img { transform: scale(1.04); }
+        .arrivo-card:hover .arrivo-img { transform: scale(1.03); }
 
         .arrivo-category-tag {
           position: absolute;
@@ -699,6 +760,7 @@ export default function Home({ articoli, onNavigateToShop }) {
           border-radius: var(--radius-sm);
           color: var(--text-primary);
           border: 1px solid var(--border-color);
+          z-index: 10;
         }
 
         .arrivo-info {
@@ -779,7 +841,39 @@ export default function Home({ articoli, onNavigateToShop }) {
             flex-direction: column;
             align-items: stretch;
           }
+
+          /* Responsive Footer */
+          .footer-content {
+            flex-direction: column;
+            gap: var(--spacing-md);
+            text-align: center;
+            align-items: center;
+          }
+          .footer-left {
+            flex-direction: column;
+            gap: var(--spacing-xs);
+            align-items: center;
+          }
+          .footer-right {
+            align-items: center;
+            text-align: center;
+            gap: var(--spacing-sm);
+          }
+          .footer-links-row {
+            justify-content: center;
+            gap: var(--spacing-xs) var(--spacing-md);
+          }
+          .footer-info-row {
+            justify-content: center;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .footer-separator {
+            display: none;
+          }
         }
+
+
       `}</style>
     </div>
   );

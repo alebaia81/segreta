@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
 import { CookieProvider } from './context/CookieContext';
 import Navbar from './components/Navbar';
@@ -17,6 +17,7 @@ const ARTICOLI_SEED = [
     descrizione: 'Abito lungo fresco e colorato, ideale per le serate estive. Fantasia floreale accesa.',
     prezzo: 39.90,
     immagine_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+    target: 'Donna',
     categoria: 'Abiti',
     taglie: 'S,M,L',
     attivo: true
@@ -27,6 +28,7 @@ const ARTICOLI_SEED = [
     descrizione: 'Blusa in cotone leggero con maniche a sbuffo, colore pastello alla moda.',
     prezzo: 24.90,
     immagine_url: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=600&q=80',
+    target: 'Donna',
     categoria: 'Camicie e Bluse',
     taglie: 'M,L',
     attivo: true
@@ -37,6 +39,7 @@ const ARTICOLI_SEED = [
     descrizione: 'Jeans denim elasticizzato a vita alta, vestibilità perfetta che valorizza la silhouette.',
     prezzo: 34.90,
     immagine_url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80',
+    target: 'Donna',
     categoria: 'Pantaloni',
     taglie: 'S,M,L,XL',
     attivo: true
@@ -47,6 +50,7 @@ const ARTICOLI_SEED = [
     descrizione: 'Giacca stile kimono con ricami floreali, perfetta per arricchire un look casual.',
     prezzo: 45.00,
     immagine_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80',
+    target: 'Donna',
     categoria: 'Giacche',
     taglie: 'Unica',
     attivo: true
@@ -57,6 +61,7 @@ const ARTICOLI_SEED = [
     descrizione: 'T-shirt in cotone biologico con stampa logo e dettagli ricamati in filo dorato.',
     prezzo: 19.90,
     immagine_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
+    target: 'Donna',
     categoria: 'T-Shirt',
     taglie: 'S,M,L',
     attivo: true
@@ -81,11 +86,11 @@ function MainApp() {
     }
   });
 
-  // Recupera gli articoli aggiornati dal database MySQL (se disponibile) all'avvio
+  // Recupera gli articoli aggiornati dal database all'avvio
   useEffect(() => {
     const fetchArticoli = async () => {
       try {
-        const response = await fetch('/api.php?action=list');
+        const response = await fetch('/api/prodotti/shop');
         if (!response.ok) throw new Error('API Response not OK');
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {
@@ -95,6 +100,7 @@ function MainApp() {
             descrizione: String(item.descrizione || ''),
             prezzo: parseFloat(item.prezzo) || 0,
             immagine_url: String(item.immagine_url || ''),
+            target: String(item.target || 'Donna'),
             categoria: String(item.categoria || ''),
             taglie: String(item.taglie || ''),
             attivo: Boolean(Number(item.attivo))
@@ -102,7 +108,7 @@ function MainApp() {
           setArticoli(parsedData);
         }
       } catch (err) {
-        console.warn('Connessione al database MySQL fallita. Caricamento articoli da cache locale.', err);
+        console.warn('Connessione al database fallita. Caricamento articoli da cache locale.', err);
       }
     };
     fetchArticoli();
@@ -180,6 +186,7 @@ function MainApp() {
               art.categoria.toLowerCase().includes(searchQuery.toLowerCase())
             )}
             onNavigateToShop={handleNavigateToShop}
+            onNavigateToAdmin={() => setCurrentPath('/admin')}
           />
         )}
 
@@ -191,6 +198,7 @@ function MainApp() {
               art.categoria.toLowerCase().includes(searchQuery.toLowerCase())
             )}
             onNavigateToHome={handleNavigateToHome}
+            onNavigateToAdmin={() => setCurrentPath('/admin')}
           />
         )}
         {currentPath === '/admin' && (

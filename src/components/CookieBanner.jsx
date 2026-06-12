@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCookie } from '../context/CookieContext';
 import { X, Shield } from 'lucide-react';
 
@@ -7,7 +7,7 @@ import { X, Shield } from 'lucide-react';
  * WCAG 2.2: navigabile da tastiera, role="dialog", aria-modal, focus-trap, switch ≥ 24x24px
  */
 export default function CookieBanner() {
-  const { isOpen, setIsOpen, preferences, savePreferences } = useCookie();
+  const { isOpen, preferences, savePreferences } = useCookie();
 
   // Stato locale della modale — parte dai valori salvati
   const [local, setLocal] = useState({
@@ -20,7 +20,9 @@ export default function CookieBanner() {
   // Sincronizza quando il banner si apre
   useEffect(() => {
     if (isOpen) {
-      setLocal({ ...preferences, necessari: true });
+      setTimeout(() => {
+        setLocal({ ...preferences, necessari: true });
+      }, 0);
     }
   }, [isOpen, preferences]);
 

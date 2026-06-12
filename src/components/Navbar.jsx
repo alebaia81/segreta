@@ -1,17 +1,16 @@
-import React from 'react';
-import { ShoppingBag, Menu, X, User, Search } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingBag, Menu, X, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 export default function Navbar({ onOpenCart, activeSection, setActiveSection, currentPath, setCurrentPath, searchQuery, setSearchQuery }) {
   const { cartCount } = useCart();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const navItems = [
     { id: 'home', label: 'Home', path: '/' },
     { id: 'shop', label: 'Shop', path: '/shop' },
-    { id: 'chi-sono', label: 'La Nostra Storia', path: '/', section: true },
-    { id: 'admin', label: 'Gestione', path: '/admin' }
+    { id: 'chi-sono', label: 'La Nostra Storia', path: '/', section: true }
   ];
 
 
