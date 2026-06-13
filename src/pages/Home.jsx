@@ -96,7 +96,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
       {/* Hero Section */}
       <header id="home" className="hero-section flex flex-col justify-center items-center min-h-[85vh] px-4">
-        <div className="hero-content container">
+        <div className="hero-content container bg-white/85 backdrop-blur-lg border border-white/40">
           <span className="badge hero-badge">Boutique & Shopping Online</span>
           <h1>Moda unica, frizzante e ricca di personalità nel cuore di <br />Monticelli d’Ongina.</h1>
           <div className="hero-actions">
@@ -477,11 +477,11 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           max-width: 700px;
           margin: 0 auto;
           background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
           padding: var(--spacing-xl) var(--spacing-lg);
           border-radius: var(--radius-lg);
-          border: 1px solid rgba(255, 255, 255, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.4);
           box-shadow: var(--shadow-glass);
         }
 
