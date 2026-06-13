@@ -95,7 +95,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
       />
 
       {/* Hero Section */}
-      <header id="home" className="hero-section">
+      <header id="home" className="hero-section flex flex-col justify-center items-center min-h-[85vh] px-4">
         <div className="hero-content container">
           <span className="badge hero-badge">Boutique & Shopping Online</span>
           <h1>Moda unica, frizzante e ricca di personalità nel cuore di <br />Monticelli d’Ongina.</h1>
@@ -1025,9 +1025,20 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
             margin-top: 0;
           }
 
+          .hero-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 85vh;
+            padding: 0 1rem;
+          }
+
           .hero-content {
             padding: 1.5rem 1rem;
-            margin-bottom: 2rem;
+            margin: 0 auto 2rem;
+            width: 100%;
+            max-width: 100%;
           }
           
           .hero-actions {
