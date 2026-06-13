@@ -442,7 +442,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
               <button 
                 onClick={onNavigateToAdmin} 
                 className="footer-lock-btn"
-                aria-label="Accesso Area Riservata Amministratore"
+                aria-label="Area riservata gestione catalogo"
                 title="Area Riservata"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -476,7 +476,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           z-index: 2;
           max-width: 700px;
           margin: 0 auto;
-          background: rgba(255, 255, 255, 0.75);
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           padding: var(--spacing-xl) var(--spacing-lg);
@@ -782,6 +782,17 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         .footer-links-row a:hover {
           opacity: 1;
           color: var(--accent-gold);
+        }
+
+        .footer-links-row a:focus-visible,
+        .footer-cookie-btn:focus-visible,
+        .social-footer-icon-btn:focus-visible,
+        .footer-logo-btn:focus-visible,
+        .footer-lock-btn:focus-visible {
+          outline: 2px solid var(--accent-gold);
+          outline-offset: 4px;
+          border-radius: var(--radius-sm);
+          opacity: 1;
         }
 
         .footer-cookie-btn {
