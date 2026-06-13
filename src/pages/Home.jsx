@@ -1013,10 +1013,22 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           .features-bar {
             margin-top: 0;
           }
+
+          .hero-content {
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+          }
           
           .hero-actions {
             flex-direction: column;
             align-items: stretch;
+            gap: var(--spacing-sm);
+          }
+
+          .hero-actions .btn-primary,
+          .hero-actions .btn-secondary {
+            padding: 10px 1.5rem;
+            min-height: 44px; /* WCAG 2.2 touch target standard */
           }
 
           /* Responsive Footer */
