@@ -21,13 +21,13 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   // --- Meta tag SEO specifici per /shop ---
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "Shop Abbigliamento Donna & Uomo | Segreta Style — Monticelli d'Ongina";
+    document.title = "Shop Online | Collezioni Abbigliamento Piacenza e Cremona — Segreta Style";
 
     // Description
     let metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
     if (metaDesc) {
-      metaDesc.setAttribute('content', "Esplora il catalogo completo di Segreta Style: abiti, gonne, bluse, giacche e accessori moda donna e uomo. Acquista online o ritira in boutique a Monticelli d'Ongina (PC).");
+      metaDesc.setAttribute('content', "Esplora lo shop online di Segreta Style: abbigliamento donna e uomo per Piacenza e Cremona. Acquista online e finalizza tramite WhatsApp con Greta.");
     }
 
     // OG
@@ -35,8 +35,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       const el = document.querySelector(`meta[property="${property}"]`);
       if (el) el.setAttribute('content', content);
     };
-    updateOG('og:title', "Shop Moda Donna & Uomo | Segreta Style — Abbigliamento Online");
-    updateOG('og:description', "Scopri tutti i capi disponibili per donna e uomo: abiti, bluse, giacche, pantaloni, T-shirt e accessori. Qualità e prezzi accessibili da Segreta Style.");
+    updateOG('og:title', "Shop Online | Collezioni Abbigliamento Piacenza e Cremona — Segreta Style");
+    updateOG('og:description', "Scopri le nostre collezioni di abbigliamento donna e uomo. Ordina e personalizza via WhatsApp con consegna tra Piacenza e Cremona.");
     updateOG('og:url', 'https://www.segretastylemonticelli.it/shop');
 
     return () => {
@@ -76,7 +76,38 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     setTimeout(() => setAddedAnimation(prev => ({ ...prev, [articolo.id]: false })), 1500);
   };
 
-
+  const getDisplayCategory = (category, target) => {
+    if (target === 'Donna') {
+      switch (category) {
+        case 'Abiti':
+          return 'Abiti ed Elegante';
+        case 'Camicie e Bluse':
+          return 'Camicie e Bluse';
+        case 'Giacche':
+        case 'Giacche e Cappotti':
+          return 'Giacche e Cappotti';
+        case 'Pantaloni':
+          return 'Pantaloni e Jeans';
+        default:
+          return category;
+      }
+    } else {
+      switch (category) {
+        case 'Camicie':
+          return 'Camicie';
+        case 'Giacche':
+        case 'Giacche e Cappotti':
+          return 'Giacche';
+        case 'Pantaloni':
+          return 'Pantaloni';
+        case 'T-Shirt':
+        case 'Maglieria':
+          return 'T-Shirt e Maglieria';
+        default:
+          return category;
+      }
+    }
+  };
 
   return (
     <div className="shop-page fade-in">
@@ -143,7 +174,20 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       </div>
 
       {/* Products Grid */}
-      <section className="container shop-grid-section">
+      <section className="container shop-grid-section" aria-labelledby="shop-section-title">
+        <div className="shop-section-header">
+          <h2 id="shop-section-title" className="shop-section-title">
+            {selectedTarget === 'Donna' ? 'Abbigliamento Donna Segreta Style' : 'Abbigliamento Uomo e Tendenze Casual'}
+          </h2>
+          <h3 className="shop-section-subtitle">
+            {selectedCategory === 'Tutti'
+              ? (selectedTarget === 'Donna' ? 'Abiti ed Elegante, Camicie e Bluse, Giacche e Cappotti, Pantaloni e Jeans' : 'Camicie, Giacche, Pantaloni, T-Shirt e Maglieria')
+              : getDisplayCategory(selectedCategory, selectedTarget)
+            }
+          </h3>
+          <div className="accent-line-left" style={{ marginTop: '0.5rem', marginBottom: '0' }}></div>
+        </div>
+
         {articoliFiltrati.length === 0 ? (
           <div className="shop-empty">
             <p>Nessun articolo disponibile in questa categoria al momento.</p>
@@ -406,6 +450,34 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
         /* Grid */
         .shop-grid-section {
           padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-xxl);
+        }
+
+        .shop-section-header {
+          margin-bottom: var(--spacing-lg);
+          text-align: left;
+        }
+
+        .shop-section-title {
+          font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+          margin-bottom: 0.25rem;
+          color: var(--text-primary);
+        }
+
+        .shop-section-subtitle {
+          font-size: clamp(0.95rem, 2vw, 1.1rem);
+          color: var(--text-secondary);
+          font-weight: 500;
+          font-family: var(--font-sans);
+          margin-top: 0;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .accent-line-left {
+          width: 40px;
+          height: 2px;
+          background-color: var(--accent-gold);
+          margin-bottom: var(--spacing-md);
         }
 
         .shop-prodotti-grid {

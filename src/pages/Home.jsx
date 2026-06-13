@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MapPin, Phone, Clock, ShieldCheck, Heart, Sparkles, Mail, ArrowRight, ShoppingBag } from 'lucide-react';
+import { MapPin, Phone, Clock, ShieldCheck, Heart, Sparkles, Mail, ArrowRight, ShoppingBag, Star } from 'lucide-react';
 import { useCookie } from '../context/CookieContext';
 
 
@@ -9,8 +9,18 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
   // --- Meta tag SEO specifici per Home (Brand + Local) ---
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "Segreta Style | Abbigliamento Donna a Monticelli d'Ongina — Boutique di Greta Righi";
-    return () => { document.title = prevTitle; };
+    document.title = "Segreta Style | Boutique Abbigliamento Donna e Uomo Monticelli d'Ongina";
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
+    if (metaDesc) {
+      metaDesc.setAttribute('content', "Benvenuti da Segreta Style di Greta Righi a Monticelli d'Ongina (PC), boutique di abbigliamento donna e uomo per le zone di Piacenza e Cremona. Acquista online con assistenza WhatsApp.");
+    }
+
+    return () => {
+      document.title = prevTitle;
+      if (metaDesc) metaDesc.setAttribute('content', prevDesc);
+    };
   }, []);
 
 
@@ -21,6 +31,69 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
     .slice(0, 8);
   return (
     <div className="home-page fade-in">
+      {/* JSON-LD Dati Strutturati SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ClothingStore",
+            "name": "Segreta Style",
+            "alternativeName": "Segreta di Greta Righi",
+            "image": "https://www.segretastyle.it/assets/logo.png",
+            "@id": "https://www.segretastyle.it/#store",
+            "url": "https://www.segretastyle.it",
+            "telephone": "+390523820276",
+            "priceRange": "$$",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Via Martiri della Libertà 67",
+              "addressLocality": "Monticelli d'Ongina",
+              "addressRegion": "PC",
+              "postalCode": "29010",
+              "addressCountry": "IT"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": 45.089282,
+              "longitude": 9.9312513
+            },
+            "openingHoursSpecification": [
+              {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Friday", "Saturday"],
+                "opens": "09:00",
+                "closes": "19:00"
+              },
+              {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": "Sunday",
+                "opens": "09:00",
+                "closes": "12:00"
+              }
+            ],
+            "sameAs": [
+              "https://www.instagram.com/segretastyle/"
+            ],
+            "areaServed": [
+              {
+                "@type": "AdministrativeArea",
+                "name": "Piacenza"
+              },
+              {
+                "@type": "AdministrativeArea",
+                "name": "Cremona"
+              }
+            ],
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.6",
+              "reviewCount": "10"
+            }
+          })
+        }}
+      />
+
       {/* Hero Section */}
       <header id="home" className="hero-section">
         <div className="hero-content container">
@@ -128,8 +201,106 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="testimonials-section container">
+        <div className="section-header-centered">
+          <span className="badge">Dicono di Noi</span>
+          <h2>Recensioni</h2>
+          <div className="accent-line"></div>
+          <p className="section-subtitle">
+            Le parole di chi ha scelto lo stile di Segreta. Clicca e leggi l'esperienza in boutique.
+          </p>
+        </div>
+
+        <div className="testimonials-grid">
+          <figure className="testimonial-card">
+            <div className="testimonial-card-header">
+              <div className="testimonial-stars" aria-label="Valutazione 5 stelle su 5">
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+              </div>
+              <span className="testimonial-verified-badge" title="Recensione reale verificata su Google Maps">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '4px' }}>
+                  <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.51 0-6.357-2.89-6.357-6.457s2.847-6.456 6.357-6.456c1.621 0 3.092.604 4.22 1.59l3.053-3.053C19.23 2.201 15.96 1 12.24 1 5.922 1 1 5.922 1 12.24s4.922 11.24 11.24 11.24c6.12 0 11.24-4.514 11.24-11.24 0-.776-.072-1.5-.2-2.195H12.24z"/>
+                </svg>
+                Google
+              </span>
+            </div>
+            <blockquote className="testimonial-text">
+              "Negozio molto carino e accogliente, Greta la titolare è super gentile e disponibile e sa consigliarti al meglio. Capi d'abbigliamento e accessori particolari e molto giovanili, prezzi ottimi. Consigliatissimo!"
+            </blockquote>
+            <figcaption>
+              — <cite className="testimonial-author">Eleonora</cite>
+            </figcaption>
+          </figure>
+
+          <figure className="testimonial-card">
+            <div className="testimonial-card-header">
+              <div className="testimonial-stars" aria-label="Valutazione 5 stelle su 5">
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+              </div>
+              <span className="testimonial-verified-badge" title="Recensione reale verificata su Google Maps">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '4px' }}>
+                  <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.51 0-6.357-2.89-6.357-6.457s2.847-6.456 6.357-6.456c1.621 0 3.092.604 4.22 1.59l3.053-3.053C19.23 2.201 15.96 1 12.24 1 5.922 1 1 5.922 1 12.24s4.922 11.24 11.24 11.24c6.12 0 11.24-4.514 11.24-11.24 0-.776-.072-1.5-.2-2.195H12.24z"/>
+                </svg>
+                Google
+              </span>
+            </div>
+            <blockquote className="testimonial-text">
+              "Negozio bellissimo, abbigliamento super top! Greta splendida e solare sa sempre consigliarti l'outfit perfetto per te. Consigliatissimo!"
+            </blockquote>
+            <figcaption>
+              — <cite className="testimonial-author">Simona</cite>
+            </figcaption>
+          </figure>
+
+          <figure className="testimonial-card">
+            <div className="testimonial-card-header">
+              <div className="testimonial-stars" aria-label="Valutazione 5 stelle su 5">
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+              </div>
+              <span className="testimonial-verified-badge" title="Recensione reale verificata su Google Maps">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '4px' }}>
+                  <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.51 0-6.357-2.89-6.357-6.457s2.847-6.456 6.357-6.456c1.621 0 3.092.604 4.22 1.59l3.053-3.053C19.23 2.201 15.96 1 12.24 1 5.922 1 1 5.922 1 12.24s4.922 11.24 11.24 11.24c6.12 0 11.24-4.514 11.24-11.24 0-.776-.072-1.5-.2-2.195H12.24z"/>
+                </svg>
+                Google
+              </span>
+            </div>
+            <blockquote className="testimonial-text">
+              "Negozio accogliente con capi unici ed esclusivi. Greta è fantastica e ti guida nella scelta con una professionalità e una dolcezza uniche. Il top tra Piacenza e Cremona."
+            </blockquote>
+            <figcaption>
+              — <cite className="testimonial-author">Rita</cite>
+            </figcaption>
+          </figure>
+        </div>
+
+        <div className="testimonials-footer">
+          <a
+            href="https://www.google.com/search?q=segreta+style+monticelli"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="google-reviews-link"
+          >
+            Leggi tutte le recensioni reali sulla nostra scheda Google Maps ➔
+          </a>
+        </div>
+      </section>
+
       {/* Chi Sono Section - Storia di Greta Righi */}
-      <section id="chi-sono" className="about-section">
+      <section id="chi-sono" className="about-section" aria-labelledby="about-title">
+        <h1 id="about-title" style={{ display: 'none' }}>Segreta Style | Boutique Abbigliamento Donna e Uomo Monticelli d'Ongina</h1>
         <div className="container about-grid">
           <div className="about-image-column">
             <div className="about-image-frame">
@@ -147,23 +318,21 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           
           <div className="about-text-column">
             <span className="badge">Chi Sono</span>
-            <h2>Mi chiamo Greta Righi</h2>
+            <h2>Dal 2010, la moda con personalità tra Piacenza e Cremona</h2>
             <div className="accent-line-left"></div>
             
             <p className="about-paragraph highlight-paragraph">
-              <strong>Segreta Style</strong> nasce con una mission precisa: offrire prodotti di moda adatti a chi ama giocare con lo stile attraverso brand accessibili e divertenti.
-            </p>
-            
-            <p className="about-paragraph">
-              Il <strong>6 febbraio 2010</strong> inauguro il mio negozio a <strong>Monticelli d’Ongina (PC)</strong>, a pochi km da Piacenza e da Cremona, sotto i portici del centro storico del paese, in una zona di forte passaggio anche turistico.
+              Benvenuti nel mondo di <strong>Segreta Style</strong>, la boutique nata nel cuore di <strong>Monticelli d'Ongina</strong> dalla passione di <strong>Greta Righi</strong>. Da oltre quindici anni, il nostro obiettivo non è semplicemente vendere vestiti, ma aiutare ogni persona a far emergere la propria unicità attraverso selezioni di stile ricercate e mai banali.
             </p>
 
+            <h3>Collezioni Frizzanti e Senza Età</h3>
             <p className="about-paragraph">
-              Nel mio negozio trovi un po’ di me: marche frizzanti, pensate per un pubblico giovane ma anche più serie per chi non ha più vent’anni ma ama ancora far vincere la propria personalità. Gli stili si possono mischiare per creare ciò che vuoi essere senza filtri e senza finzioni.
+              La nostra filosofia si basa su un concetto di moda fluida e inclusiva. Amiamo mixare <strong>brand frizzanti</strong>, freschi e di tendenza, perfetti per un pubblico giovane che ama osare, con proposte più strutturate, eleganti e sofisticate dedicate a chi non ha più vent'anni ma non vuole assolutamente rinunciare a esprimere la propria forte personalità. Che tu stia cercando un abito da sera per un evento speciale a Piacenza o un look casual per il weekend a Cremona, da noi trovi capi selezionati a mano che valorizzano chi sei.
             </p>
 
+            <h3>Un'Esperienza Boutique, Anche Online</h3>
             <p className="about-paragraph">
-              Adesso puoi venire a trovarmi nel mio punto vendita o iniziare il tuo shopping online cercando tra i tanti prodotti che ho accuratamente selezionato per te. Tendenze del momento e qualità sono stati i due aspetti a cui ho dato più importanza. Fare shopping è ancora più semplice, divertente e veloce.
+              Nati come punto di riferimento fisico per lo shopping nella <strong>provincia di Piacenza</strong> e limitrofi della <strong>provincia di Cremona</strong>, oggi portiamo l'atmosfera della nostra boutique direttamente sui tuoi schermi. Grazie alla nostra forte community su <strong>Instagram</strong>, mostriamo ogni settimana i nuovi arrivi in tempo reale. E la nostra assistenza non cambia: puoi ordinare sul sito e finalizzare l'acquisto direttamente su <strong>WhatsApp</strong>, parlando con noi per ricevere consigli personalizzati su taglie, vestibilità e abbinamenti, proprio come se fossi in negozio da Greta.
             </p>
           </div>
         </div>
@@ -429,6 +598,14 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         .about-text-column h2 {
           font-size: 2.2rem;
           margin-top: var(--spacing-xs);
+        }
+
+        .about-text-column h3 {
+          font-size: 1.35rem;
+          margin-top: var(--spacing-lg);
+          margin-bottom: var(--spacing-xs);
+          color: var(--text-primary);
+          font-weight: 600;
         }
 
         .about-paragraph {
@@ -870,6 +1047,129 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           }
           .footer-separator {
             display: none;
+          }
+        }
+
+        /* Testimonials Section Styling */
+        .testimonials-section {
+          padding: var(--spacing-xxl) 0;
+          background-color: var(--bg-primary);
+        }
+
+        .testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--spacing-lg);
+          margin-top: var(--spacing-xl);
+        }
+
+        .testimonial-card {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: var(--spacing-lg);
+          box-shadow: var(--shadow-sm);
+          display: flex;
+          flex-direction: column;
+          margin: 0;
+          transition: var(--transition-smooth);
+        }
+
+        .testimonial-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-md);
+          border-color: var(--accent-gold);
+        }
+
+        .testimonial-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: var(--spacing-sm);
+          width: 100%;
+        }
+
+        .testimonial-verified-badge {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.65rem;
+          font-weight: 700;
+          color: var(--text-secondary);
+          background-color: var(--bg-tertiary);
+          padding: 3px 8px;
+          border-radius: var(--radius-full);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .testimonial-stars {
+          display: flex;
+          gap: 2px;
+          color: var(--accent-gold);
+        }
+
+        .testimonials-footer {
+          text-align: center;
+          margin-top: var(--spacing-xl);
+        }
+
+        .google-reviews-link {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          text-decoration: underline;
+          text-underline-offset: 4px;
+          transition: var(--transition-fast);
+          min-height: 44px;
+          padding: 0 var(--spacing-md);
+        }
+
+        .google-reviews-link:hover {
+          color: var(--accent-gold-hover);
+          text-decoration-color: var(--accent-gold-hover);
+        }
+
+        .testimonial-text {
+          font-size: 0.95rem;
+          line-height: 1.6;
+          color: var(--text-secondary);
+          margin-bottom: var(--spacing-md);
+          font-style: italic;
+          font-family: var(--font-sans);
+          flex-grow: 1;
+        }
+
+        .testimonial-author {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-style: normal;
+        }
+
+        @media (max-width: 768px) {
+          .testimonials-grid {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            margin: var(--spacing-lg) calc(-1 * var(--spacing-lg)) 0;
+            padding-left: var(--spacing-lg);
+            padding-right: var(--spacing-lg);
+            scrollbar-width: none; /* Firefox */
+          }
+
+          .testimonials-grid::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+          }
+
+          .testimonial-card {
+            flex: 0 0 85%;
+            scroll-snap-align: center;
           }
         }
 
