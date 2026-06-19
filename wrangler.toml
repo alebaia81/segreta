@@ -5,19 +5,16 @@
 # Documentazione: https://developers.cloudflare.com/pages/configuration/
 # ─────────────────────────────────────────────────────────────────────────────
 
-name            = "segreta-style"
+name            = "segreta"
 compatibility_date = "2024-09-23"
 
-# ─── Cloudflare Pages ─────────────────────────────────────────────────────────
-pages_build_output_dir = "dist"
+# ─── Cloudflare Workers Assets (Vite static build) ───────────────────────────
+[assets]
+directory = "./dist"
 
 # ─── Variabili d'ambiente (production) ───────────────────────────────────────
-# I segreti sensibili (VITE_ADMIN_PASSWORD, CLOUDFLARE_API_TOKEN, etc.)
-# vanno inseriti nel dashboard Cloudflare Pages → Settings → Environment Variables
-# e NON qui in chiaro.
 [vars]
 ENVIRONMENT = "production"
-NODE_VERSION = "20"
 
 # ─── Header HTTP ─────────────────────────────────────────────────────────────
 # Cloudflare Pages legge _headers in public/ oppure usa questa sezione.
