@@ -7,5 +7,5 @@
 # Sintassi: https://developers.cloudflare.com/pages/configuration/redirects/
 # ─────────────────────────────────────────────────────────────────────────────
 
-# SPA catch-all: tutto ciò che non è un file statico esistente → index.html
-/*    /index.html    200
+# SPA catch-all is now handled natively in wrangler.toml with not_found_handling = "single-page-application"
+# /*    /index.html    200
