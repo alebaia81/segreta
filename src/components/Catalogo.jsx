@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Check } from 'lucide-react';
+import ProductCard from './ProductCard.tsx';
 
 export default function Catalogo({ articoli }) {
   const { addToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('Tutti');
-  const [selectedSizes, setSelectedSizes] = useState({}); // articoloId -> size
-  const [addedAnimation, setAddedAnimation] = useState({}); // articoloId -> boolean
 
   // Estrarre le categorie uniche
   const categorie = ['Tutti', ...new Set(articoli.filter(a => a.attivo).map(a => a.categoria))];
@@ -15,30 +13,14 @@ export default function Catalogo({ articoli }) {
     ? articoli.filter(a => a.attivo)
     : articoli.filter(a => a.attivo && a.categoria === selectedCategory);
 
-  const handleSelectSize = (articoloId, size) => {
-    setSelectedSizes(prev => ({
-      ...prev,
-      [articoloId]: size
-    }));
-  };
 
-  const handleAddToCart = (articolo) => {
-    const size = selectedSizes[articolo.id];
-    
+
+  const handleAddToCart = (articolo, size) => {
     // Se l'articolo ha delle taglie definite e nessuna taglia è stata selezionata
     const taglieDisponibili = articolo.taglie ? articolo.taglie.split(',').map(s => s.trim()) : [];
-    if (taglieDisponibili.length > 0 && !size) {
-      alert('Per favore, seleziona una taglia prima di aggiungere al carrello.');
-      return;
-    }
+    if (taglieDisponibili.length > 0 && !size) return; // gestito in ProductCard
 
     addToCart(articolo, size || 'Unica');
-    
-    // Animazione di successo
-    setAddedAnimation(prev => ({ ...prev, [articolo.id]: true }));
-    setTimeout(() => {
-      setAddedAnimation(prev => ({ ...prev, [articolo.id]: false }));
-    }, 1500);
   };
 
 
@@ -75,92 +57,13 @@ export default function Catalogo({ articoli }) {
         </div>
       ) : (
         <div className="prodotti-grid">
-          {articoliFiltrati.map(articolo => {
-            const taglieList = articolo.taglie ? articolo.taglie.split(',').map(s => s.trim()) : [];
-            const selectedSize = selectedSizes[articolo.id];
-            const isAdded = addedAnimation[articolo.id];
-
-            return (
-              <article key={articolo.id} className="prodotto-card">
-                <div className="prodotto-image-wrapper">
-                  <img
-                    src={articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:') ? articolo.immagine_url : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)}
-                    alt=""
-                    className="prodotto-image-blur-bg"
-                    aria-hidden="true"
-                    onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                    }}
-                  />
-                  <img
-                    src={articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:') ? articolo.immagine_url : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)}
-                    alt={articolo.titolo}
-                    className="prodotto-image"
-                    onError={(e) => {
-                      // Fallback se l'immagine non esiste
-                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                    }}
-                  />
-                  {articolo.categoria && (
-                    <span className="prodotto-category-tag">{articolo.categoria}</span>
-                  )}
-                </div>
-
-                <div className="prodotto-details">
-                  <h3 className="prodotto-title">{articolo.titolo}</h3>
-                  <p className="prodotto-description">{articolo.descrizione}</p>
-                  
-                  <div className="prodotto-price-row">
-                    <span className="prodotto-price">€{parseFloat(articolo.prezzo).toFixed(2)}</span>
-                  </div>
-
-                  {/* Taglie Selector con Accessibilità (Target > 24px) */}
-                  {taglieList.length > 0 && (
-                    <div className="prodotto-sizes-container">
-                      <span className="sizes-label">Seleziona Taglia:</span>
-                      <div className="sizes-row" role="group" aria-label={`Taglie per ${articolo.titolo}`}>
-                        {taglieList.map(size => {
-                          const isSelected = selectedSize === size;
-                          return (
-                            <button
-                              key={size}
-                              type="button"
-                              className={`size-btn ${isSelected ? 'selected' : ''}`}
-                              onClick={() => handleSelectSize(articolo.id, size)}
-                              aria-pressed={isSelected}
-                              aria-label={`Taglia ${size}`}
-                            >
-                              {size}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pulsante Aggiungi al Carrello */}
-                  <button
-                    className={`btn-add-to-cart ${isAdded ? 'success' : ''}`}
-                    onClick={() => handleAddToCart(articolo)}
-                    disabled={isAdded}
-                    aria-label={`Aggiungi ${articolo.titolo} al carrello`}
-                  >
-                    {isAdded ? (
-                      <>
-                        <Check size={18} style={{ marginRight: '8px' }} />
-                        Aggiunto
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={18} style={{ marginRight: '8px' }} />
-                        Aggiungi al Carrello
-                      </>
-                    )}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+          {articoliFiltrati.map(articolo => (
+            <ProductCard
+              key={articolo.id}
+              articolo={articolo}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
         </div>
       )}
 

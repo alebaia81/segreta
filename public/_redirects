@@ -1,0 +1,11 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# public/_redirects — Segreta Style
+# Cloudflare Pages SPA Routing
+#
+# Redirige tutte le route non-file verso index.html (React Router / stato URL).
+# Equivalente dell'Apache .htaccess per Cloudflare Pages.
+# Sintassi: https://developers.cloudflare.com/pages/configuration/redirects/
+# ─────────────────────────────────────────────────────────────────────────────
+
+# SPA catch-all: tutto ciò che non è un file statico esistente → index.html
+/*    /index.html    200

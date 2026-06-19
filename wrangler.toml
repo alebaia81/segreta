@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# wrangler.toml — Segreta Style
+# Cloudflare Pages + Workers configuration
+#
+# Documentazione: https://developers.cloudflare.com/pages/configuration/
+# ─────────────────────────────────────────────────────────────────────────────
+
+name            = "segreta-style"
+compatibility_date = "2024-09-23"
+
+# ─── Cloudflare Pages ─────────────────────────────────────────────────────────
+pages_build_output_dir = "dist"
+
+# ─── Variabili d'ambiente (production) ───────────────────────────────────────
+# I segreti sensibili (VITE_ADMIN_PASSWORD, CLOUDFLARE_API_TOKEN, etc.)
+# vanno inseriti nel dashboard Cloudflare Pages → Settings → Environment Variables
+# e NON qui in chiaro.
+[vars]
+ENVIRONMENT = "production"
+NODE_VERSION = "20"
+
+# ─── Header HTTP ─────────────────────────────────────────────────────────────
+# Cloudflare Pages legge _headers in public/ oppure usa questa sezione.
+# Qui usiamo il file _headers (più portabile), ma la logica è documentata sotto.
+#
+# STRATEGIA DI CACHE:
+#
+#  /index.html
+#    Cache-Control: no-cache, no-store, must-revalidate
+#    → Sempre fresco: il browser chiede sempre a Cloudflare se è cambiato.
+#    → Cloudflare ha il file in edge ma lo riconvalida in millisecondi.
+#
+#  /assets/* (JS/CSS hashati da Vite)
+#    Cache-Control: public, max-age=31536000, immutable
+#    → Cache immutabile 1 anno: il nome del file CAMBIA a ogni build
+#      (es. index-Abc123.js → index-Def456.js), quindi non serve purge.
+#
+#  /greta.jpg, /logo.png, /boutique_bg.png (asset statici senza hash)
+#    Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+#    → Cache 1 giorno, aggiornamento silenzioso in background.
+#    → La pipeline di purge (vedere deploy.yml) forza il purge di questi
+#      file a ogni deploy per garantire aggiornamenti immediati.
+#
+#  /api/* (se instradato verso il Worker Express)
+#    Cache-Control: no-store
+#    → Nessuna cache per le API dinamiche.
+
+# ─── Worker (opzionale — per future API Cloudflare Workers) ──────────────────
+# Decommenta questa sezione se vuoi spostare l'Express backend su CF Workers:
+#
+# [build]
+# command = "npm run build"
+#
+# [[routes]]
+# pattern = "/api/*"
+# script = "workers/api.js"

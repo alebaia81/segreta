@@ -1,51 +1,346 @@
-name: Deploy to GitHub Pages
+# ─────────────────────────────────────────────────────────────────────────────
+# .github/workflows/deploy.yml — Segreta Style
+#
+# Pipeline CI/CD: TypeScript check → Build → Deploy su Cloudflare Pages
+#                 → Cache Purge automatico se modificati file a11y / CSS
+#
+# SECRETS RICHIESTI nel repository GitHub (Settings → Secrets → Actions):
+#   CLOUDFLARE_API_TOKEN   → API Token con permesso "Cloudflare Pages: Edit"
+#   CLOUDFLARE_ACCOUNT_ID  → Account ID (Cloudflare Dashboard → lato destro)
+#   CLOUDFLARE_ZONE_ID     → Zone ID del dominio segretastyle.it
+#                            (Dashboard → dominio → Overview → lato destro)
+#
+# Il VITE_ADMIN_PASSWORD NON va qui: viene letto dal .env locale e
+# impostato come variabile d'ambiente nel Cloudflare Pages Dashboard.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: "🚀 Deploy Segreta Style → Cloudflare Pages"
 
 on:
   push:
     branches:
       - main
 
-# Permessi necessari per pubblicare su GitHub Pages
+  # Permette lancio manuale dalla tab Actions di GitHub
+  workflow_dispatch:
+    inputs:
+      force_purge:
+        description: "Forza il purge completo della cache Cloudflare"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+# ─── Permessi ────────────────────────────────────────────────────────────────
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Permette una sola build contemporanea per evitare conflitti
+# ─── Una build alla volta per branch main ────────────────────────────────────
 concurrency:
-  group: 'pages'
-  cancel-in-progress: false
+  group: "deploy-${{ github.ref }}"
+  cancel-in-progress: true   # Annulla build precedente se arriva un nuovo push
 
+# ─────────────────────────────────────────────────────────────────────────────
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 1: quality-check
+  # TypeScript type check + verifica percorsi statici
+  # ══════════════════════════════════════════════════════════════════════════
+  quality-check:
+    name: "🔍 Type Check & Lint"
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: "📥 Checkout"
         uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: "⚙️ Setup Node 20"
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: "📦 Install dependencies"
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      # ── TypeScript: zero errori obbligatori ──────────────────────────────
+      - name: "🔷 TypeScript type check (--noEmit)"
+        run: npx tsc --noEmit
+        # I file .tsx/.ts vengono controllati; i .jsx sono esclusi dal tsconfig.
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      # ── QA: verifica esistenza file statici attesi ───────────────────────
+      - name: "🖼 QA – Verifica asset statici in public/"
+        run: |
+          echo "=== Checking required static assets ==="
+          MISSING=0
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+          for f in \
+            "public/index.html" \
+            "public/favicon.svg" \
+            "public/logo.png" \
+            "public/boutique_bg.png" \
+            "public/_headers" \
+            "public/_redirects"
+          do
+            # index.html è nella root, non in public/
+            if [ "$f" = "public/index.html" ]; then
+              if [ ! -f "index.html" ]; then
+                echo "  ❌ MANCANTE: index.html (root)"
+                MISSING=$((MISSING+1))
+              else
+                echo "  ✅ index.html"
+              fi
+            elif [ ! -f "$f" ]; then
+              echo "  ❌ MANCANTE: $f"
+              MISSING=$((MISSING+1))
+            else
+              echo "  ✅ $f"
+            fi
+          done
+
+          if [ "$MISSING" -gt 0 ]; then
+            echo ""
+            echo "❌ QA FAIL: $MISSING file statici mancanti!"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ QA PASS: tutti i file statici presenti."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 2: build
+  # Compilazione Vite con asset hashing
+  # ══════════════════════════════════════════════════════════════════════════
+  build:
+    name: "🏗 Build Vite"
+    runs-on: ubuntu-latest
+    needs: quality-check   # Esegue solo se il type-check è passato
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "⚙️ Setup Node 20"
+        uses: actions/setup-node@v4
         with:
-          path: './dist'
+          node-version: 20
+          cache: npm
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      - name: "🏗 Build (Vite + asset hashing)"
+        run: npm run build
+        env:
+          # NODE_ENV è già 'production' di default in npm run build
+          # Eventuali VITE_* pubblici possono essere aggiunti qui come secrets
+          NODE_ENV: production
+
+      # ── Verifica che dist/ contenga i file attesi ────────────────────────
+      - name: "📋 QA – Verifica output dist/"
+        run: |
+          echo "=== Build output ==="
+          ls -lh dist/
+          echo ""
+          echo "=== Assets hashati ==="
+          ls dist/assets/ | head -20
+          echo ""
+
+          # Verifica che index.html esista
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ dist/index.html mancante!"
+            exit 1
+          fi
+
+          # Verifica che _headers e _redirects siano stati copiati da public/
+          if [ ! -f "dist/_headers" ]; then
+            echo "❌ dist/_headers mancante (controllare public/_headers)"
+            exit 1
+          fi
+          if [ ! -f "dist/_redirects" ]; then
+            echo "❌ dist/_redirects mancante (controllare public/_redirects)"
+            exit 1
+          fi
+
+          # Verifica che ci siano file JS/CSS hashati in assets/
+          JS_COUNT=$(ls dist/assets/*.js 2>/dev/null | wc -l)
+          CSS_COUNT=$(ls dist/assets/*.css 2>/dev/null | wc -l)
+          if [ "$JS_COUNT" -eq 0 ]; then
+            echo "❌ Nessun file JS hashato in dist/assets/!"
+            exit 1
+          fi
+          echo "✅ $JS_COUNT file JS hashati trovati"
+          echo "✅ $CSS_COUNT file CSS hashati trovati"
+          echo "✅ Build output verificato."
+
+      # ── Upload artifact per il job deploy ───────────────────────────────
+      - name: "📤 Upload build artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 3: deploy
+  # Push su Cloudflare Pages via Action ufficiale
+  # ══════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: "☁️ Deploy → Cloudflare Pages"
+    runs-on: ubuntu-latest
+    needs: build
+
+    outputs:
+      deployment_url: ${{ steps.cf-deploy.outputs.deployment-url }}
+
+    steps:
+      - name: "📥 Download build artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: "☁️ Cloudflare Pages Deploy"
+        id: cf-deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/ --project-name=segreta-style --commit-dirty=true
+
+      - name: "🔗 Deployment URL"
+        run: |
+          echo "✅ Deploy completato!"
+          echo "🌐 URL: ${{ steps.cf-deploy.outputs.deployment-url }}"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 4: cache-purge
+  # Purge Cloudflare Edge Cache per file a11y / CSS se modificati
+  # ──────────────────────────────────────────────────────────────────────────
+  # PROTOCOLLO PURGE:
+  #   - AUTOMATICO: se il push ha modificato file CSS, .tsx/.ts (a11y/design),
+  #     _headers, _redirects → purge dei file statici senza hash.
+  #   - MANUALE: workflow_dispatch con force_purge=true → purge totale.
+  #   - Gli /assets/* con hash NON vengono mai purgati (sono immutabili by design).
+  # ══════════════════════════════════════════════════════════════════════════
+  cache-purge:
+    name: "🧹 Cloudflare Cache Purge"
+    runs-on: ubuntu-latest
+    needs: deploy
+    # Esegue sempre dopo il deploy, anche se il purge non è necessario
+
+    steps:
+      - name: "📥 Checkout (per rilevare diff)"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # Serve per confrontare con il commit precedente
+
+      # ── Rileva se ci sono modifiche ai file a11y / CSS / headers ────────
+      - name: "🔎 Rileva modifiche a11y / CSS / design"
+        id: detect-changes
+        run: |
+          echo "=== File modificati in questo push ==="
+          git diff --name-only HEAD~1 HEAD || git diff --name-only HEAD
+
+          # Controlla se ci sono file rilevanti modificati
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+
+          NEEDS_PURGE="false"
+
+          # File che triggherano il purge (a11y, CSS, design system, header CF)
+          PATTERNS=(
+            "src/index.css"
+            "src/App.css"
+            "src/components/HeroGlass"
+            "src/components/ProductCard"
+            "src/hooks/useAccessibilityAnimation"
+            "public/_headers"
+            "public/_redirects"
+            "wrangler.toml"
+          )
+
+          for pattern in "${PATTERNS[@]}"; do
+            if echo "$CHANGED" | grep -q "$pattern"; then
+              echo "🎯 Rilevata modifica rilevante: $pattern"
+              NEEDS_PURGE="true"
+            fi
+          done
+
+          echo "needs_purge=$NEEDS_PURGE" >> $GITHUB_OUTPUT
+          echo "Purge necessario: $NEEDS_PURGE"
+
+      # ── Purge selettivo: file statici senza hash ─────────────────────────
+      # Quando il PURGE è automatico (modifiche a11y/CSS rilevate)
+      - name: "🧹 Purge selettivo file statici (a11y/CSS modificati)"
+        if: steps.detect-changes.outputs.needs_purge == 'true'
+        run: |
+          echo "=== Cloudflare Selective Cache Purge ==="
+          echo "Zona: ${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
+          # File statici senza hash che vanno purgati esplicitamente
+          # (gli /assets/* hashati sono immutabili → non servono purge)
+          FILES_TO_PURGE=(
+            "https://www.segretastyle.it/"
+            "https://www.segretastyle.it/index.html"
+            "https://www.segretastyle.it/greta.jpg"
+            "https://www.segretastyle.it/logo.png"
+            "https://www.segretastyle.it/boutique_bg.png"
+            "https://www.segretastyle.it/favicon.svg"
+          )
+
+          # Costruisce JSON array per l'API Cloudflare
+          FILES_JSON=$(printf '"%s",' "${FILES_TO_PURGE[@]}")
+          FILES_JSON="[${FILES_JSON%,}]"
+
+          echo "File da purgare: $FILES_JSON"
+
+          RESPONSE=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data "{\"files\": $FILES_JSON}")
+
+          echo "Risposta API: $RESPONSE"
+
+          SUCCESS=$(echo "$RESPONSE" | grep -o '"success":true')
+          if [ -z "$SUCCESS" ]; then
+            echo "⚠️  Purge potrebbe non essere riuscito. Verificare manualmente."
+            echo "Risposta completa: $RESPONSE"
+            # Non facciamo exit 1: il deploy è già avvenuto, il purge è best-effort
+          else
+            echo "✅ Purge selettivo completato con successo!"
+          fi
+
+      # ── Purge totale: attivato solo con workflow_dispatch force_purge=true ─
+      - name: "💥 Purge Everything (solo su richiesta manuale)"
+        if: github.event.inputs.force_purge == 'true'
+        run: |
+          echo "=== Cloudflare PURGE EVERYTHING (manuale) ==="
+
+          RESPONSE=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything": true}')
+
+          echo "Risposta API: $RESPONSE"
+
+          SUCCESS=$(echo "$RESPONSE" | grep -o '"success":true')
+          if [ -z "$SUCCESS" ]; then
+            echo "❌ Purge Everything fallito!"
+            echo "Risposta: $RESPONSE"
+            exit 1
+          else
+            echo "✅ Purge Everything completato!"
+          fi
+
+      # ── Nessun purge necessario ───────────────────────────────────────────
+      - name: "ℹ️  Nessun purge necessario"
+        if: |
+          steps.detect-changes.outputs.needs_purge == 'false' &&
+          github.event.inputs.force_purge != 'true'
+        run: |
+          echo "ℹ️  Nessuna modifica a11y/CSS/header rilevata."
+          echo "ℹ️  Gli asset hashati in /assets/* sono immutabili per design."
+          echo "ℹ️  Nessun purge edge cache necessario."

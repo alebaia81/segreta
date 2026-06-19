@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { MapPin, Phone, Clock, ShieldCheck, Heart, Sparkles, Mail, ArrowRight, ShoppingBag, Star } from 'lucide-react';
 import { useCookie } from '../context/CookieContext';
+import HeroGlass from '../components/HeroGlass.tsx';
+import ProductCard from '../components/ProductCard.tsx';
+import { useCart } from '../context/CartContext';
 
 
 export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) {
@@ -29,6 +32,8 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
   const ultimiArrivi = articoli
     .filter(a => a.attivo)
     .slice(0, 8);
+  const { addToCart } = useCart();
+
   return (
     <div className="home-page fade-in">
       {/* JSON-LD Dati Strutturati SEO */}
@@ -93,19 +98,8 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           })
         }}
       />
-
-      {/* Hero Section */}
-      <header id="home" className="hero-section flex flex-col justify-center items-center min-h-[85vh] px-4">
-        <div className="hero-content container bg-white/85 backdrop-blur-lg border border-white/40">
-          <span className="badge hero-badge">Boutique & Shopping Online</span>
-          <h1>Moda unica, frizzante e ricca di personalità nel cuore di <br />Monticelli d’Ongina.</h1>
-          <div className="hero-actions">
-            <a href="#catalogo" className="btn-primary">Acquista la Collezione</a>
-            <a href="#chi-sono" className="btn-secondary">Scopri la Nostra Storia</a>
-          </div>
-        </div>
-        <div className="hero-wave"></div>
-      </header>
+      {/* Hero Section — HeroGlass (WCAG 2.2 AA) */}
+      <HeroGlass onNavigateToShop={onNavigateToShop} />
 
       {/* Features Bar */}
       <section className="features-bar container">
@@ -150,42 +144,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         ) : (
           <div className="arrivi-grid">
             {ultimiArrivi.map(articolo => (
-              <article key={articolo.id} className="arrivo-card" onClick={onNavigateToShop} style={{ cursor: 'pointer' }}>
-                <div className="arrivo-img-wrapper">
-                  <img
-                    src={
-                      articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
-                        ? articolo.immagine_url
-                        : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
-                    }
-                    alt=""
-                    className="arrivo-img-blur-bg"
-                    aria-hidden="true"
-                    onError={e => {
-                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                    }}
-                  />
-                  <img
-                    src={
-                      articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
-                        ? articolo.immagine_url
-                        : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
-                    }
-                    alt={articolo.titolo}
-                    className="arrivo-img"
-                    onError={e => {
-                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                    }}
-                  />
-                  {articolo.categoria && (
-                    <span className="arrivo-category-tag">{articolo.categoria}</span>
-                  )}
-                </div>
-                <div className="arrivo-info">
-                  <h3 className="arrivo-title">{articolo.titolo}</h3>
-                  <span className="arrivo-price">€{parseFloat(articolo.prezzo).toFixed(2)}</span>
-                </div>
-              </article>
+              <ProductCard
+                key={articolo.id}
+                articolo={articolo}
+                onAddToCart={addToCart}
+                onCardClick={onNavigateToShop}
+              />
             ))}
           </div>
         )}
