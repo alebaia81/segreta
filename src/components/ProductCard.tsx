@@ -116,26 +116,41 @@ export default function ProductCard({
     >
       {/* ── Immagine ──────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
-        {/* Blur decorativo — puramente estetico */}
-        <img
-          src={imgSrc}
-          alt=""
-          className="pc-image-blur"
-          aria-hidden="true"
-          onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
-        />
-
-        {/* Immagine principale con alt descrittivo */}
-        <img
-          src={imgSrc}
-          alt={articolo.titolo}
-          className="pc-image"
-          loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
-        />
+        <div className="pc-slider" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+          {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
+            const imgUrl = resolveImgSrc(url.trim());
+            return (
+              <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
+                <img
+                  src={imgUrl}
+                  alt=""
+                  className="pc-image-blur"
+                  aria-hidden="true"
+                  onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
+                />
+                <img
+                  src={imgUrl}
+                  alt={`${articolo.titolo} - Foto ${idx + 1}`}
+                  className="pc-image"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
+                />
+              </div>
+            );
+          })}
+        </div>
 
         {/* Overlay sfumato basso — supporta leggibilità badge */}
-        <div className="pc-image-overlay" aria-hidden="true" />
+        <div className="pc-image-overlay" aria-hidden="true" style={{ pointerEvents: 'none' }} />
+
+        {/* Dots per immagini multiple */}
+        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+          <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
+            {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
+              <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
+            ))}
+          </div>
+        )}
 
         {/* Badge categoria (WCAG 1.4.3: contrasto ~12:1 garantito) */}
         {articolo.categoria && (

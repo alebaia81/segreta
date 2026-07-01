@@ -204,33 +204,41 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
               return (
                 <article key={articolo.id} className="prodotto-card">
                   <div className="prodotto-image-wrapper">
-                    <img
-                      src={
-                        articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
-                          ? articolo.immagine_url
-                          : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
-                      }
-                      alt=""
-                      className="prodotto-image-blur-bg"
-                      aria-hidden="true"
-                      onError={e => {
-                        e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                      }}
-                    />
-                    <img
-                      src={
-                        articolo.immagine_url.startsWith('http') || articolo.immagine_url.startsWith('blob:')
-                          ? articolo.immagine_url
-                          : (articolo.immagine_url.startsWith('/') ? articolo.immagine_url : `/${articolo.immagine_url}`)
-                      }
-                      alt={articolo.titolo}
-                      className="prodotto-image"
-                      onError={e => {
-                        e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                      }}
-                    />
+                    <div className="prodotto-slider" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+                      {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
+                        const imgUrl = url.trim().startsWith('http') || url.trim().startsWith('blob:') ? url.trim() : (url.trim().startsWith('/') ? url.trim() : `/${url.trim()}`);
+                        return (
+                          <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
+                            <img
+                              src={imgUrl}
+                              alt=""
+                              className="prodotto-image-blur-bg"
+                              aria-hidden="true"
+                              onError={e => {
+                                e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                              }}
+                            />
+                            <img
+                              src={imgUrl}
+                              alt={`${articolo.titolo} - Foto ${idx + 1}`}
+                              className="prodotto-image"
+                              onError={e => {
+                                e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                     {articolo.categoria && (
                       <span className="prodotto-category-tag">{articolo.categoria}</span>
+                    )}
+                    {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+                      <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
+                        {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
+                          <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="prodotto-details">

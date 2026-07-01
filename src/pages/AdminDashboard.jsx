@@ -195,72 +195,87 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     setPassword('');
   };
 
-  // --- CARICAMENTO E COMPRESSIONE IMMAGINE (WebP, max 1080px) ---
+  // --- CARICAMENTO IMMAGINI MULTIPLE (Nativo) ---
   const handleImageUpload = async (e) => {
-    const imageFile = e.target.files[0];
-    if (!imageFile) return;
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
 
     setUploading(true);
 
     try {
-      const finalMimeType = imageFile.type || 'image/avif';
-      const finalFileName = imageFile.name || `prodotto-${Date.now()}.avif`;
+      const uploadedUrls = [];
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
 
-      // Conversione diretta del file nativo in Base64 (senza compressione)
-      const base64data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(imageFile);
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
+      for (const imageFile of files) {
+        const finalMimeType = imageFile.type || 'image/avif';
+        const finalFileName = imageFile.name || `prodotto-${Date.now()}.avif`;
+
+        // Conversione diretta del file nativo in Base64 (senza compressione)
+        const base64data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(imageFile);
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+        
+        if (!isAPIAvailable) {
+          const localBlobUrl = URL.createObjectURL(imageFile);
+          uploadedUrls.push(localBlobUrl);
+          continue;
+        }
+
+        // Invio al backend Vercel/Supabase
+        const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          },
+          body: JSON.stringify({
+            imageData: base64data,
+            fileName: finalFileName,
+            mimeType: finalMimeType
+          })
+        });
+
+        let json;
+        try {
+          json = await response.json();
+        } catch (parseErr) {
+          throw new Error('Il server ha risposto con un formato non valido (forse errore 500). Controlla se le foto superano il limite Vercel.');
+        }
+
+        if (json.success) {
+          uploadedUrls.push(json.url);
+        } else {
+          throw new Error(json.error || 'Errore sconosciuto dal server.');
+        }
+      }
+
+      setNuovoArticolo(prev => {
+        const existingUrls = prev.immagine_url ? prev.immagine_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+        const newUrlsString = [...existingUrls, ...uploadedUrls].join(',');
+        return {
+          ...prev,
+          immagine_url: newUrlsString
+        };
       });
       
-      if (!isAPIAvailable) {
-        const localBlobUrl = URL.createObjectURL(imageFile);
-        setNuovoArticolo(prev => ({
-          ...prev,
-          immagine_url: localBlobUrl
-        }));
-        alert(`Immagine caricata localmente in ${finalMimeType.split('/')[1].toUpperCase()}.`);
-        return;
-      }
-
-      // Invio al backend Vercel/Supabase
-      const pass = sessionStorage.getItem('segreta_admin_password') || password;
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': pass
-        },
-        body: JSON.stringify({
-          imageData: base64data,
-          fileName: finalFileName,
-          mimeType: finalMimeType
-        })
-      });
-
-      let json;
-      try {
-        json = await response.json();
-      } catch (parseErr) {
-        throw new Error('Il server ha risposto con un formato non valido (forse errore 500). Controlla se la foto supera i 4MB di limite Vercel.');
-      }
-
-      if (json.success) {
-        setNuovoArticolo(prev => ({
-          ...prev,
-          immagine_url: json.url
-        }));
-        alert('Immagine caricata con successo su Supabase!');
-      } else {
-        throw new Error(json.error || 'Errore sconosciuto dal server.');
-      }
+      alert(`Caricate con successo ${uploadedUrls.length} immagin${uploadedUrls.length === 1 ? 'e' : 'i'} su Supabase!`);
     } catch (error) {
-      console.error('Errore durante il caricamento dell\'immagine:', error);
-      alert(`Impossibile completare il caricamento dell'immagine. Motivo: ${error.message}`);
+      console.error('Errore durante il caricamento delle immagini:', error);
+      alert(`Impossibile completare il caricamento. Motivo: ${error.message}`);
     } finally {
       setUploading(false);
+      e.target.value = ''; // Reset input file
     }
+  };
+
+  const rimuoviImmagine = (urlToRemove) => {
+    setNuovoArticolo(prev => {
+      const urls = prev.immagine_url.split(',').filter(u => u.trim() !== urlToRemove);
+      return { ...prev, immagine_url: urls.join(',') };
+    });
   };
 
   // Aggiunge una taglia personalizzata all'elenco dei flag
@@ -1158,7 +1173,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </div>
 
             <div className="form-group">
-              <label className="form-label">Foto Prodotto (Nessuna Compressione: Carica file già ottimizzati) *</label>
+              <label className="form-label">Foto Prodotto (Puoi selezionare più foto insieme) *</label>
               <div className="upload-btn-wrapper">
                 <button type="button" className="btn-secondary upload-btn-trigger">
                   {uploading ? (
@@ -1169,12 +1184,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   ) : (
                     <>
                       <Upload size={18} style={{ marginRight: '8px' }} />
-                      Seleziona Foto
+                      Seleziona Foto (anche multiple)
                     </>
                   )}
                 </button>
                 <input
                   type="file"
+                  multiple
                   accept="image/*"
                   onChange={handleImageUpload}
                   disabled={uploading}
@@ -1183,14 +1199,22 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                 />
               </div>
               
-              {/* Preview dell'immagine caricata */}
               {nuovoArticolo.immagine_url && (
-                <div className="upload-preview-box fade-in">
-                  <span className="badge preview-badge">Caricata</span>
-                  <img src={nuovoArticolo.immagine_url.startsWith('http') || nuovoArticolo.immagine_url.startsWith('blob:') ? nuovoArticolo.immagine_url : (nuovoArticolo.immagine_url.startsWith('/') ? nuovoArticolo.immagine_url : `/${nuovoArticolo.immagine_url}`)} alt="Anteprima prodotto" className="img-preview" />
-                  <p className="preview-path-text">Immagine: {nuovoArticolo.immagine_url}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '15px' }}>
+                  {nuovoArticolo.immagine_url.split(',').filter(Boolean).map((url, idx) => (
+                    <div key={idx} style={{ position: 'relative', width: '100px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                      <img src={url} alt={`Preview ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button 
+                        type="button" 
+                        onClick={() => rimuoviImmagine(url)}
+                        style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
+
             </div>
 
             <div className="form-group">
