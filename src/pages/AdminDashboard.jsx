@@ -162,6 +162,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         setArticoliAPI(json.data);
         setIsAPIAvailable(true);
       } else {
+        const errJson = await response.json().catch(() => ({}));
+        if (response.status === 500) {
+          alert('Errore Server (500). Le chiavi di Supabase su Vercel potrebbero essere mancanti o non valide. Controlla i log di Vercel.');
+        }
         setLoginError(true);
         setPassword('');
       }
