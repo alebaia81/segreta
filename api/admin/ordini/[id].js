@@ -1,5 +1,5 @@
-import supabase from '../../../_lib/supabase.js';
-import { checkAdminAuth } from '../../../_lib/auth.js';
+import supabase from '../../_lib/supabase.js';
+import { checkAdminAuth } from '../../_lib/auth.js';
 
 // PUT    /api/admin/ordini/[id]  con body { action: 'archivia' | 'stato', stato?: string }
 // DELETE /api/admin/ordini/[id]  — Elimina ordine
@@ -7,7 +7,7 @@ import { checkAdminAuth } from '../../../_lib/auth.js';
 // Nota: Vercel non gestisce sub-routes multiple (/[id]/archiviare, /[id]/stato) nella stessa
 // cartella facilmente con file statici — gestiamo tutto qui con un campo "action" nel body.
 export default async function handler(req, res) {
-  if (!checkAdminAuth(req, res)) return;
+  if (!await checkAdminAuth(req, res)) return;
 
   const { id } = req.query;
 

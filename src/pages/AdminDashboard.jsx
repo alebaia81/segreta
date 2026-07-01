@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, RotateCcw } from 'lucide-react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, RotateCcw, Pencil, Settings } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 const TARGET_CATEGORIES = {
@@ -63,6 +63,32 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     categoria: '',
     taglie: 'S,M,L'
   });
+
+  const [editingId, setEditingId] = useState(null);
+  const [newDashboardPassword, setNewDashboardPassword] = useState('');
+  const [confirmDashboardPassword, setConfirmDashboardPassword] = useState('');
+
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'ordini': return 'Ordini Ricevuti';
+      case 'archivio': return 'Archivio Ordini';
+      case 'articoli': return 'Catalogo Articoli';
+      case 'nuovo': return editingId ? 'Modifica Articolo' : 'Nuovo Articolo';
+      case 'impostazioni': return 'Impostazioni Dashboard';
+      default: return 'Pannello di Controllo';
+    }
+  };
+
+  const getTabSubtitle = () => {
+    switch (activeTab) {
+      case 'ordini': return 'Visualizza ed elabora gli ordini attivi ricevuti dal sito.';
+      case 'archivio': return 'Elenco storico di tutti gli ordini archiviati o annullati.';
+      case 'articoli': return 'Gestisci, attiva/disattiva ed elimina i prodotti esposti nello shop.';
+      case 'nuovo': return editingId ? `Modifica i dettagli del prodotto ID: ${editingId}` : 'Aggiungi un nuovo abito o accessorio al tuo catalogo.';
+      case 'impostazioni': return 'Configura le credenziali di accesso per Greta.';
+      default: return 'Gestisci il negozio Segreta Style.';
+    }
+  };
 
   // --- ACCESSIBILITÀ & SEO (noindex/nofollow) ---
   useEffect(() => {
@@ -289,6 +315,22 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   };
 
+  const resetNuovoArticoloForm = () => {
+    setNuovoArticolo({
+      titolo: '',
+      descrizione: '',
+      prezzo: '',
+      immagine_url: '',
+      target: 'Donna',
+      categoria: '',
+      taglie: 'S,M,L'
+    });
+    setSelectedSizes({ S: true, M: true, L: true });
+    setCustomSizesList([]);
+    setNewCustomSizeInput('');
+    setEditingId(null);
+  };
+
   // --- CRUD OPERAZIONI ---
   const handleCreateArticolo = async (e) => {
     e.preventDefault();
@@ -303,7 +345,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       return;
     }
 
-    const articoloDaAggiungere = {
+    const articoloDaSalvare = {
       ...nuovoArticolo,
       taglie: taglieFinali,
       prezzo: parseFloat(nuovoArticolo.prezzo),
@@ -314,50 +356,50 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       setLoading(true);
       try {
         const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch('/api/admin/prodotti', {
-          method: 'POST',
+        const method = editingId ? 'PUT' : 'POST';
+        const url = editingId ? `/api/admin/prodotti/${editingId}` : '/api/admin/prodotti';
+
+        const response = await fetch(url, {
+          method,
           headers: { 
             'Content-Type': 'application/json',
             'x-admin-password': pass
           },
-          body: JSON.stringify(articoloDaAggiungere)
+          body: JSON.stringify(articoloDaSalvare)
         });
         const json = await response.json();
         if (json.success) {
-          // Aggiunge allo stato locale degli articoli API
-          setArticoliAPI(prev => [json.data, ...prev]);
-          // Sincronizza anche lo stato dell'app principale passatogli dal padre
-          onAddArticolo(json.data);
-          alert('Articolo salvato sul database SQLite!');
+          if (editingId) {
+            // Aggiorna lo stato locale degli articoli
+            setArticoliAPI(prev => prev.map(a => a.id === editingId ? json.data : a));
+            alert('Articolo modificato con successo!');
+          } else {
+            // Aggiunge allo stato locale degli articoli API
+            setArticoliAPI(prev => [json.data, ...prev]);
+            alert('Articolo salvato sul database!');
+          }
+          resetNuovoArticoloForm();
+          setActiveTab('articoli');
         } else {
           alert('Errore dal database: ' + json.error);
         }
-      } catch {
+      } catch (err) {
         alert('Errore di rete durante il salvataggio.');
       } finally {
         setLoading(false);
       }
     } else {
-      // Fallback locale nel LocalStorage
-      const nuovoId = Math.floor(Math.random() * 10000) + 1;
-      const artConId = { ...articoloDaAggiungere, id: nuovoId, attivo: true, created_at: new Date().toISOString() };
-      onAddArticolo(artConId);
-      alert('Articolo salvato in locale tramite localStorage (sviluppo locale).');
+      // Fallback offline...
+      if (editingId) {
+        setArticoliAPI(prev => prev.map(a => a.id === editingId ? { ...articoloDaSalvare, id: editingId } : a));
+      } else {
+        const mockNew = { ...articoloDaSalvare, id: Date.now(), attivo: true, created_at: new Date().toISOString() };
+        setArticoliAPI(prev => [mockNew, ...prev]);
+      }
+      alert('Operazione completata localmente (offline).');
+      resetNuovoArticoloForm();
+      setActiveTab('articoli');
     }
-
-    // Reset Form
-    setNuovoArticolo({
-      titolo: '',
-      descrizione: '',
-      prezzo: '',
-      immagine_url: '',
-      target: 'Donna',
-      categoria: '',
-      taglie: 'S,M,L'
-    });
-    setSelectedSizes({ S: true, M: true, L: true });
-    setCustomSizesList([]);
-    setNewCustomSizeInput('');
   };
 
   const handleToggleActive = async (artId) => {
@@ -372,7 +414,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           headers: {
             'Content-Type': 'application/json',
             'x-admin-password': pass
-          }
+          },
+          body: JSON.stringify({ action: 'toggle' })
         });
         const json = await response.json();
         if (json.success) {
@@ -389,6 +432,77 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       setArticoliAPI(prev => prev.map(a => 
         a.id === artId ? { ...a, attivo: !a.attivo } : a
       ));
+    }
+  };
+
+  const handleAvviaModifica = (art) => {
+    setEditingId(art.id);
+    setNuovoArticolo({
+      titolo: art.titolo,
+      descrizione: art.descrizione || '',
+      prezzo: art.prezzo.toString(),
+      immagine_url: art.immagine_url || '',
+      target: art.target || 'Donna',
+      categoria: art.categoria || '',
+      taglie: art.taglie || ''
+    });
+
+    // Imposta le taglie selezionate
+    const taglieArray = art.taglie ? art.taglie.split(',').map(s => s.trim()) : [];
+    const newSelectedSizes = {};
+    const newCustomSizes = [];
+
+    taglieArray.forEach(size => {
+      if (PRESET_SIZES.includes(size)) {
+        newSelectedSizes[size] = true;
+      } else {
+        newCustomSizes.push(size);
+        newSelectedSizes[size] = true;
+      }
+    });
+
+    setSelectedSizes(newSelectedSizes);
+    setCustomSizesList(newCustomSizes);
+    setActiveTab('nuovo'); // Vai al form
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (newDashboardPassword !== confirmDashboardPassword) {
+      alert('Le due password non coincidono.');
+      return;
+    }
+    if (newDashboardPassword.trim().length < 4) {
+      alert('La password deve contenere almeno 4 caratteri.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
+      const response = await fetch('/api/admin/settings/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': pass
+        },
+        body: JSON.stringify({ newPassword: newDashboardPassword.trim() })
+      });
+      const json = await response.json();
+      if (json.success) {
+        alert(json.message);
+        sessionStorage.setItem('segreta_admin_password', newDashboardPassword.trim());
+        setPassword(newDashboardPassword.trim());
+        setNewDashboardPassword('');
+        setConfirmDashboardPassword('');
+        setActiveTab('ordini');
+      } else {
+        alert('Errore: ' + json.error);
+      }
+    } catch (err) {
+      alert('Errore di connessione durante l\'aggiornamento.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -719,281 +833,331 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
 
   return (
-    <section className="admin-dashboard-container container fade-in">
-      <div className="dashboard-header">
-        <div className="header-flex-row">
-          <div>
-            <h2>Pannello di Controllo</h2>
-            <div className="accent-line-left"></div>
-            <p className="dashboard-sub">Gestisci il catalogo e gli ordini di Segreta Style.</p>
-          </div>
-          <div className="header-actions">
-            {isAPIAvailable ? (
-              <span className="status-badge online" title="Database SQLite Connesso">● Database Collegato</span>
-            ) : (
-              <span className="status-badge offline" title="Database SQLite non raggiungibile. Dati salvati in locale.">● Modalità Sviluppo Locale</span>
+    <div className="admin-dashboard-layout fade-in">
+      <aside className="admin-sidebar">
+        <div className="admin-brand">
+          <span className="brand-logo">SEGRETA</span>
+          <span className="brand-subtitle">Style • Admin</span>
+        </div>
+
+        <nav className="admin-nav">
+          <button
+            className={`nav-item ${activeTab === 'ordini' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('ordini');
+              fetchOrdini(false);
+            }}
+          >
+            <ClipboardList size={18} />
+            <span>Ordini Attivi</span>
+            {ordini.length > 0 && activeTab !== 'archivio' && (
+              <span className="nav-badge">{ordini.length}</span>
             )}
-            <button className="btn-logout" onClick={handleLogout} aria-label="Scollegati dalla dashboard">
-              <LogOut size={16} style={{ marginRight: '6px' }} />
-              Scollegati
-            </button>
+          </button>
+
+          <button
+            className={`nav-item ${activeTab === 'archivio' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('archivio');
+              fetchOrdini(true);
+            }}
+          >
+            <Archive size={18} />
+            <span>Archivio Ordini</span>
+          </button>
+
+          <button
+            className={`nav-item ${activeTab === 'articoli' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('articoli');
+              setEditingId(null);
+            }}
+          >
+            <Package size={18} />
+            <span>Catalogo Articoli</span>
+          </button>
+
+          <button
+            className={`nav-item ${activeTab === 'nuovo' ? 'active' : ''}`}
+            onClick={() => {
+              if (!editingId) {
+                resetNuovoArticoloForm();
+              }
+              setActiveTab('nuovo');
+            }}
+          >
+            <PlusCircle size={18} />
+            <span>{editingId ? 'Modifica Articolo' : 'Nuovo Articolo'}</span>
+          </button>
+
+          <button
+            className={`nav-item ${activeTab === 'impostazioni' ? 'active' : ''}`}
+            onClick={() => setActiveTab('impostazioni')}
+          >
+            <Settings size={18} />
+            <span>Impostazioni</span>
+          </button>
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <div className="db-status">
+            {isAPIAvailable ? (
+              <span className="status-dot online">● DB Connesso</span>
+            ) : (
+              <span className="status-dot offline">● Offline</span>
+            )}
           </div>
+          <button className="btn-logout-sidebar" onClick={handleLogout} aria-label="Scollegati dalla dashboard">
+            <LogOut size={16} />
+            <span>Scollegati</span>
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Tabs di Navigazione Interna */}
-      <div className="dashboard-tabs" role="tablist">
-        <button
-          className={`tab-btn ${activeTab === 'ordini' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('ordini');
-            fetchOrdini(false);
-          }}
-          role="tab"
-          aria-selected={activeTab === 'ordini'}
-        >
-          <ClipboardList size={18} style={{ marginRight: '8px' }} />
-          Ordini Ricevuti ({ordini.length})
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'articoli' ? 'active' : ''}`}
-          onClick={() => setActiveTab('articoli')}
-          role="tab"
-          aria-selected={activeTab === 'articoli'}
-        >
-          <Package size={18} style={{ marginRight: '8px' }} />
-          Catalogo Articoli ({listaArticoliVisualizzati.length})
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'nuovo' ? 'active' : ''}`}
-          onClick={() => setActiveTab('nuovo')}
-          role="tab"
-          aria-selected={activeTab === 'nuovo'}
-        >
-          <PlusCircle size={18} style={{ marginRight: '8px' }} />
-          Nuovo Articolo
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'archivio' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('archivio');
-            fetchOrdini(true);
-          }}
-          role="tab"
-          aria-selected={activeTab === 'archivio'}
-        >
-          <Archive size={18} style={{ marginRight: '8px' }} />
-          Archivio Ordini
-        </button>
-      </div>
+      <main className="admin-main-content">
+        <header className="admin-content-header">
+          <div>
+            <h2>{getTabTitle()}</h2>
+            <p className="dashboard-sub">{getTabSubtitle()}</p>
+          </div>
+        </header>
 
-      {/* Loader globale */}
-      {loading && (
-        <div className="global-loader-container">
-          <Loader className="spin-icon" size={32} />
-          <span>Sincronizzazione database...</span>
-        </div>
-      )}
+        {/* Loader globale */}
+        {loading && (
+          <div className="global-loader-container">
+            <Loader className="spin-icon" size={32} />
+            <span>Sincronizzazione database...</span>
+          </div>
+        )}
 
       {/* Tab 1: Ordini Ricevuti */}
       {activeTab === 'ordini' && !loading && (
         <div className="dashboard-content fade-in">
-          {/* Download rapido */}
           <div className="orders-toolbar">
-            <span className="orders-toolbar-title">Ordini attivi</span>
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder="Cerca per cliente, telefono o ID..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Cerca ordini"
+              />
+            </div>
+            
             <div className="orders-download-group">
-              <button
+              <button 
                 className="download-btn"
-                onClick={handleDownloadCSV}
-                disabled={ordini.length === 0}
-                title="Scarica CSV"
+                onClick={() => printFilteredOrders('PDF_LISTA')}
+                title="Stampa lista ordini filtrata"
               >
-                <Download size={14} /> CSV
-              </button>
-              <button
-                className="download-btn"
-                onClick={handleDownloadPDF}
-                disabled={ordini.length === 0}
-                title="Stampa / Salva PDF"
-              >
-                <Download size={14} /> PDF
+                <Download size={16} /> PDF Lista
               </button>
             </div>
           </div>
 
-          {ordini.length === 0 ? (
-            <p className="no-data-msg">Nessun ordine ricevuto al momento.</p>
+          {filteredOrdini.length === 0 ? (
+            <div className="no-data-msg">Nessun ordine attivo trovato.</div>
           ) : (
-            <div className="orders-list">
-              {ordini.map(ordine => {
-                let dettagli = [];
-                try { dettagli = JSON.parse(ordine.dettaglio_articoli); } catch { dettagli = []; }
-                return (
-                  <div key={ordine.id} className="order-admin-card">
-                    <div className="order-admin-header">
-                      <div>
-                        <h4>Ordine #{ordine.id}</h4>
-                        <span className="order-date">{new Date(ordine.created_at).toLocaleString('it-IT')}</span>
-                      </div>
-                      <div className="order-actions-row">
-                        <select
-                          className="form-control state-select"
-                          value={ordine.stato}
-                          onChange={(e) => handleUpdateStatoOrdine(ordine.id, e.target.value)}
-                          aria-label="Stato dell'ordine"
-                        >
-                          <option value="In attesa">In attesa</option>
-                          <option value="Spedito">Spedito / Consegnato</option>
-                          <option value="Annullato">Annullato</option>
-                        </select>
-                        {ordine.stato !== 'In attesa' && (
-                          <button
-                            className="archive-order-btn"
-                            onClick={() => handleArchivia(ordine.id)}
-                            aria-label={`Archivia ordine #${ordine.id}`}
-                            title="Sposta in Archivio"
-                          >
-                            <Archive size={15} />
-                            <span>Archivia</span>
-                          </button>
-                        )}
-                        <button
-                          className="delete-order-btn"
-                          onClick={() => handleCancellaOrdine(ordine.id)}
-                          aria-label="Cancella ordine"
-                        >
-                          <Trash size={16} />
-                        </button>
+            <div className="orders-admin-list">
+              {filteredOrdini.map(ord => (
+                <div key={ord.id} className="order-admin-card">
+                  <div className="order-admin-header">
+                    <div className="order-admin-title">
+                      <h4>Ordine #{ord.id}</h4>
+                      <div className="order-admin-meta">
+                        <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
                     </div>
-
-                    <div className="order-admin-body">
-                      <div className="customer-info-box">
-                        <p><strong>Cliente:</strong> {ordine.nome_cliente}</p>
-                        <p><strong>Telefono:</strong> <a href={`tel:${ordine.telefono}`}>{ordine.telefono}</a></p>
-                        <p><strong>Consegna:</strong> {ordine.metodo_consegna}</p>
-                        <p><strong>Indirizzo:</strong> {ordine.indirizzo_spedizione}</p>
-                        <p><strong>Pagamento:</strong> {ordine.metodo_pagamento}</p>
+                    <div className="order-admin-status-area">
+                      <select 
+                        className="select-status"
+                        value={ord.stato}
+                        onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
+                        aria-label="Stato ordine"
+                      >
+                        <option value="Nuovo">Nuovo</option>
+                        <option value="In Elaborazione">In Lavorazione</option>
+                        <option value="Spedito">Spedito</option>
+                        <option value="Pronto al Ritiro">Ritiro Pronto</option>
+                        <option value="Completato">Completato</option>
+                        <option value="Annullato">Annullato</option>
+                      </select>
+                      
+                      <button 
+                        className="download-btn"
+                        onClick={() => printFilteredOrders('RICEVUTA', ord)}
+                        title="Stampa ricevuta ordine"
+                      >
+                        <Download size={14} /> Ricevuta
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="order-admin-body">
+                    <div className="order-info-section">
+                      <h5>Cliente e Consegna</h5>
+                      <div className="order-info-grid">
+                        <span className="info-label">Nome:</span>
+                        <span className="info-value">{ord.nome_cliente}</span>
+                        
+                        <span className="info-label">Telefono:</span>
+                        <span className="info-value">{ord.telefono}</span>
+                        
+                        <span className="info-label">Metodo:</span>
+                        <span className="info-value" style={{fontWeight: 600}}>{ord.metodo_consegna}</span>
+                        
+                        <span className="info-label">Indirizzo:</span>
+                        <span className="info-value">{ord.indirizzo || 'Ritiro in negozio'}</span>
+                        
+                        {ord.note && (
+                          <>
+                            <span className="info-label">Note:</span>
+                            <span className="info-value" style={{fontStyle: 'italic'}}>{ord.note}</span>
+                          </>
+                        )}
                       </div>
-
-                      <div className="order-items-box">
-                        <h5>Prodotti Acquistati:</h5>
-                        <ul className="items-list-admin">
-                          {dettagli.map((item, idx) => (
-                            <li key={idx} className="item-li-admin">
-                              <span>{item.titolo} (Taglia {item.taglia}) <strong>x{item.quantita}</strong></span>
-                              <span>€{(item.prezzo * item.quantita).toFixed(2)}</span>
-                            </li>
+                    </div>
+                    
+                    <div className="order-info-section">
+                      <h5>Articoli Acquistati</h5>
+                      <div style={{ fontSize: '0.88rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {JSON.parse(ord.articoli).map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                              <span>
+                                {item.titolo} (x{item.quantita}) - Taglia: {item.tagliaSelezionata || 'U'}
+                              </span>
+                              <span style={{ fontWeight: 600 }}>€{parseFloat(item.prezzo * item.quantita).toFixed(2)}</span>
+                            </div>
                           ))}
-                        </ul>
-                        <div className="order-total-admin">
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontWeight: 'bold', fontSize: '0.95rem' }}>
                           <span>Totale Ordine:</span>
-                          <strong>€{ordine.totale.toFixed(2)}</strong>
+                          <span style={{ color: 'var(--accent-gold-hover)' }}>€{parseFloat(ord.totale).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Tab Archivio Ordini */}
+      {/* Tab 2: Archivio Ordini */}
       {activeTab === 'archivio' && !loading && (
         <div className="dashboard-content fade-in">
           <div className="orders-toolbar">
-            <span className="orders-toolbar-title">Cronologia ordini archiviati</span>
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder="Cerca in archivio..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Cerca in archivio"
+              />
+            </div>
             <div className="orders-download-group">
-              <button
+              <button 
                 className="download-btn"
-                onClick={handleDownloadCSV}
-                disabled={ordini.length === 0}
-                title="Scarica CSV archivio"
+                onClick={() => printFilteredOrders('PDF_LISTA')}
+                title="Stampa lista ordini archiviata"
               >
-                <Download size={14} /> CSV
-              </button>
-              <button
-                className="download-btn"
-                onClick={handleDownloadPDF}
-                disabled={ordini.length === 0}
-                title="Stampa / Salva PDF archivio"
-              >
-                <Download size={14} /> PDF
+                <Download size={16} /> PDF Lista
               </button>
             </div>
           </div>
 
-          {ordini.length === 0 ? (
-            <p className="no-data-msg">Nessun ordine archiviato.</p>
+          {filteredOrdini.length === 0 ? (
+            <div className="no-data-msg">Nessun ordine archiviato trovato.</div>
           ) : (
-            <div className="orders-list">
-              {ordini.map(ordine => {
-                let dettagli = [];
-                try { dettagli = JSON.parse(ordine.dettaglio_articoli); } catch { dettagli = []; }
-                return (
-                  <div key={ordine.id} className="order-admin-card archived-card">
-                    <div className="order-admin-header">
-                      <div>
-                        <h4>Ordine #{ordine.id}</h4>
-                        <span className="order-date">{new Date(ordine.created_at).toLocaleString('it-IT')}</span>
-                      </div>
-                      <div className="order-actions-row">
-                        <span className="badge badge-archived">Archiviato</span>
-                        <button
-                          className="delete-order-btn"
-                          onClick={() => handleCancellaOrdine(ordine.id)}
-                          aria-label="Elimina ordine archiviato"
-                        >
-                          <Trash size={16} />
-                        </button>
+            <div className="orders-admin-list">
+              {filteredOrdini.map(ord => (
+                <div key={ord.id} className="order-admin-card" style={{ opacity: 0.85 }}>
+                  <div className="order-admin-header">
+                    <div className="order-admin-title">
+                      <h4>Ordine #{ord.id}</h4>
+                      <div className="order-admin-meta">
+                        <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
                     </div>
-
-                    <div className="order-admin-body">
-                      <div className="customer-info-box">
-                        <p><strong>Cliente:</strong> {ordine.nome_cliente}</p>
-                        <p><strong>Telefono:</strong> <a href={`tel:${ordine.telefono}`}>{ordine.telefono}</a></p>
-                        <p><strong>Consegna:</strong> {ordine.metodo_consegna}</p>
-                        <p><strong>Indirizzo:</strong> {ordine.indirizzo_spedizione}</p>
-                        <p><strong>Pagamento:</strong> {ordine.metodo_pagamento}</p>
+                    <div className="order-admin-status-area">
+                      <select 
+                        className="select-status"
+                        value={ord.stato}
+                        onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
+                        aria-label="Stato ordine"
+                      >
+                        <option value="Nuovo">Nuovo</option>
+                        <option value="In Elaborazione">In Lavorazione</option>
+                        <option value="Spedito">Spedito</option>
+                        <option value="Pronto al Ritiro">Ritiro Pronto</option>
+                        <option value="Completato">Completato</option>
+                        <option value="Annullato">Annullato</option>
+                      </select>
+                      
+                      <button 
+                        className="download-btn"
+                        onClick={() => printFilteredOrders('RICEVUTA', ord)}
+                        title="Stampa ricevuta"
+                      >
+                        <Download size={14} /> Ricevuta
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="order-admin-body">
+                    <div className="order-info-section">
+                      <h5>Dettagli Spedizione</h5>
+                      <div className="order-info-grid">
+                        <span className="info-label">Nome:</span>
+                        <span className="info-value">{ord.nome_cliente}</span>
+                        <span className="info-label">Telefono:</span>
+                        <span className="info-value">{ord.telefono}</span>
+                        <span className="info-label">Metodo:</span>
+                        <span className="info-value">{ord.metodo_consegna}</span>
+                        <span className="info-label">Indirizzo:</span>
+                        <span className="info-value">{ord.indirizzo || 'Ritiro in negozio'}</span>
                       </div>
-
-                      <div className="order-items-box">
-                        <h5>Prodotti Acquistati:</h5>
-                        <ul className="items-list-admin">
-                          {dettagli.map((item, idx) => (
-                            <li key={idx} className="item-li-admin">
-                              <span>{item.titolo} (Taglia {item.taglia}) <strong>x{item.quantita}</strong></span>
-                              <span>€{(item.prezzo * item.quantita).toFixed(2)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="order-total-admin">
-                          <span>Totale Ordine:</span>
-                          <strong>€{ordine.totale.toFixed(2)}</strong>
+                    </div>
+                    
+                    <div className="order-info-section">
+                      <h5>Prodotti acquistati</h5>
+                      <div style={{ fontSize: '0.88rem' }}>
+                        {JSON.parse(ord.articoli).map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '4px' }}>
+                            <span>{item.titolo} (x{item.quantita})</span>
+                            <span style={{ fontWeight: 600 }}>€{parseFloat(item.prezzo * item.quantita).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontWeight: 'bold' }}>
+                          <span>Totale:</span>
+                          <span>€{parseFloat(ord.totale).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Tab 2: Lista Articoli */}
+      {/* Tab 4: Gestione Catalogo */}
       {activeTab === 'articoli' && !loading && (
         <div className="dashboard-content fade-in">
-          <div className="articles-table-container">
-            <table className="articles-table">
+          <div className="table-container">
+            <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Prodotto</th>
-                  <th>Target</th>
+                  <th>Foto</th>
+                  <th>Titolo</th>
                   <th>Categoria</th>
+                  <th>Target</th>
                   <th>Prezzo</th>
                   <th>Taglie</th>
                   <th>Stato</th>
@@ -1002,34 +1166,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </thead>
               <tbody>
                 {listaArticoliVisualizzati.map(art => (
-                  <tr key={art.id} className={!art.attivo ? 'inactive-row' : ''}>
-                    <td className="art-title-td">
-                      <img 
-                        src={art.immagine_url.startsWith('http') || art.immagine_url.startsWith('blob:') ? art.immagine_url : (art.immagine_url.startsWith('/') ? art.immagine_url : `/${art.immagine_url}`)} 
-                        alt="" 
-                        className="table-art-img"
-                        onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                        }}
-                      />
-                      <div>
-                        <strong>{art.titolo}</strong>
-                        <span className="art-id-span">ID: {art.id}</span>
-                      </div>
-                    </td>
+                  <tr key={art.id}>
                     <td>
-                      <span 
-                        className="badge" 
-                        style={{ 
-                          backgroundColor: art.target === 'Uomo' ? 'rgba(30, 136, 229, 0.1)' : 'rgba(216, 27, 96, 0.1)', 
-                          color: art.target === 'Uomo' ? '#1E88E5' : '#D81B60',
-                          border: art.target === 'Uomo' ? '1px solid rgba(30, 136, 229, 0.2)' : '1px solid rgba(216, 27, 96, 0.2)'
-                        }}
-                      >
-                        {art.target || 'Donna'}
-                      </span>
+                      <img 
+                        src={art.immagine_url ? art.immagine_url.split(',')[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'} 
+                        alt={art.titolo} 
+                        style={{ width: '40px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} 
+                      />
                     </td>
-                    <td><span className="badge">{art.categoria}</span></td>
+                    <td style={{ fontWeight: 600 }}>{art.titolo}</td>
+                    <td>{art.categoria}</td>
+                    <td>{art.target}</td>
                     <td className="price-td">€{parseFloat(art.prezzo).toFixed(2)}</td>
                     <td>{art.taglie || 'Unica'}</td>
                     <td>
@@ -1045,11 +1192,20 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         )}
                       </button>
                     </td>
-                    <td>
+                    <td style={{ display: 'flex', gap: '8px', minHeight: '44px', alignItems: 'center' }}>
+                      <button
+                        className="edit-art-btn"
+                        onClick={() => handleAvviaModifica(art)}
+                        aria-label={`Modifica ${art.titolo}`}
+                        style={{ color: 'var(--accent-gold-hover)', border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}
+                      >
+                        <Pencil size={16} />
+                      </button>
                       <button
                         className="delete-art-btn"
                         onClick={() => handleEliminaArticolo(art.id)}
                         aria-label={`Elimina ${art.titolo}`}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}
                       >
                         <Trash size={16} />
                       </button>
@@ -1074,7 +1230,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   id="new_titolo"
                   className="form-control"
                   value={nuovoArticolo.titolo}
-                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, titolo: e.target.value})}
+                  onChange={(e) => setNuovoArticolo(prev => ({...prev, titolo: e.target.value}))}
                   required
                   placeholder="Es. Gonna Plissé Rosa"
                 />
@@ -1088,7 +1244,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   step="0.01"
                   className="form-control"
                   value={nuovoArticolo.prezzo}
-                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, prezzo: e.target.value})}
+                  onChange={(e) => setNuovoArticolo(prev => ({...prev, prezzo: e.target.value}))}
                   required
                   placeholder="Es. 29.90"
                 />
@@ -1102,7 +1258,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   id="select_target"
                   className="form-control"
                   value={nuovoArticolo.target}
-                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, target: e.target.value, categoria: ''})}
+                  onChange={(e) => setNuovoArticolo(prev => ({...prev, target: e.target.value, categoria: ''}))}
                   required
                   style={{ minHeight: '44px' }}
                 >
@@ -1117,7 +1273,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   id="select_categoria"
                   className="form-control"
                   value={nuovoArticolo.categoria}
-                  onChange={(e) => setNuovoArticolo({...nuovoArticolo, categoria: e.target.value})}
+                  onChange={(e) => setNuovoArticolo(prev => ({...prev, categoria: e.target.value}))}
                   required
                   style={{ minHeight: '44px' }}
                 >
@@ -1217,627 +1373,720 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
             </div>
 
-            <div className="form-group">
+             <div className="form-group">
               <label className="form-label" htmlFor="new_descrizione">Descrizione Articolo</label>
               <textarea
                 id="new_descrizione"
                 className="form-control"
                 rows="4"
                 value={nuovoArticolo.descrizione}
-                onChange={(e) => setNuovoArticolo({...nuovoArticolo, descrizione: e.target.value})}
+                onChange={(e) => setNuovoArticolo(prev => ({...prev, descrizione: e.target.value}))}
                 placeholder="Inserisci i dettagli del materiale, vestibilità..."
               ></textarea>
             </div>
 
             <button type="submit" className="btn-primary" disabled={uploading}>
-              Salva Articolo
+              {editingId ? 'Salva Modifiche' : 'Salva Articolo'}
             </button>
           </form>
         </div>
       )}
 
-      <style>{`
-        .admin-dashboard-container {
-          padding: var(--spacing-xl) var(--spacing-lg);
-          margin-bottom: var(--spacing-xxl);
-        }
-
-        .dashboard-header {
-          margin-bottom: var(--spacing-xl);
-        }
-
-        .header-flex-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: var(--spacing-md);
-        }
-
-        .header-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-md);
-          flex-wrap: wrap;
-        }
-
-        .btn-logout {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background-color: transparent;
-          color: var(--text-secondary);
-          border: 1.5px solid var(--border-color);
-          padding: 0.45rem 0.9rem;
-          border-radius: var(--radius-md);
-          font-size: 0.82rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.20s ease;
-          min-height: 38px;
-        }
-
-        .btn-logout:hover {
-          background-color: var(--border-color);
-          color: var(--text-primary);
-        }
-
-        .btn-logout:focus-visible {
-          outline: 2px solid var(--accent-gold);
-          outline-offset: 2px;
-        }
-
-        .status-badge-container {
-          display: flex;
-        }
-
-        .status-badge {
-          font-size: 0.8rem;
-          font-weight: 700;
-          padding: 0.35rem 0.75rem;
-          border-radius: var(--radius-full);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .status-badge.online {
-          background-color: rgba(46, 125, 50, 0.1);
-          color: var(--success);
-        }
-
-        .status-badge.offline {
-          background-color: rgba(197, 168, 128, 0.1);
-          color: var(--accent-gold-hover);
-        }
-
-        .dashboard-sub {
-          color: var(--text-secondary);
-        }
-
-        .dashboard-tabs {
-          display: flex;
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: var(--spacing-lg);
-          gap: var(--spacing-xs);
-          flex-wrap: wrap;
-        }
-
-        .tab-btn {
-          padding: 0.8rem 1.4rem;
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-          border-bottom: 2px solid transparent;
-          border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-          min-height: 44px;
-        }
-
-        .tab-btn:hover {
-          color: var(--text-primary);
-          background-color: var(--bg-tertiary);
-        }
-
-        .tab-btn.active {
-          color: var(--text-primary);
-          border-bottom-color: var(--accent-gold);
-          background-color: var(--bg-secondary);
-        }
-
-        .dashboard-content {
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: var(--spacing-lg);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .global-loader-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: var(--spacing-xxl);
-          color: var(--text-secondary);
-          gap: var(--spacing-md);
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-        }
-
-        .spin-icon {
-          animation: spin 1.5s linear infinite;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .no-data-msg {
-          text-align: center;
-          padding: var(--spacing-xl) 0;
-          color: var(--text-secondary);
-        }
-
-        /* Order Admin Cards */
-        .orders-list {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-md);
-        }
-
-        .order-admin-card {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          background-color: var(--bg-primary);
-        }
-
-        .order-admin-header {
-          background-color: var(--bg-secondary);
-          padding: var(--spacing-md);
-          border-bottom: 1px solid var(--border-color);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: var(--spacing-sm);
-        }
-
-        .order-admin-header h4 {
-          font-family: var(--font-sans);
-          font-weight: 700;
-        }
-
-        .order-date {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-
-        .order-actions-row {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-        }
-
-        .state-select {
-          min-height: 44px;
-          padding: 0.4rem var(--spacing-md);
-          font-size: 0.85rem;
-          background-color: var(--bg-secondary);
-        }
-
-        .delete-order-btn {
-          width: 44px;
-          height: 44px;
-          color: var(--text-secondary);
-          border-radius: var(--radius-sm);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .delete-order-btn:hover {
-          color: var(--error);
-          background-color: rgba(201, 42, 42, 0.05);
-        }
-
-        .order-admin-body {
-          padding: var(--spacing-md);
-          display: grid;
-          grid-template-columns: 1fr 1.2fr;
-          gap: var(--spacing-lg);
-        }
-
-        .customer-info-box {
-          font-size: 0.9rem;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .customer-info-box a {
-          color: var(--accent-gold-hover);
-          text-decoration: underline;
-        }
-
-        .order-items-box h5 {
-          font-family: var(--font-sans);
-          font-weight: 600;
-          font-size: 0.9rem;
-          margin-bottom: var(--spacing-sm);
-        }
-
-        .items-list-admin {
-          list-style: none;
-          font-size: 0.85rem;
-          margin-bottom: var(--spacing-md);
-        }
-
-        .item-li-admin {
-          display: flex;
-          justify-content: space-between;
-          border-bottom: 1px dashed var(--border-color);
-          padding: 4px 0;
-        }
-
-        .order-total-admin {
-          display: flex;
-          justify-content: space-between;
-          font-size: 1rem;
-          font-weight: 700;
-          border-top: 1px solid var(--border-color);
-          padding-top: var(--spacing-sm);
-        }
-
-        /* Articles Table */
-        .articles-table-container {
-          overflow-x: auto;
-        }
-
-        .articles-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.9rem;
-          text-align: left;
-        }
-
-        .articles-table th {
-          border-bottom: 2px solid var(--border-color);
-          padding: var(--spacing-sm) var(--spacing-md);
-          color: var(--text-secondary);
-          font-weight: 600;
-        }
-
-        .articles-table td {
-          border-bottom: 1px solid var(--border-color);
-          padding: var(--spacing-md);
-          color: var(--text-primary);
-        }
-
-        .art-title-td {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-md);
-        }
-
-        .table-art-img {
-          width: 50px;
-          height: 60px;
-          object-fit: cover;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--border-color);
-        }
-
-        .art-id-span {
-          display: block;
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-        }
-
-        .price-td {
-          font-weight: 700;
-          font-family: var(--font-serif);
-        }
-
-        .toggle-active-btn {
-          min-height: 44px;
-          min-width: 80px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: none;
-          border: none;
-          cursor: pointer;
-        }
-
-        .active-tag {
-          color: var(--success);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-weight: 600;
-        }
-
-        .inactive-tag {
-          color: var(--text-muted);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .icon-active {
-          color: var(--success);
-        }
-        
-        .icon-inactive {
-          color: var(--text-muted);
-        }
-
-        .delete-art-btn {
-          width: 44px;
-          height: 44px;
-          color: var(--text-secondary);
-          border-radius: var(--radius-sm);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: none;
-          border: none;
-          cursor: pointer;
-        }
-
-        .delete-art-btn:hover {
-          color: var(--error);
-          background-color: rgba(201, 42, 42, 0.05);
-        }
-
-        .inactive-row {
-          opacity: 0.6;
-          background-color: rgba(0,0,0,0.02);
-        }
-
-        /* New Article Form */
-        .new-article-form {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-md);
-          max-width: 700px;
-        }
-
-        .form-grid-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--spacing-md);
-        }
-
-        /* Size Checkbox Styles */
-        .sizes-checkbox-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .size-checkbox-label {
-          position: relative;
-          cursor: pointer;
-          user-select: none;
-        }
-        .size-checkbox-input {
-          position: absolute;
-          opacity: 0;
-          cursor: pointer;
-          height: 0;
-          width: 0;
-        }
-        .size-checkbox-box {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 44px;
-          height: 44px;
-          padding: 0 10px;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          color: var(--text-primary);
-          font-size: 0.85rem;
-          font-weight: 600;
-          transition: var(--transition-fast);
-        }
-        .size-checkbox-label:hover .size-checkbox-box {
-          border-color: var(--text-primary);
-          background-color: var(--bg-tertiary);
-        }
-        .size-checkbox-input:checked + .size-checkbox-box {
-          background-color: var(--text-primary);
-          color: var(--bg-secondary);
-          border-color: var(--text-primary);
-        }
-        .size-checkbox-input:focus-visible + .size-checkbox-box {
-          outline: 2px solid var(--accent-gold);
-          outline-offset: 2px;
-        }
-
-        /* Upload Image Area styles */
-        .upload-btn-wrapper {
-          position: relative;
-          overflow: hidden;
-          display: inline-block;
-        }
-
-        .upload-btn-trigger {
-          min-height: 44px;
-        }
-
-        .file-input-hidden {
-          font-size: 100px;
-          position: absolute;
-          left: 0;
-          top: 0;
-          opacity: 0;
-          cursor: pointer;
-          height: 100%;
-          width: 100%;
-        }
-
-        .upload-preview-box {
-          margin-top: var(--spacing-md);
-          padding: var(--spacing-md);
-          border: 1px dashed var(--border-color);
-          border-radius: var(--radius-md);
-          background-color: var(--bg-primary);
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: var(--spacing-sm);
-          position: relative;
-        }
-
-        .preview-badge {
-          position: absolute;
-          top: var(--spacing-sm);
-          left: var(--spacing-sm);
-        }
-
-        .img-preview {
-          width: 120px;
-          height: 150px;
-          object-fit: cover;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--border-color);
-          margin-top: var(--spacing-md);
-        }
-
-        .preview-path-text {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          word-break: break-all;
-          margin-bottom: 0;
-        }
-
-        /* Orders Toolbar */
-        .orders-toolbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: var(--spacing-sm);
-          margin-bottom: var(--spacing-md);
-          padding: var(--spacing-sm) var(--spacing-md);
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-        }
-
-        .orders-toolbar-title {
-          font-size: 0.82rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-        }
-
-        .orders-download-group {
-          display: flex;
-          gap: var(--spacing-sm);
-        }
-
-        .download-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          min-height: 44px;
-          padding: 0 var(--spacing-md);
-          border: 1.5px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          background: var(--bg-primary);
-          color: var(--text-secondary);
-          font-size: 0.82rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: var(--transition-fast);
-        }
-
-        .download-btn:hover:not(:disabled) {
-          border-color: var(--text-primary);
-          color: var(--text-primary);
-        }
-
-        .download-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-
-        /* Archive order action button */
-        .archive-order-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          min-height: 44px;
-          min-width: 44px;
-          padding: 0 var(--spacing-sm);
-          border: 1.5px solid transparent;
-          border-radius: var(--radius-sm);
-          background: transparent;
-          color: var(--text-secondary);
-          font-size: 0.82rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: var(--transition-fast);
-        }
-
-        .archive-order-btn:hover {
-          border-color: var(--accent-gold);
-          color: var(--accent-gold);
-          background-color: rgba(var(--accent-gold-rgb, 180, 141, 92), 0.07);
-        }
-
-        /* Archived card visual state */
-        .archived-card {
-          opacity: 0.75;
-          border-style: dashed;
-        }
-
-        .archived-card .order-admin-header {
-          background-color: rgba(0,0,0,0.04);
-        }
-
-        .badge-archived {
-          display: inline-block;
-          padding: 4px 10px;
-          border-radius: var(--radius-sm);
-          font-size: 0.75rem;
-          font-weight: 700;
-          background-color: rgba(120,120,120,0.12);
-          color: var(--text-secondary);
-          border: 1px solid var(--border-color);
-          letter-spacing: 0.04em;
-        }
-
-        @media (max-width: 768px) {
-          .order-admin-body {
-            grid-template-columns: 1fr;
-          }
-          
-          .form-grid-2 {
-            grid-template-columns: 1fr;
-          }
-
-          .orders-toolbar {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .orders-download-group {
-            width: 100%;
-          }
-
-          .download-btn {
-            flex: 1;
-            justify-content: center;
-          }
-        }
-      `}</style>
-    </section>
+      {/* Tab 5: Impostazioni */}
+      {activeTab === 'impostazioni' && !loading && (
+        <div className="dashboard-content fade-in">
+          <div className="settings-box" style={{ maxWidth: '500px' }}>
+            <h3>Gestione Password Dashboard</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              Da qui puoi cambiare la password di accesso a questo pannello di controllo. La nuova password verrà salvata in modo sicuro nel database Supabase.
+            </p>
+            
+            <form onSubmit={handleChangePasswordSubmit}>
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label className="form-label" htmlFor="new_password_input">Nuova Password</label>
+                <input
+                  type="password"
+                  id="new_password_input"
+                  className="form-control"
+                  value={newDashboardPassword}
+                  onChange={(e) => setNewDashboardPassword(e.target.value)}
+                  placeholder="Inserisci la nuova password..."
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label" htmlFor="confirm_password_input">Conferma Nuova Password</label>
+                <input
+                  type="password"
+                  id="confirm_password_input"
+                  className="form-control"
+                  value={confirmDashboardPassword}
+                  onChange={(e) => setConfirmDashboardPassword(e.target.value)}
+                  placeholder="Ripeti la password..."
+                  required
+                />
+              </div>
+              <button type="submit" className="btn-primary">
+                Aggiorna Password
+              </button>
+            </form>
+
+            <div style={{ marginTop: '30px', padding: '15px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <h5 style={{ fontFamily: 'var(--font-sans)', fontWeight: 'bold', marginBottom: '8px', fontSize: '0.88rem' }}>Istruzioni di configurazione iniziale</h5>
+              <p style={{ fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
+                Per abilitare il salvataggio della password su Supabase, è necessario creare la tabella <code>admin_settings</code>. 
+                Se non l'hai ancora fatto, vai nella console di <strong>Supabase &gt; SQL Editor</strong>, crea una nuova query, incolla questo codice e premi <strong>RUN</strong>:
+              </p>
+              <pre style={{ margin: '10px 0 0 0', padding: '10px', backgroundColor: '#1a1a2e', color: '#fff', borderRadius: '4px', fontSize: '0.78rem', overflowX: 'auto', userSelect: 'all' }}>
+{`CREATE TABLE IF NOT EXISTS admin_settings (
+  id INT PRIMARY KEY DEFAULT 1,
+  password TEXT NOT NULL
+);
+INSERT INTO admin_settings (id, password) 
+VALUES (1, 'Segreta2026') 
+ON CONFLICT (id) DO NOTHING;`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+    <style>{`
+    /* Layout a due colonne (Sidebar + Content) */
+    .admin-dashboard-layout {
+      display: flex;
+      min-height: 100vh;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+    }
+
+    /* Sidebar elegantissima */
+    .admin-sidebar {
+      width: 260px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: var(--spacing-lg) var(--spacing-md);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .admin-brand {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: var(--spacing-xl);
+      padding: 0 var(--spacing-sm);
+    }
+
+    .brand-logo {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-gold);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .admin-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-grow: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background-color: var(--accent-soft-gold);
+      color: var(--accent-gold-hover);
+      font-weight: 600;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background-color: var(--accent-gold);
+      color: white;
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+    }
+
+    .admin-sidebar-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: var(--spacing-md);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .db-status {
+      font-size: 0.75rem;
+      padding: 0 var(--spacing-sm);
+    }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .status-dot.online {
+      color: var(--success);
+    }
+
+    .status-dot.offline {
+      color: var(--error);
+    }
+
+    .btn-logout-sidebar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout-sidebar:hover {
+      background-color: var(--error);
+      color: white;
+      border-color: var(--error);
+    }
+
+    /* Main Content */
+    .admin-main-content {
+      flex-grow: 1;
+      padding: var(--spacing-xl) var(--spacing-xxl);
+      overflow-y: auto;
+      height: 100vh;
+      background-color: var(--bg-primary);
+    }
+
+    .admin-content-header {
+      margin-bottom: var(--spacing-xl);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: var(--spacing-md);
+    }
+
+    .admin-content-header h2 {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .dashboard-sub {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 4px 0 0 0;
+    }
+
+    /* Struttura della Dashboard Content */
+    .dashboard-content {
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Toolbar per la ricerca e filtri */
+    .orders-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .orders-download-group {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+
+    .download-btn:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    /* Lista degli ordini */
+    .orders-admin-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .order-admin-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .order-admin-header {
+      padding: var(--spacing-md) var(--spacing-lg);
+      background-color: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+    }
+
+    .order-admin-title h4 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+    }
+
+    .order-admin-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .order-admin-status-area {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    .select-status {
+      min-height: 34px;
+      padding: 0 10px;
+      font-size: 0.8rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .order-admin-body {
+      padding: var(--spacing-md) var(--spacing-lg);
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: var(--spacing-lg);
+    }
+
+    .order-info-section h5 {
+      margin: 0 0 var(--spacing-sm) 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-gold);
+    }
+
+    .order-info-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: var(--spacing-xs) var(--spacing-sm);
+      font-size: 0.88rem;
+    }
+
+    .info-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .info-value {
+      color: var(--text-primary);
+    }
+
+    /* Tabella Articoli */
+    .table-container {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .admin-table th, .admin-table td {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .admin-table th {
+      background-color: var(--bg-tertiary);
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+    }
+
+    .admin-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .admin-table tr:hover td {
+      background-color: var(--bg-tertiary);
+    }
+
+    .price-td {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Form e inputs */
+    .new-article-form {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-lg);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .form-control {
+      min-height: 44px;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 3px var(--accent-soft-gold);
+    }
+
+    textarea.form-control {
+      min-height: auto;
+      resize: vertical;
+    }
+
+    /* Taglie checkboxes */
+    .sizes-checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: var(--spacing-xs);
+      background-color: var(--bg-tertiary);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .size-checkbox-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .size-checkbox-input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .size-checkbox-box {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background-color: var(--bg-secondary);
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .size-checkbox-input:checked + .size-checkbox-box {
+      background-color: var(--accent-soft-gold);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold-hover);
+      font-weight: 700;
+    }
+
+    /* Active/Inactive tags */
+    .active-tag, .inactive-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .active-tag {
+      color: var(--success);
+    }
+
+    .inactive-tag {
+      color: var(--text-muted);
+    }
+
+    .toggle-active-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .toggle-active-btn:hover {
+      color: var(--accent-gold);
+    }
+
+    .icon-active {
+      color: var(--success);
+    }
+
+    .icon-inactive {
+      color: var(--text-muted);
+    }
+
+    /* Action buttons (edit/delete) */
+    .edit-art-btn, .delete-art-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .edit-art-btn:hover {
+      color: var(--accent-gold);
+    }
+
+    .delete-art-btn:hover {
+      color: var(--error);
+    }
+
+    /* Upload Foto */
+    .upload-btn-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .upload-btn-trigger {
+      width: 100%;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--border-color);
+      background-color: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .upload-btn-trigger:hover {
+      border-color: var(--accent-gold);
+      background-color: var(--accent-soft-gold);
+    }
+
+    .file-input-hidden {
+      position: absolute;
+      font-size: 100px;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* Loader globale */
+    .global-loader-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-xxl) 0;
+      gap: var(--spacing-sm);
+      color: var(--text-secondary);
+    }
+
+    .spin-icon {
+      animation: spin 1s linear infinite;
+      color: var(--accent-gold);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .admin-dashboard-layout {
+        flex-direction: column;
+      }
+
+      .admin-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        padding: var(--spacing-md);
+      }
+
+      .admin-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+
+      .nav-item {
+        white-space: nowrap;
+      }
+
+      .admin-sidebar-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-top: none;
+        padding-top: 8px;
+        margin-top: 8px;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .admin-main-content {
+        height: auto;
+        padding: var(--spacing-md);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .order-admin-body {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .orders-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .orders-download-group {
+        width: 100%;
+      }
+
+      .download-btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  `}</style>
+    </div>
   );
 }

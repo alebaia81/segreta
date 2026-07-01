@@ -168,20 +168,26 @@ function MainApp() {
     }, 100);
   };
 
+  const isAdminPath = currentPath === '/admin';
+
   return (
     <>
-      <div className="promo-banner-top" role="banner" aria-label="Offerta promozionale">
-        <span>✨ SPEDIZIONE GRATUITA PER ORDINI SUPERIORI A 50€ ✨</span>
-      </div>
-      <Navbar
-        onOpenCart={() => setCartOpen(true)}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        currentPath={currentPath}
-        setCurrentPath={setCurrentPath}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
+      {!isAdminPath && (
+        <div className="promo-banner-top" role="banner" aria-label="Offerta promozionale">
+          <span>✨ SPEDIZIONE GRATUITA PER ORDINI SUPERIORI A 50€ ✨</span>
+        </div>
+      )}
+      {!isAdminPath && (
+        <Navbar
+          onOpenCart={() => setCartOpen(true)}
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          currentPath={currentPath}
+          setCurrentPath={setCurrentPath}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      )}
 
       <main>
         {currentPath === '/' && (
@@ -220,14 +226,16 @@ function MainApp() {
         )}
       </main>
 
-      <Carrello
-        isOpen={cartOpen}
-        onClose={() => setCartOpen(false)}
-        onCheckout={handleCheckoutTransition}
-      />
+      {!isAdminPath && (
+        <Carrello
+          isOpen={cartOpen}
+          onClose={() => setCartOpen(false)}
+          onCheckout={handleCheckoutTransition}
+        />
+      )}
 
       {/* Cookie Banner — visibile globalmente */}
-      <CookieBanner />
+      {!isAdminPath && <CookieBanner />}
     </>
   );
 }

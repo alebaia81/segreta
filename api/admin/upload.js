@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import supabase from '../_lib/supabase.js';
 import { checkAdminAuth } from '../_lib/auth.js';
 
@@ -16,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  if (!checkAdminAuth(req, res)) return;
+  if (!await checkAdminAuth(req, res)) return;
 
   if (!supabase) {
     return res.status(500).json({ success: false, error: "Supabase non inizializzato." });
@@ -32,8 +33,10 @@ export default async function handler(req, res) {
   const base64 = imageData.replace(/^data:[^;]+;base64,/, '');
   const buffer = Buffer.from(base64, 'base64');
 
-  // Nome file univoco
-  const uniqueName = `art-${Date.now()}-${Math.random().toString(36).slice(2)}-${fileName}`;
+  // Calcola hash del file per deduplicazione
+  const hash = crypto.createHash('md5').update(buffer).digest('hex').slice(0, 16);
+  const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const uniqueName = `art-${hash}-${cleanFileName}`;
 
   // Upload su Supabase Storage nel bucket 'immagini-prodotti'
   const { error: uploadError } = await supabase.storage
@@ -43,7 +46,8 @@ export default async function handler(req, res) {
       upsert: false,
     });
 
-  if (uploadError) {
+  // Se il file esiste già (errore 409 o messaggio "already exists"), lo riutilizziamo
+  if (uploadError && !uploadError.message.includes('already exists') && !uploadError.message.includes('Duplicate')) {
     return res.status(500).json({ success: false, error: uploadError.message });
   }
 
@@ -52,5 +56,5 @@ export default async function handler(req, res) {
     .from('immagini-prodotti')
     .getPublicUrl(uniqueName);
 
-  return res.json({ success: true, url: urlData.publicUrl });
+  return res.json({ success: true, url: urlData.publicUrl, reused: !!uploadError });
 }

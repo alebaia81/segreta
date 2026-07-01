@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  if (!checkAdminAuth(req, res)) return;
+  if (!await checkAdminAuth(req, res)) return;
 
   const showArchive = req.query.archivio === 'true';
 
