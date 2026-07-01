@@ -35,9 +35,9 @@ export default async function handler(req, res) {
   // Nome file univoco
   const uniqueName = `art-${Date.now()}-${Math.random().toString(36).slice(2)}-${fileName}`;
 
-  // Upload su Supabase Storage nel bucket 'prodotti'
+  // Upload su Supabase Storage nel bucket 'immagini-prodotti'
   const { error: uploadError } = await supabase.storage
-    .from('prodotti')
+    .from('immagini-prodotti')
     .upload(uniqueName, buffer, {
       contentType: mimeType || 'image/jpeg',
       upsert: false,
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
 
   // URL pubblico
   const { data: urlData } = supabase.storage
-    .from('prodotti')
+    .from('immagini-prodotti')
     .getPublicUrl(uniqueName);
 
   return res.json({ success: true, url: urlData.publicUrl });
