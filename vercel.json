@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/admin/prodotti/:id", "destination": "/api/admin/prodotti/[id].js" },
+    { "source": "/api/admin/ordini/:id", "destination": "/api/admin/ordini/[id].js" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)",    "destination": "/index.html" }
   ]
