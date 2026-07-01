@@ -67,6 +67,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [editingId, setEditingId] = useState(null);
   const [newDashboardPassword, setNewDashboardPassword] = useState('');
   const [confirmDashboardPassword, setConfirmDashboardPassword] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredOrdini = ordini.filter(ord => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (ord.nome_cliente || '').toLowerCase().includes(query) ||
+      (ord.telefono || '').includes(query) ||
+      (ord.id || '').toString().includes(query)
+    );
+  });
 
   const getTabTitle = () => {
     switch (activeTab) {
