@@ -69,8 +69,14 @@ const ARTICOLI_SEED = [
 ];
 
 function MainApp() {
-  const [currentPath, setCurrentPath] = useState('/'); // '/', '/shop', '/admin', '/checkout'
+  // Leggiamo il percorso dal browser per supportare i link diretti (come /admin)
+  const [currentPath, setCurrentPath] = useState(window.location.pathname === '/' ? '/' : window.location.pathname);
   const [activeSection, setActiveSection] = useState('home');
+
+  // Aggiorniamo l'URL del browser quando cambiamo pagina internamente
+  useEffect(() => {
+    window.history.pushState({}, '', currentPath);
+  }, [currentPath]);
 
   const [cartOpen, setCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
