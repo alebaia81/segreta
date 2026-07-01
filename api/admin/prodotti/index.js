@@ -6,6 +6,10 @@ import { checkAdminAuth } from '../../_lib/auth.js';
 export default async function handler(req, res) {
   if (!checkAdminAuth(req, res)) return;
 
+  if (!supabase) {
+    return res.status(500).json({ success: false, error: "Supabase non inizializzato. SUPABASE_URL o SUPABASE_SECRET_KEY mancanti su Vercel." });
+  }
+
   // ── GET ──────────────────────────────────────────────────────────
   if (req.method === 'GET') {
     const { data, error } = await supabase

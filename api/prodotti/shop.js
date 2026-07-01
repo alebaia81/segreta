@@ -5,6 +5,9 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
+  if (!supabase) {
+    return res.status(500).json({ success: false, error: "Supabase non inizializzato. SUPABASE_URL o SUPABASE_SECRET_KEY mancanti su Vercel." });
+  }
 
   const { data, error } = await supabase
     .from('articoli')
