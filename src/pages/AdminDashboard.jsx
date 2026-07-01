@@ -1203,23 +1203,25 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         )}
                       </button>
                     </td>
-                    <td style={{ display: 'flex', gap: '8px', minHeight: '44px', alignItems: 'center' }}>
-                      <button
-                        className="edit-art-btn"
-                        onClick={() => handleAvviaModifica(art)}
-                        aria-label={`Modifica ${art.titolo}`}
-                        style={{ color: 'var(--accent-gold-hover)', border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="delete-art-btn"
-                        onClick={() => handleEliminaArticolo(art.id)}
-                        aria-label={`Elimina ${art.titolo}`}
-                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}
-                      >
-                        <Trash size={16} />
-                      </button>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button
+                          className="edit-art-btn"
+                          onClick={() => handleAvviaModifica(art)}
+                          aria-label={`Modifica ${art.titolo}`}
+                          style={{ color: 'var(--accent-gold-hover)', border: 'none', background: 'none', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="delete-art-btn"
+                          onClick={() => handleEliminaArticolo(art.id)}
+                          aria-label={`Elimina ${art.titolo}`}
+                          style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Trash size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
