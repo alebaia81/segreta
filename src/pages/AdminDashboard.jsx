@@ -203,35 +203,24 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     setUploading(true);
 
     try {
-      // Opzioni per la compressione delle immagini in AVIF
-      const options = {
-        maxSizeMB: 0.8,          // Molto aggressivo per risparmiare spazio (AVIF regge bene a basse dimensioni)
-        maxWidthOrHeight: 1080,
-        useWebWorker: true,
-        fileType: 'image/avif'   // Conversione forzata in AVIF
-      };
+      const finalMimeType = imageFile.type || 'image/avif';
+      const finalFileName = imageFile.name || `prodotto-${Date.now()}.avif`;
 
-      // Compressione client-side
-      const compressedFile = await imageCompression(imageFile, options);
-
-      // MimeType finale post-compressione (se il browser non supporta AVIF, fallbacks)
-      const finalMimeType = compressedFile.type || 'image/avif';
-
-      // Conversione del file in Base64
+      // Conversione diretta del file nativo in Base64 (senza compressione)
       const base64data = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
+        reader.readAsDataURL(imageFile);
         reader.onloadend = () => resolve(reader.result);
         reader.onerror = reject;
       });
       
       if (!isAPIAvailable) {
-        const localBlobUrl = URL.createObjectURL(compressedFile);
+        const localBlobUrl = URL.createObjectURL(imageFile);
         setNuovoArticolo(prev => ({
           ...prev,
           immagine_url: localBlobUrl
         }));
-        alert(`Immagine compressa localmente in ${finalMimeType.split('/')[1].toUpperCase()}.`);
+        alert(`Immagine caricata localmente in ${finalMimeType.split('/')[1].toUpperCase()}.`);
         return;
       }
 
@@ -245,7 +234,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         },
         body: JSON.stringify({
           imageData: base64data,
-          fileName: imageFile.name.replace(/\.[^/.]+$/, "") + '.avif',
+          fileName: finalFileName,
           mimeType: finalMimeType
         })
       });
@@ -254,7 +243,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       try {
         json = await response.json();
       } catch (parseErr) {
-        throw new Error('Il server ha risposto con un formato non valido (forse errore 500).');
+        throw new Error('Il server ha risposto con un formato non valido (forse errore 500). Controlla se la foto supera i 4MB di limite Vercel.');
       }
 
       if (json.success) {
@@ -262,12 +251,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           ...prev,
           immagine_url: json.url
         }));
-        alert('Immagine caricata con successo!');
+        alert('Immagine caricata con successo su Supabase!');
       } else {
         throw new Error(json.error || 'Errore sconosciuto dal server.');
       }
     } catch (error) {
-      console.error('Errore durante la compressione/upload dell\'immagine:', error);
+      console.error('Errore durante il caricamento dell\'immagine:', error);
       alert(`Impossibile completare il caricamento dell'immagine. Motivo: ${error.message}`);
     } finally {
       setUploading(false);
@@ -1169,14 +1158,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </div>
 
             <div className="form-group">
-              <label className="form-label">Foto Prodotto (Converte in AVIF prima del caricamento) *</label>
+              <label className="form-label">Foto Prodotto (Nessuna Compressione: Carica file già ottimizzati) *</label>
               <div className="upload-btn-wrapper">
                 <button type="button" className="btn-secondary upload-btn-trigger">
                   {uploading ? (
-                    <>
-                      <Loader className="spin-icon" size={18} style={{ marginRight: '8px' }} />
-                      Compressione AVIF...
-                    </>
+                    <div className="upload-placeholder loading">
+                      <Loader className="spin" size={24} />
+                      <span>CARICAMENTO IN CORSO...</span>
+                    </div>
                   ) : (
                     <>
                       <Upload size={18} style={{ marginRight: '8px' }} />
