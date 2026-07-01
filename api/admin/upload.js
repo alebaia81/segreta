@@ -18,6 +18,10 @@ export default async function handler(req, res) {
 
   if (!checkAdminAuth(req, res)) return;
 
+  if (!supabase) {
+    return res.status(500).json({ success: false, error: "Supabase non inizializzato." });
+  }
+
   const { imageData, fileName, mimeType } = req.body;
 
   if (!imageData || !fileName) {
@@ -31,9 +35,9 @@ export default async function handler(req, res) {
   // Nome file univoco
   const uniqueName = `art-${Date.now()}-${Math.random().toString(36).slice(2)}-${fileName}`;
 
-  // Upload su Supabase Storage nel bucket 'immagini-prodotti'
+  // Upload su Supabase Storage nel bucket 'prodotti'
   const { error: uploadError } = await supabase.storage
-    .from('immagini-prodotti')
+    .from('prodotti')
     .upload(uniqueName, buffer, {
       contentType: mimeType || 'image/jpeg',
       upsert: false,
@@ -45,7 +49,7 @@ export default async function handler(req, res) {
 
   // URL pubblico
   const { data: urlData } = supabase.storage
-    .from('immagini-prodotti')
+    .from('prodotti')
     .getPublicUrl(uniqueName);
 
   return res.json({ success: true, url: urlData.publicUrl });

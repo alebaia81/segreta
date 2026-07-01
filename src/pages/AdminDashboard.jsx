@@ -203,18 +203,20 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     setUploading(true);
 
     try {
-      // Opzioni per la compressione delle immagini
+      // Opzioni per la compressione delle immagini (usa il formato nativo)
       const options = {
         maxSizeMB: 1,            // Dimensione massima file compresso
         maxWidthOrHeight: 1080,  // Dimensione massima pixel per mantenere qualità ed ottimizzare
         useWebWorker: true,
-        fileType: 'image/webp'   // Forza la conversione in formato WebP
       };
 
       // Compressione client-side
       const compressedFile = await imageCompression(imageFile, options);
 
-      // Conversione del file in Base64 usando una Promise per mantenere il try/catch pulito
+      // MimeType finale post-compressione
+      const finalMimeType = compressedFile.type || 'image/jpeg';
+
+      // Conversione del file in Base64
       const base64data = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(compressedFile);
@@ -222,14 +224,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         reader.onerror = reject;
       });
       
-      // Se l'API non è disponibile (sviluppo locale offline), simuliamo l'upload
       if (!isAPIAvailable) {
         const localBlobUrl = URL.createObjectURL(compressedFile);
         setNuovoArticolo(prev => ({
           ...prev,
           immagine_url: localBlobUrl
         }));
-        alert('Immagine compressa localmente in WebP (Sviluppo Locale).');
+        alert('Immagine compressa localmente (Sviluppo Locale).');
         return;
       }
 
@@ -243,25 +244,30 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         },
         body: JSON.stringify({
           imageData: base64data,
-          fileName: 'prodotto.webp',
-          mimeType: 'image/webp'
+          fileName: imageFile.name || 'prodotto.jpg',
+          mimeType: finalMimeType
         })
       });
 
-      const json = await response.json();
+      let json;
+      try {
+        json = await response.json();
+      } catch (parseErr) {
+        throw new Error('Il server ha risposto con un formato non valido (forse errore 500).');
+      }
 
       if (json.success) {
         setNuovoArticolo(prev => ({
           ...prev,
           immagine_url: json.url
         }));
-        alert('Immagine caricata e convertita in WebP con successo!');
+        alert('Immagine caricata con successo!');
       } else {
-        alert('Errore nel caricamento dell\'immagine: ' + json.error);
+        throw new Error(json.error || 'Errore sconosciuto dal server.');
       }
     } catch (error) {
       console.error('Errore durante la compressione/upload dell\'immagine:', error);
-      alert('Impossibile completare la compressione o il caricamento dell\'immagine.');
+      alert(`Impossibile completare il caricamento dell'immagine. Motivo: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -1162,7 +1168,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </div>
 
             <div className="form-group">
-              <label className="form-label">Foto Prodotto (Converte in WebP prima del caricamento) *</label>
+              <label className="form-label">Foto Prodotto (Compressione automatica) *</label>
               <div className="upload-btn-wrapper">
                 <button type="button" className="btn-secondary upload-btn-trigger">
                   {uploading ? (
