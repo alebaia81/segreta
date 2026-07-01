@@ -209,11 +209,15 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       // Compressione client-side
       const compressedFile = await imageCompression(imageFile, options);
 
-      // Conversione del file compresso in FormData per l'upload
-      const formData = new FormData();
-      formData.append('immagine', compressedFile, 'prodotto.webp');
-
-      // Se l'API non è disponibile (sviluppo locale offline), simuliamo l'upload con un URL blob locale
+      // Conversione del file in Base64 usando una Promise per mantenere il try/catch pulito
+      const base64data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
+      
+      // Se l'API non è disponibile (sviluppo locale offline), simuliamo l'upload
       if (!isAPIAvailable) {
         const localBlobUrl = URL.createObjectURL(compressedFile);
         setNuovoArticolo(prev => ({
@@ -224,14 +228,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         return;
       }
 
-      // Invio al backend Express
+      // Invio al backend Vercel/Supabase
       const pass = sessionStorage.getItem('segreta_admin_password') || password;
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'x-admin-password': pass
         },
-        body: formData
+        body: JSON.stringify({
+          imageData: base64data,
+          fileName: 'prodotto.webp',
+          mimeType: 'image/webp'
+        })
       });
 
       const json = await response.json();
@@ -342,7 +351,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     if (isAPIAvailable) {
       try {
         const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch(`/api/admin/prodotti/${artId}/toggle`, {
+        const response = await fetch(`/api/admin/prodotti/${artId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -414,13 +423,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     if (isAPIAvailable) {
       try {
         const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch(`/api/admin/ordini/${ordineId}/stato`, {
+        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'x-admin-password': pass
           },
-          body: JSON.stringify({ stato: nuovoStato })
+          body: JSON.stringify({ action: 'stato', stato: nuovoStato })
         });
         const json = await response.json();
         if (json.success) {
@@ -474,9 +483,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     if (isAPIAvailable) {
       try {
         const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch(`/api/admin/ordini/${ordineId}/archiviare`, {
+        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
           method: 'PUT',
-          headers: { 'x-admin-password': pass }
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-admin-password': pass 
+          },
+          body: JSON.stringify({ action: 'archivia' })
         });
         const json = await response.json();
         if (json.success) {
