@@ -203,18 +203,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     setUploading(true);
 
     try {
-      // Opzioni per la compressione delle immagini (usa il formato nativo)
+      // Opzioni per la compressione delle immagini in AVIF
       const options = {
-        maxSizeMB: 1,            // Dimensione massima file compresso
-        maxWidthOrHeight: 1080,  // Dimensione massima pixel per mantenere qualità ed ottimizzare
+        maxSizeMB: 0.8,          // Molto aggressivo per risparmiare spazio (AVIF regge bene a basse dimensioni)
+        maxWidthOrHeight: 1080,
         useWebWorker: true,
+        fileType: 'image/avif'   // Conversione forzata in AVIF
       };
 
       // Compressione client-side
       const compressedFile = await imageCompression(imageFile, options);
 
-      // MimeType finale post-compressione
-      const finalMimeType = compressedFile.type || 'image/jpeg';
+      // MimeType finale post-compressione (se il browser non supporta AVIF, fallbacks)
+      const finalMimeType = compressedFile.type || 'image/avif';
 
       // Conversione del file in Base64
       const base64data = await new Promise((resolve, reject) => {
@@ -230,7 +231,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           ...prev,
           immagine_url: localBlobUrl
         }));
-        alert('Immagine compressa localmente (Sviluppo Locale).');
+        alert(`Immagine compressa localmente in ${finalMimeType.split('/')[1].toUpperCase()}.`);
         return;
       }
 
@@ -244,7 +245,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         },
         body: JSON.stringify({
           imageData: base64data,
-          fileName: imageFile.name || 'prodotto.jpg',
+          fileName: imageFile.name.replace(/\.[^/.]+$/, "") + '.avif',
           mimeType: finalMimeType
         })
       });
@@ -1168,13 +1169,13 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </div>
 
             <div className="form-group">
-              <label className="form-label">Foto Prodotto (Compressione automatica) *</label>
+              <label className="form-label">Foto Prodotto (Converte in AVIF prima del caricamento) *</label>
               <div className="upload-btn-wrapper">
                 <button type="button" className="btn-secondary upload-btn-trigger">
                   {uploading ? (
                     <>
                       <Loader className="spin-icon" size={18} style={{ marginRight: '8px' }} />
-                      Compressione WebP...
+                      Compressione AVIF...
                     </>
                   ) : (
                     <>
