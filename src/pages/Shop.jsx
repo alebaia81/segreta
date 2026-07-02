@@ -204,7 +204,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
               return (
                 <article key={articolo.id} className="prodotto-card">
                   <div className="prodotto-image-wrapper">
-                    <div className="prodotto-slider" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+                    <div className="prodotto-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
                       {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
                         const imgUrl = url.trim().startsWith('http') || url.trim().startsWith('blob:') ? url.trim() : (url.trim().startsWith('/') ? url.trim() : `/${url.trim()}`);
                         return (
