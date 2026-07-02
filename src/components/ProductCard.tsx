@@ -116,7 +116,7 @@ export default function ProductCard({
     >
       {/* ── Immagine ──────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
-        <div className="pc-slider" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+        <div className="pc-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
           {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
             const imgUrl = resolveImgSrc(url.trim());
             return (
