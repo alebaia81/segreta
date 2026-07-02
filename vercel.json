@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/admin/prodotti/:id", "destination": "/api/admin/prodotti/[id]" },
     { "source": "/api/admin/ordini/:id", "destination": "/api/admin/ordini/[id]" },
+    { "source": "/api/prodotti", "destination": "/api/prodotti/index" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)",    "destination": "/index.html" }
   ]
