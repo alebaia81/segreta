@@ -11,7 +11,7 @@
  *   2.3.3  useAccessibilityAnimation() azzera Y/scale se reducedMotion è attivo.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingBag, Check, Tag } from 'lucide-react';
 import useAccessibilityAnimation from '../hooks/useAccessibilityAnimation';
@@ -62,6 +62,18 @@ export default function ProductCard({
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [isAdded, setIsAdded] = useState(false);
   const [sizeError, setSizeError] = useState(false);
+
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (sliderRef.current) {
+      const scrollAmount = sliderRef.current.clientWidth;
+      sliderRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const taglieList: string[] = articolo.taglie
     ? articolo.taglie.split(',').map((s) => s.trim()).filter(Boolean)
@@ -115,7 +127,7 @@ export default function ProductCard({
     >
       {/* ── Immagine ──────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
-        <div className="pc-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+        <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
           {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
             const imgUrl = resolveImgSrc(url.trim());
             return (
@@ -141,6 +153,28 @@ export default function ProductCard({
 
         {/* Overlay sfumato basso — supporta leggibilità badge */}
         <div className="pc-image-overlay" aria-hidden="true" style={{ pointerEvents: 'none' }} />
+
+        {/* Navigazione frecce se più di 1 immagine */}
+        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+          <>
+            <button
+              type="button"
+              className="pc-slider-arrow pc-arrow-left"
+              onClick={(e) => { e.stopPropagation(); scrollSlider('left'); }}
+              aria-label="Immagine precedente"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="pc-slider-arrow pc-arrow-right"
+              onClick={(e) => { e.stopPropagation(); scrollSlider('right'); }}
+              aria-label="Immagine successiva"
+            >
+              ›
+            </button>
+          </>
+        )}
 
         {/* Dots per immagini multiple */}
         {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
@@ -351,6 +385,44 @@ const CSS = `
     border: 1px solid rgba(230,223,215,0.7);
     z-index: 10;
     pointer-events: none;
+  }
+
+  /* Slider arrows */
+  .pc-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(44, 37, 32, 0.15);
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(44, 37, 32, 0.08);
+    transition: var(--transition-fast);
+    padding-bottom: 3px;
+  }
+  .pc-slider-arrow:hover {
+    background: #fff;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 6px 16px rgba(44, 37, 32, 0.12);
+  }
+  .pc-slider-arrow:focus-visible {
+    outline: 3px solid var(--text-primary);
+    outline-offset: 3px;
+  }
+  .pc-arrow-left {
+    left: 8px;
+  }
+  .pc-arrow-right {
+    right: 8px;
   }
 
   /* ── Dettagli ────────────────────────────────────────────────────── */

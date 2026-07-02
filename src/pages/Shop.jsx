@@ -18,6 +18,19 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const [selectedSizes, setSelectedSizes] = useState({});
   const [addedAnimation, setAddedAnimation] = useState({});
 
+  const scrollShopSlider = (e, direction) => {
+    e.stopPropagation();
+    const wrapper = e.currentTarget.closest('.prodotto-image-wrapper');
+    const slider = wrapper ? wrapper.querySelector('.prodotto-slider') : null;
+    if (slider) {
+      const scrollAmount = slider.clientWidth;
+      slider.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // --- Meta tag SEO specifici per /shop ---
   useEffect(() => {
     const prevTitle = document.title;
@@ -230,6 +243,29 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
                         );
                       })}
                     </div>
+
+                    {/* Navigazione frecce se più di 1 immagine */}
+                    {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          className="shop-slider-arrow shop-arrow-left"
+                          onClick={(e) => scrollShopSlider(e, 'left')}
+                          aria-label="Immagine precedente"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          className="shop-slider-arrow shop-arrow-right"
+                          onClick={(e) => scrollShopSlider(e, 'right')}
+                          aria-label="Immagine successiva"
+                        >
+                          ›
+                        </button>
+                      </>
+                    )}
+
                     {articolo.categoria && (
                       <span className="prodotto-category-tag">{articolo.categoria}</span>
                     )}
@@ -510,13 +546,50 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           box-shadow: var(--shadow-md);
           border-color: var(--accent-gold);
         }
-         .prodotto-image-wrapper {
-           position: relative;
-           width: 100%;
-           padding-top: 125%;
-           background-color: var(--bg-tertiary);
-           overflow: hidden;
-         }
+          .prodotto-image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 125%;
+            background-color: var(--bg-tertiary);
+            overflow: hidden;
+          }
+          /* Slider arrows */
+          .shop-slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(44, 37, 32, 0.15);
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(44, 37, 32, 0.08);
+            transition: var(--transition-fast);
+            padding-bottom: 3px;
+          }
+          .shop-slider-arrow:hover {
+            background: #fff;
+            transform: translateY(-50%) scale(1.08);
+            box-shadow: 0 6px 16px rgba(44, 37, 32, 0.12);
+          }
+          .shop-slider-arrow:focus-visible {
+            outline: 3px solid var(--text-primary);
+            outline-offset: 3px;
+          }
+          .shop-arrow-left {
+            left: 8px;
+          }
+          .shop-arrow-right {
+            right: 8px;
+          }
          .prodotto-image-blur-bg {
            position: absolute;
            top: 0; left: 0;
