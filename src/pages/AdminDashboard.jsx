@@ -1443,23 +1443,6 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                 Aggiorna Password
               </button>
             </form>
-
-            <div style={{ marginTop: '30px', padding: '15px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-              <h5 style={{ fontFamily: 'var(--font-sans)', fontWeight: 'bold', marginBottom: '8px', fontSize: '0.88rem' }}>Istruzioni di configurazione iniziale</h5>
-              <p style={{ fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
-                Per abilitare il salvataggio della password su Supabase, è necessario creare la tabella <code>admin_settings</code>. 
-                Se non l'hai ancora fatto, vai nella console di <strong>Supabase &gt; SQL Editor</strong>, crea una nuova query, incolla questo codice e premi <strong>RUN</strong>:
-              </p>
-              <pre style={{ margin: '10px 0 0 0', padding: '10px', backgroundColor: '#1a1a2e', color: '#fff', borderRadius: '4px', fontSize: '0.78rem', overflowX: 'auto', userSelect: 'all' }}>
-{`CREATE TABLE IF NOT EXISTS admin_settings (
-  id INT PRIMARY KEY DEFAULT 1,
-  password TEXT NOT NULL
-);
-INSERT INTO admin_settings (id, password) 
-VALUES (1, 'Segreta2026') 
-ON CONFLICT (id) DO NOTHING;`}
-              </pre>
-            </div>
           </div>
         </div>
       )}
