@@ -67,7 +67,6 @@ export default function ProductCard({
     ? articolo.taglie.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
-  const imgSrc = resolveImgSrc(articolo.immagine_url);
   const prezzoFormatted = `€${parseFloat(String(articolo.prezzo)).toFixed(2)}`;
 
   // ─── Handlers ────────────────────────────────────────────────────────────

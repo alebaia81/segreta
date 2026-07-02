@@ -48,8 +48,6 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
     ? articolo.taglie.split(',').map(s => s.trim()).filter(Boolean)
     : [];
 
-  const imageSrc = resolveImageSrc(articolo.immagine_url);
-
   /* ─── Gestori ───────────────────────────────────────────────────────────── */
 
   const handleAddToCart = (e) => {
