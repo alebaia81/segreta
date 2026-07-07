@@ -173,7 +173,7 @@ export default function Navbar({ onOpenCart, activeSection, setActiveSection, cu
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border-bottom: 1px solid var(--border-color);
-          height: 70px;
+          height: 110px;
           display: flex;
           align-items: center;
           transition: var(--transition-smooth);
@@ -190,11 +190,11 @@ export default function Navbar({ onOpenCart, activeSection, setActiveSection, cu
           display: flex;
           align-items: center;
           gap: var(--spacing-sm);
-          min-height: 44px;
+          min-height: 93px;
         }
 
         .navbar-logo {
-          max-height: 48px;
+          max-height: 93px;
           object-fit: contain;
           transition: var(--transition-smooth);
         }
