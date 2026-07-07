@@ -814,7 +814,9 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           padding: 1.5rem var(--spacing-lg) var(--spacing-xxl);
         }
 
-        .ultimi-arrivi-section .badge {
+        .ultimi-arrivi-section .badge,
+        .testimonials-section .badge,
+        .about-text-column .badge {
           background-color: #E295AB;
           color: #FFFFFF;
           font-weight: 800;
