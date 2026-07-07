@@ -321,7 +321,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
           z-index: 1;
           transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -536,8 +536,8 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           justify-content: center;
           gap: 8px;
           margin-top: auto;
-          background: var(--text-primary);
-          color: var(--bg-secondary);
+          background: #E295AB;
+          color: #fff;
           font-family: var(--font-sans);
           font-size: 0.85rem;
           font-weight: 700;
@@ -546,14 +546,14 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           padding: 0.85rem 1rem;
           border-radius: var(--radius-sm);
           min-height: 48px; /* WCAG 2.2 touch target ≥ 24px, ottimizzato 48px */
-          border: 1.5px solid var(--text-primary);
+          border: 1.5px solid #E295AB;
           cursor: pointer;
           transition: var(--transition-smooth);
         }
 
         .pc-add-to-cart-btn:hover:not(:disabled) {
           background: transparent;
-          color: var(--text-primary);
+          color: #E295AB;
         }
 
         /* WCAG 2.4.7 — focus ring ad alto contrasto */

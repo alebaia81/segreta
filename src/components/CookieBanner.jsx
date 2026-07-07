@@ -286,7 +286,7 @@ export default function CookieBanner() {
         }
 
         .cookie-title {
-          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-family: var(--font-sans);
           font-size: 1.15rem;
           font-weight: 600;
           color: #1a1714;

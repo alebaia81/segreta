@@ -4,12 +4,12 @@ import ProductCard from './ProductCard.tsx';
 
 export default function Catalogo({ articoli }) {
   const { addToCart } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState('Tutti');
+  const [selectedCategory, setSelectedCategory] = useState('TUTTI');
 
   // Estrarre le categorie uniche
-  const categorie = ['Tutti', ...new Set(articoli.filter(a => a.attivo).map(a => a.categoria))];
+  const categorie = ['TUTTI', ...new Set(articoli.filter(a => a.attivo).map(a => a.categoria))];
 
-  const articoliFiltrati = selectedCategory === 'Tutti'
+  const articoliFiltrati = selectedCategory === 'TUTTI'
     ? articoli.filter(a => a.attivo)
     : articoli.filter(a => a.attivo && a.categoria === selectedCategory);
 
@@ -28,7 +28,6 @@ export default function Catalogo({ articoli }) {
   return (
     <section id="catalogo" className="catalogo-section container fade-in">
       <div className="catalogo-header">
-        <span className="badge">Collezione 2026</span>
         <h2>Esplora i Nostri Capi</h2>
         <div className="accent-line"></div>
         <p className="catalogo-subtitle">
@@ -127,9 +126,9 @@ export default function Catalogo({ articoli }) {
         }
 
         .filter-btn.active {
-          background-color: var(--text-primary);
-          color: var(--bg-secondary);
-          border-color: var(--text-primary);
+          background-color: #E295AB;
+          color: #fff;
+          border-color: #E295AB;
         }
 
         .no-products {
@@ -151,6 +150,7 @@ export default function Catalogo({ articoli }) {
           border: 1px solid var(--border-color);
           display: flex;
           flex-direction: column;
+          height: 100%;
           transition: var(--transition-smooth);
         }
 
@@ -185,7 +185,8 @@ export default function Catalogo({ articoli }) {
           left: 0;
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
+          object-position: center;
           z-index: 1;
           transition: var(--transition-smooth);
         }
@@ -294,21 +295,27 @@ export default function Catalogo({ articoli }) {
 
         .btn-add-to-cart {
           width: 100%;
-          background-color: var(--text-primary);
-          color: var(--bg-secondary);
+          background-color: #E295AB;
+          color: #fff;
           font-size: 0.88rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
           padding: 0.8rem;
           border-radius: var(--radius-sm);
-          min-height: 44px; /* WCAG 2.2 touch target */
-          border: 1px solid var(--text-primary);
+          min-height: 44px;
+          border: 1px solid #E295AB;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: var(--transition-fast);
         }
 
         .btn-add-to-cart:hover:not(:disabled) {
           background-color: transparent;
-          color: var(--text-primary);
+          color: #E295AB;
+          border-color: #E295AB;
         }
 
         .btn-add-to-cart.success {

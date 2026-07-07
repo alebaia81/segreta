@@ -865,6 +865,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           border: 1px solid var(--border-color);
           display: flex;
           flex-direction: column;
+          height: 100%;
           transition: var(--transition-smooth);
         }
 
@@ -897,7 +898,8 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           position: absolute;
           top: 0; left: 0;
           width: 100%; height: 100%;
-          object-fit: contain;
+          object-fit: cover;
+          object-position: center;
           z-index: 1;
           transition: var(--transition-smooth);
         }

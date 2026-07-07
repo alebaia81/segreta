@@ -14,7 +14,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const { openCookieSettings } = useCookie();
 
   const [selectedTarget, setSelectedTarget] = useState('Donna');
-  const [selectedCategory, setSelectedCategory] = useState('Tutti');
+  const [selectedCategory, setSelectedCategory] = useState('TUTTI');
   const [selectedSizes, setSelectedSizes] = useState({});
   const [addedAnimation, setAddedAnimation] = useState({});
 
@@ -61,17 +61,39 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     };
   }, []);
 
-  const articoliAttivi = articoli.filter(a => a.attivo);
-  const articoliTarget = articoliAttivi.filter(a => a.target === selectedTarget);
-  const categorie = ['Tutti', ...new Set(articoliTarget.map(a => a.categoria))].sort((a, b) => {
-    if (a === 'Tutti') return -1;
-    if (b === 'Tutti') return 1;
-    return a.localeCompare(b);
-  });
+  const CATEGORIE_SHOP = [
+    'TUTTI',
+    'ABITI-BLUES',
+    'CAMICE-MAGLIE-FELPE',
+    'T-SHIRT',
+    'JEANS',
+    'PANTALONI',
+    'CAPPOTTI & GIACCHE',
+    'SCARPE',
+    'BORSE'
+  ];
 
-  const articoliFiltrati = selectedCategory === 'Tutti'
+  const normalizeCategory = (cat) => {
+    if (!cat) return '';
+    const c = cat.toUpperCase().trim();
+    if (c === 'ABITI' || c === 'GONNE' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI-BLUES';
+    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'FELPE' || c === 'CAMICE-MAGLIE-FELPE') return 'CAMICE-MAGLIE-FELPE';
+    if (c === 'T-SHIRT') return 'T-SHIRT';
+    if (c === 'JEANS') return 'JEANS';
+    if (c === 'PANTALONI') return 'PANTALONI';
+    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE') return 'CAPPOTTI & GIACCHE';
+    if (c === 'SCARPE') return 'SCARPE';
+    if (c === 'BORSE' || c === 'ACCESSORI') return 'BORSE';
+    return c;
+  };
+
+  const articoliAttivi = articoli.filter(a => a.attivo);
+  const articoliTarget = articoliAttivi.filter(a => a.target === 'Donna');
+  const categorie = CATEGORIE_SHOP;
+
+  const articoliFiltrati = selectedCategory === 'TUTTI'
     ? articoliTarget
-    : articoliTarget.filter(a => a.categoria === selectedCategory);
+    : articoliTarget.filter(a => normalizeCategory(a.categoria) === selectedCategory);
 
   const handleSelectSize = (articoloId, size) => {
     setSelectedSizes(prev => ({ ...prev, [articoloId]: size }));
@@ -128,8 +150,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       {/* Shop Header */}
       <header className="shop-hero">
         <div className="container shop-hero-content">
-          <span className="badge">Collezione 2026</span>
-          <h1>Il Nostro Shop</h1>
+          <h1>IL NOSTRO SHOP</h1>
           <div className="accent-line" style={{ margin: '1rem auto 1.25rem' }}></div>
           <p className="shop-hero-subtitle">
             Tutti i capi disponibili, aggiornati in tempo reale. Trova la categoria adatta ed esplora le novità.
@@ -151,30 +172,15 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
             </button>
           ))}
         </div>
-        <p className="shop-count">
-          {articoliFiltrati.length} {articoliFiltrati.length === 1 ? 'articolo' : 'articoli'}
-        </p>
       </div>
 
       {/* Products Grid */}
-      <section className="container shop-grid-section" aria-labelledby="shop-section-title">
-        <div className="shop-section-header">
-          <h2 id="shop-section-title" className="shop-section-title">
-            Abbigliamento Donna Segreta Style
-          </h2>
-          <h3 className="shop-section-subtitle">
-            {selectedCategory === 'Tutti'
-              ? 'Abiti ed Elegante, Camicie e Bluse, Giacche e Cappotti, Pantaloni e Jeans'
-              : getDisplayCategory(selectedCategory, 'Donna')
-            }
-          </h3>
-          <div className="accent-line-left" style={{ marginTop: '0.5rem', marginBottom: '0' }}></div>
-        </div>
+      <section className="container shop-grid-section" aria-label="Prodotti dello shop" style={{ marginTop: '1rem' }}>
 
         {articoliFiltrati.length === 0 ? (
           <div className="shop-empty">
             <p>Nessun articolo disponibile in questa categoria al momento.</p>
-            <button className="btn-secondary" onClick={() => setSelectedCategory('Tutti')}>
+            <button className="btn-secondary" onClick={() => setSelectedCategory('TUTTI')}>
               Vedi tutti i prodotti
             </button>
           </div>
@@ -450,9 +456,9 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
         }
 
         .shop-filter-btn.active {
-          background-color: var(--text-primary);
-          color: var(--bg-secondary);
-          border-color: var(--text-primary);
+          background-color: #E295AB;
+          color: #fff;
+          border-color: #E295AB;
         }
 
         .shop-count {
@@ -509,6 +515,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           border: 1px solid var(--border-color);
           display: flex;
           flex-direction: column;
+          height: 100%;
           transition: var(--transition-smooth);
         }
         .prodotto-card:hover {
@@ -570,14 +577,15 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
            transform: scale(1.1);
            pointer-events: none;
          }
-         .prodotto-image {
-           position: absolute;
-           top: 0; left: 0;
-           width: 100%; height: 100%;
-           object-fit: contain;
-           z-index: 1;
-           transition: var(--transition-smooth);
-         }
+          .prodotto-image {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: center;
+            z-index: 1;
+            transition: var(--transition-smooth);
+          }
          .prodotto-card:hover .prodotto-image {
            transform: scale(1.03);
          }
@@ -660,8 +668,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
         .size-btn.selected { background-color: var(--text-primary); color: var(--bg-secondary); border-color: var(--text-primary); }
         .btn-add-to-cart {
           width: 100%;
-          background-color: var(--text-primary);
-          color: var(--bg-secondary);
+          background-color: #E295AB;
+          color: #fff;
           font-size: 0.88rem;
           font-weight: 600;
           text-transform: uppercase;
@@ -669,7 +677,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           padding: 0.8rem;
           border-radius: var(--radius-sm);
           min-height: 44px;
-          border: 1px solid var(--text-primary);
+          border: 1px solid #E295AB;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -678,7 +686,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
         }
         .btn-add-to-cart:hover:not(:disabled) {
           background-color: transparent;
-          color: var(--text-primary);
+          color: #E295AB;
+          border-color: #E295AB;
         }
         .btn-add-to-cart.success {
           background-color: var(--success);

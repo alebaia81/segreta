@@ -19,7 +19,7 @@
   --border-color: #E6DFD7;     /* Elegant soft beige borders */
   
   /* Font Families */
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-serif: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   
   /* Spacings */
@@ -117,8 +117,8 @@ button {
 
 /* Bottoni primari */
 .btn-primary {
-  background-color: var(--text-primary);
-  color: var(--bg-secondary);
+  background-color: #E295AB;
+  color: #fff;
   padding: 0.8rem 1.6rem;
   font-size: 0.9rem;
   font-weight: 600;
@@ -127,12 +127,13 @@ button {
   border-radius: var(--radius-sm);
   min-height: 44px; /* WCAG 2.2 Target Size */
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--text-primary);
+  border: 1px solid #E295AB;
 }
 
 .btn-primary:hover {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
+  background-color: transparent;
+  color: #E295AB;
+  border-color: #E295AB;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }

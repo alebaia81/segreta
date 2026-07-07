@@ -299,6 +299,7 @@ const CSS = `
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100%;
     cursor: pointer;
     transition: border-color 0.2s ease;
     position: relative;
@@ -341,7 +342,8 @@ const CSS = `
     position: absolute;
     inset: 0;
     width: 100%; height: 100%;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center;
     z-index: 1;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -540,8 +542,8 @@ const CSS = `
     justify-content: center;
     gap: 8px;
     margin-top: auto;
-    background: var(--text-primary);
-    color: var(--bg-secondary);
+    background: #E295AB;
+    color: #fff;
     font-family: var(--font-sans);
     font-size: 0.83rem;
     font-weight: 700;
@@ -549,7 +551,7 @@ const CSS = `
     text-transform: uppercase;
     padding: 0.85rem;
     border-radius: var(--radius-sm);
-    border: 1.5px solid var(--text-primary);
+    border: 1.5px solid #E295AB;
     /* WCAG 2.2 touch target: min 48px (meglio del minimo 24px) */
     min-height: 48px;
     cursor: pointer;
@@ -558,10 +560,9 @@ const CSS = `
 
   .pc-add-btn:hover:not(:disabled) {
     background: transparent;
-    color: var(--text-primary);
+    color: #E295AB;
   }
 
-  /* WCAG 2.4.7 — focus ring ad alto contrasto 3px / offset 3px */
   .pc-add-btn:focus-visible {
     outline: 3px solid var(--text-primary);
     outline-offset: 3px;

@@ -4,22 +4,14 @@ import imageCompression from 'browser-image-compression';
 
 const TARGET_CATEGORIES = {
   Donna: [
-    'Abiti',
-    'Accessori',
-    'Camicie e Bluse',
-    'Giacche e Cappotti',
-    'Gonne',
-    'Maglieria',
-    'Pantaloni',
-    'T-Shirt'
-  ],
-  Uomo: [
-    'Accessori',
-    'Camicie',
-    'Giacche e Cappotti',
-    'Maglieria',
-    'Pantaloni',
-    'T-Shirt'
+    'ABITI-BLUES',
+    'CAMICE-MAGLIE-FELPE',
+    'T-SHIRT',
+    'JEANS',
+    'PANTALONI',
+    'CAPPOTTI & GIACCHE',
+    'SCARPE',
+    'BORSE'
   ]
 };
 
