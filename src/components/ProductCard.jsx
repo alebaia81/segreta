@@ -262,6 +262,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          height: 100%;
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       border-color 0.2s ease;

@@ -40,7 +40,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     let metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
     if (metaDesc) {
-      metaDesc.setAttribute('content', "Esplora lo shop online di Segreta Style: abbigliamento donna e uomo per Piacenza e Cremona. Acquista online e finalizza tramite WhatsApp con Greta.");
+      metaDesc.setAttribute('content', "Esplora lo shop online di Segreta Style: abbigliamento donna per Piacenza e Cremona. Acquista online e finalizza tramite WhatsApp con Greta.");
     }
 
     // OG
@@ -48,8 +48,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       const el = document.querySelector(`meta[property="${property}"]`);
       if (el) el.setAttribute('content', content);
     };
-    updateOG('og:title', "Shop Online | Collezioni Abbigliamento Piacenza e Cremona — Segreta Style");
-    updateOG('og:description', "Scopri le nostre collezioni di abbigliamento donna e uomo. Ordina e personalizza via WhatsApp con consegna tra Piacenza e Cremona.");
+    updateOG('og:title', "Shop Online | Collezioni Abbigliamento Donna Piacenza e Cremona — Segreta Style");
+    updateOG('og:description', "Scopri le nostre collezioni di abbigliamento donna. Ordina e personalizza via WhatsApp con consegna tra Piacenza e Cremona.");
     updateOG('og:url', 'https://www.segretastylemonticelli.it/shop');
 
     return () => {
@@ -132,43 +132,13 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           <h1>Il Nostro Shop</h1>
           <div className="accent-line" style={{ margin: '1rem auto 1.25rem' }}></div>
           <p className="shop-hero-subtitle">
-            Tutti i capi disponibili, aggiornati in tempo reale. Seleziona il genere e trova la categoria adatta.
+            Tutti i capi disponibili, aggiornati in tempo reale. Trova la categoria adatta ed esplora le novità.
           </p>
         </div>
       </header>
 
-      {/* Macro Target Tab Selectors */}
-      <div className="shop-macro-wrapper container">
-        <div className="shop-macro-bar" role="tablist" aria-label="Seleziona collezione">
-          <button
-            role="tab"
-            aria-selected={selectedTarget === 'Donna'}
-            className={`shop-macro-btn ${selectedTarget === 'Donna' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedTarget('Donna');
-              setSelectedCategory('Tutti');
-            }}
-            style={{ minHeight: '44px' }}
-          >
-            Collezione Donna
-          </button>
-          <button
-            role="tab"
-            aria-selected={selectedTarget === 'Uomo'}
-            className={`shop-macro-btn ${selectedTarget === 'Uomo' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedTarget('Uomo');
-              setSelectedCategory('Tutti');
-            }}
-            style={{ minHeight: '44px' }}
-          >
-            Collezione Uomo
-          </button>
-        </div>
-      </div>
-
       {/* Filter Bar */}
-      <div className="shop-filter-wrapper container">
+      <div className="shop-filter-wrapper container" style={{ marginTop: '2rem' }}>
         <div className="shop-filter-bar" role="group" aria-label="Filtra per categoria">
           {categorie.map(cat => (
             <button
@@ -190,12 +160,12 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       <section className="container shop-grid-section" aria-labelledby="shop-section-title">
         <div className="shop-section-header">
           <h2 id="shop-section-title" className="shop-section-title">
-            {selectedTarget === 'Donna' ? 'Abbigliamento Donna Segreta Style' : 'Abbigliamento Uomo e Tendenze Casual'}
+            Abbigliamento Donna Segreta Style
           </h2>
           <h3 className="shop-section-subtitle">
             {selectedCategory === 'Tutti'
-              ? (selectedTarget === 'Donna' ? 'Abiti ed Elegante, Camicie e Bluse, Giacche e Cappotti, Pantaloni e Jeans' : 'Camicie, Giacche, Pantaloni, T-Shirt e Maglieria')
-              : getDisplayCategory(selectedCategory, selectedTarget)
+              ? 'Abiti ed Elegante, Camicie e Bluse, Giacche e Cappotti, Pantaloni e Jeans'
+              : getDisplayCategory(selectedCategory, 'Donna')
             }
           </h3>
           <div className="accent-line-left" style={{ marginTop: '0.5rem', marginBottom: '0' }}></div>

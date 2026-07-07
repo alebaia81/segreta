@@ -12,12 +12,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
   // --- Meta tag SEO specifici per Home (Brand + Local) ---
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "Segreta Style | Boutique Abbigliamento Donna e Uomo Monticelli d'Ongina";
+    document.title = "Segreta Style | Boutique Abbigliamento Donna Monticelli d'Ongina";
 
     let metaDesc = document.querySelector('meta[name="description"]');
     const prevDesc = metaDesc ? metaDesc.getAttribute('content') : '';
     if (metaDesc) {
-      metaDesc.setAttribute('content', "Benvenuti da Segreta Style di Greta Righi a Monticelli d'Ongina (PC), boutique di abbigliamento donna e uomo per le zone di Piacenza e Cremona. Acquista online con assistenza WhatsApp.");
+      metaDesc.setAttribute('content', "Benvenuti da Segreta Style di Greta Righi a Monticelli d'Ongina (PC), boutique di abbigliamento donna per le zone di Piacenza e Cremona. Acquista online con assistenza WhatsApp.");
     }
 
     return () => {
@@ -28,10 +28,10 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
 
 
-  // Ultimi 8 articoli attivi (ordinati per id decrescente come proxy per data)
+  // Ultimi 4 articoli attivi (ordinati per id decrescente come proxy per data)
   const ultimiArrivi = articoli
     .filter(a => a.attivo)
-    .slice(0, 8);
+    .slice(0, 4);
   const { addToCart } = useCart();
 
   return (
@@ -132,9 +132,6 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           <span className="badge">Novità</span>
           <h2>Ultimi Arrivi</h2>
           <div className="accent-line"></div>
-          <p className="section-subtitle">
-            I capi più freschi appena entrati in boutique. Aggiornati in tempo reale dal nostro catalogo.
-          </p>
         </div>
 
         {ultimiArrivi.length === 0 ? (
@@ -264,7 +261,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
       {/* Chi Sono Section - Storia di Greta Righi */}
       <section id="chi-sono" className="about-section" aria-labelledby="about-title">
-        <h1 id="about-title" style={{ display: 'none' }}>Segreta Style | Boutique Abbigliamento Donna e Uomo Monticelli d'Ongina</h1>
+        <h1 id="about-title" style={{ display: 'none' }}>Segreta Style | Boutique Abbigliamento Donna Monticelli d'Ongina</h1>
         <div className="container about-grid">
           <div className="about-image-column">
             <div className="about-image-frame">
@@ -476,7 +473,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: var(--spacing-lg);
-          margin: -2rem auto var(--spacing-xxl);
+          margin: 4rem auto 1.5rem;
           background-color: var(--bg-secondary);
           border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
@@ -816,9 +813,14 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           opacity: 0.9;
         }
 
-        /* Ultimi Arrivi Section */
         .ultimi-arrivi-section {
-          padding: var(--spacing-xxl) var(--spacing-lg);
+          padding: 1.5rem var(--spacing-lg) var(--spacing-xxl);
+        }
+
+        .ultimi-arrivi-section .badge {
+          background-color: #E295AB;
+          color: #FFFFFF;
+          font-weight: 800;
         }
 
         .section-header-centered {
@@ -827,7 +829,9 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         }
 
         .section-header-centered h2 {
+          font-family: var(--font-sans);
           font-size: 2.2rem;
+          font-weight: 700;
           margin-top: var(--spacing-xs);
           color: var(--text-primary);
         }
@@ -848,9 +852,10 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
         .arrivi-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
           gap: var(--spacing-lg);
           margin-bottom: var(--spacing-xl);
+          align-items: stretch;
         }
 
         .arrivo-card {

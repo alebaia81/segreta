@@ -1277,10 +1277,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   value={nuovoArticolo.target}
                   onChange={(e) => setNuovoArticolo(prev => ({...prev, target: e.target.value, categoria: ''}))}
                   required
+                  disabled
                   style={{ minHeight: '44px' }}
                 >
                   <option value="Donna">Donna</option>
-                  <option value="Uomo">Uomo</option>
                 </select>
               </div>
 
