@@ -304,7 +304,11 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
               onClick={onNavigateToHome}
               aria-label="Torna alla Home"
             >
-              <img src="/logo-footer.jpg" alt="Segreta Style Logo" className="footer-logo-img" />
+              <img
+                src="/logo-footer-2.png"
+                alt="Segreta Style Logo"
+                className="footer-logo-img"
+              />
             </button>
             <span className="footer-subtitle">DI GRETA RIGHI</span>
             <div className="footer-social-links">
@@ -723,12 +727,9 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           gap: 4px;
         }
         .footer-logo-img {
-          max-height: 48px;
+          max-height: 80px;
           object-fit: contain;
           display: block;
-          background-color: var(--bg-secondary);
-          padding: 6px 12px;
-          border-radius: var(--radius-md);
         }
 
         .footer-subtitle {

@@ -373,7 +373,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
               aria-label="Torna in cima alla pagina"
             >
               <img
-                src="/logo-footer.jpg"
+                src="/logo-footer-2.png"
                 alt="Segreta Style Logo"
                 className="footer-logo-img"
               />
@@ -676,12 +676,9 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         }
 
         .footer-logo-img {
-          max-height: 48px;
+          max-height: 80px;
           object-fit: contain;
           display: block;
-          background-color: var(--bg-secondary);
-          padding: 6px 12px;
-          border-radius: var(--radius-md);
         }
 
         .footer-subtitle {
