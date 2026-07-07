@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, RotateCcw, Pencil, Settings } from 'lucide-react';
-import imageCompression from 'browser-image-compression';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings } from 'lucide-react';
 
 const TARGET_CATEGORIES = {
   Donna: [
-    'ABITI-BLUES',
-    'CAMICE-MAGLIE-FELPE',
-    'T-SHIRT',
+    'ABITI',
+    'CAMICE-BLUSE',
+    'T-SHIRT-FELPE',
     'JEANS',
     'PANTALONI',
-    'CAPPOTTI & GIACCHE',
+    'CAPPOTTI-GIACCHE',
     'SCARPE',
     'BORSE'
   ]
@@ -17,7 +16,7 @@ const TARGET_CATEGORIES = {
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
-export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo }) {
+export default function AdminDashboard({ articoli, onToggleArticolo }) {
   const [activeTab, setActiveTab] = useState('ordini');
   const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('segreta_admin_logged') === 'true');
   const [password, setPassword] = useState('');
@@ -53,7 +52,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     immagine_url: '',
     target: 'Donna',
     categoria: '',
-    taglie: 'S,M,L'
+    taglie: 'S,M,L',
+    sconto: ''
   });
 
   const [editingId, setEditingId] = useState(null);
@@ -272,7 +272,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         let json;
         try {
           json = await response.json();
-        } catch (parseErr) {
+        } catch (err) {
           throw new Error('Il server ha risposto con un formato non valido (forse errore 500). Controlla se le foto superano il limite Vercel.');
         }
 
@@ -328,7 +328,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       immagine_url: '',
       target: 'Donna',
       categoria: '',
-      taglie: 'S,M,L'
+      taglie: 'S,M,L',
+      sconto: ''
     });
     setSelectedSizes({ S: true, M: true, L: true });
     setCustomSizesList([]);
@@ -350,11 +351,20 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       return;
     }
 
+    let descrizioneFinale = nuovoArticolo.descrizione || '';
+    const scontoNum = parseInt(nuovoArticolo.sconto);
+    if (!isNaN(scontoNum) && scontoNum > 0) {
+      descrizioneFinale = `[SCONTO:${scontoNum}] ${descrizioneFinale}`.trim();
+    }
+
     const articoloDaSalvare = {
-      ...nuovoArticolo,
-      taglie: taglieFinali,
+      titolo: nuovoArticolo.titolo,
+      descrizione: descrizioneFinale,
       prezzo: parseFloat(nuovoArticolo.prezzo),
-      immagine_url: nuovoArticolo.immagine_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'
+      immagine_url: nuovoArticolo.immagine_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+      target: nuovoArticolo.target,
+      categoria: nuovoArticolo.categoria,
+      taglie: taglieFinali
     };
 
     if (isAPIAvailable) {
@@ -442,14 +452,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
   const handleAvviaModifica = (art) => {
     setEditingId(art.id);
+    const matchSconto = art.descrizione ? art.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+    const scontoValue = matchSconto ? matchSconto[1] : '';
+    const descrizionePulita = art.descrizione ? art.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+
     setNuovoArticolo({
       titolo: art.titolo,
-      descrizione: art.descrizione || '',
+      descrizione: descrizionePulita,
       prezzo: art.prezzo.toString(),
       immagine_url: art.immagine_url || '',
       target: art.target || 'Donna',
       categoria: art.categoria || '',
-      taglie: art.taglie || ''
+      taglie: art.taglie || '',
+      sconto: scontoValue
     });
 
     // Imposta le taglie selezionate
@@ -502,7 +517,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         setConfirmDashboardPassword('');
         setShowNewPassword(false);
         setShowConfirmPassword(false);
-        setActiveTab('ordini');
+        setActiveTab('ordini'); setMostraArchivio(false); fetchOrdini(false);
       } else {
         alert('Errore: ' + json.error);
       }
@@ -538,7 +553,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         } else {
           alert('Errore database: ' + json.error);
         }
-      } catch {
+      } catch (err) {
         alert('Impossibile completare l\'eliminazione.');
       } finally {
         setLoading(false);
@@ -586,90 +601,34 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   };
 
-  const handleCancellaOrdine = async (ordineId) => {
-    if (!window.confirm('Sei sicuro di voler eliminare questo ordine?')) {
-      return;
-    }
 
-    if (isAPIAvailable) {
-      try {
-        const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-password': pass
-          }
-        });
-        const json = await response.json();
-        if (json.success) {
-          setOrdini(prev => prev.filter(o => o.id !== ordineId));
-        }
-      } catch (err) {
-        console.error('Errore durante l\'eliminazione dell\'ordine su database.', err);
-      }
-    } else {
-      const nuoviOrdini = ordini.filter(o => o.id !== ordineId);
-      setOrdini(nuoviOrdini);
-      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
-    }
+  const handlePrintRicevuta = (o) => {
+    const win = window.open('', '_blank');
+    let items = [];
+    try { items = JSON.parse(o.dettaglio_articoli); } catch (err) { /* ignore */ }
+    const righe = items.map(i => `<tr><td>${i.titolo} (Taglia: ${i.tagliaSelezionata || 'U'})</td><td>x${i.quantita}</td><td>€${parseFloat(i.prezzo * i.quantita).toFixed(2)}</td></tr>`).join('');
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Ricevuta #${o.id}</title>
+      <style>body{font-family:sans-serif;padding:20px;color:#333;width:300px;margin:0 auto}table{width:100%;border-collapse:collapse}td{padding:4px 0}</style>
+      </head><body>
+      <h2 style="text-align:center">Segreta Style</h2>
+      <p style="text-align:center">Ordine #${o.id}<br>${new Date(o.created_at).toLocaleString('it-IT')}</p>
+      <hr>
+      <p><strong>Cliente:</strong> ${o.nome_cliente}<br><strong>Tel:</strong> ${o.telefono}</p>
+      <hr>
+      <table>${righe}</table>
+      <hr>
+      <h3 style="text-align:right">Totale: €${parseFloat(o.totale).toFixed(2)}</h3>
+      </body></html>`);
+    win.document.close();
+    win.print();
   };
 
-  const handleArchivia = async (ordineId) => {
-    if (!window.confirm('Archiviare questo ordine? Sarà visibile nella cronologia.')) return;
-    if (isAPIAvailable) {
-      try {
-        const pass = sessionStorage.getItem('segreta_admin_password') || password;
-        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-admin-password': pass 
-          },
-          body: JSON.stringify({ action: 'archivia' })
-        });
-        const json = await response.json();
-        if (json.success) {
-          setOrdini(prev => prev.filter(o => o.id !== ordineId));
-        }
-      } catch (err) {
-        console.error('Errore durante l\'archiviazione dell\'ordine.', err);
-      }
-    } else {
-      const updated = ordini.map(o => o.id === ordineId ? { ...o, stato: 'Archiviato' } : o);
-      setOrdini(updated.filter(o => o.stato !== 'Archiviato'));
-      localStorage.setItem('segreta_ordini', JSON.stringify(updated));
+  const printFilteredOrders = (type, ordine = null) => {
+    if (type === 'PDF_LISTA') {
+      handleDownloadPDF();
+    } else if (type === 'RICEVUTA' && ordine) {
+      handlePrintRicevuta(ordine);
     }
-  };
-
-  const handleToggleArchivio = () => {
-    const nuovoValore = !mostraArchivio;
-    setMostraArchivio(nuovoValore);
-    fetchOrdini(nuovoValore);
-  };
-
-  const handleDownloadCSV = () => {
-    if (ordini.length === 0) return;
-    const headers = ['ID','Cliente','Telefono','Consegna','Indirizzo','Pagamento','Totale','Stato','Data'];
-    const rows = ordini.map(o => [
-      o.id,
-      `"${o.nome_cliente}"`,
-      `"${o.telefono}"`,
-      `"${o.metodo_consegna}"`,
-      `"${o.indirizzo_spedizione}"`,
-      `"${o.metodo_pagamento}"`,
-      o.totale,
-      `"${o.stato}"`,
-      `"${new Date(o.created_at).toLocaleString('it-IT')}"`
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ordini_${mostraArchivio ? 'archivio' : 'attivi'}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleDownloadPDF = () => {
@@ -678,7 +637,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     const titolo = mostraArchivio ? 'Archivio Ordini' : 'Ordini Attivi';
     const righe = ordini.map(o => {
       let items = [];
-      try { items = JSON.parse(o.dettaglio_articoli); } catch { items = []; }
+      try { items = JSON.parse(o.dettaglio_articoli); } catch (err) { /* ignore */ }
       return `
         <tr style="border-bottom:1px solid #eee">
           <td style="padding:8px">#${o.id}</td>
@@ -851,7 +810,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           <button
             className={`nav-item ${activeTab === 'ordini' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('ordini');
+              setActiveTab('ordini'); setMostraArchivio(false); fetchOrdini(false);
               fetchOrdini(false);
             }}
           >
@@ -865,7 +824,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           <button
             className={`nav-item ${activeTab === 'archivio' ? 'active' : ''}`}
             onClick={() => {
-              setActiveTab('archivio');
+              setActiveTab('archivio'); setMostraArchivio(true); fetchOrdini(true);
               fetchOrdini(true);
             }}
           >
@@ -1184,7 +1143,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                     <td style={{ fontWeight: 600 }}>{art.titolo}</td>
                     <td>{art.categoria}</td>
                     <td>{art.target}</td>
-                    <td className="price-td">€{parseFloat(art.prezzo).toFixed(2)}</td>
+                    <td className="price-td">
+                      €{parseFloat(art.prezzo).toFixed(2)}
+                      {(() => {
+                        const match = art.descrizione ? art.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+                        return match ? (
+                          <span style={{ marginLeft: '6px', color: '#E295AB', fontSize: '0.8rem', fontWeight: 700 }}>
+                            (-{match[1]}%)
+                          </span>
+                        ) : null;
+                      })()}
+                    </td>
                     <td>{art.taglie || 'Unica'}</td>
                     <td>
                       <button
@@ -1231,22 +1200,22 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       {activeTab === 'nuovo' && !loading && (
         <div className="dashboard-content fade-in">
           <form onSubmit={handleCreateArticolo} className="new-article-form">
-            <div className="form-grid-2">
-              <div className="form-group">
-                <label className="form-label" htmlFor="new_titolo">Titolo Articolo *</label>
-                <input
-                  type="text"
-                  id="new_titolo"
-                  className="form-control"
-                  value={nuovoArticolo.titolo}
-                  onChange={(e) => setNuovoArticolo(prev => ({...prev, titolo: e.target.value}))}
-                  required
-                  placeholder="Es. Gonna Plissé Rosa"
-                />
-              </div>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+              <label className="form-label" htmlFor="new_titolo">Titolo Articolo *</label>
+              <input
+                type="text"
+                id="new_titolo"
+                className="form-control"
+                value={nuovoArticolo.titolo}
+                onChange={(e) => setNuovoArticolo(prev => ({...prev, titolo: e.target.value}))}
+                required
+                placeholder="Es. Gonna Plissé Rosa"
+              />
+            </div>
 
+            <div className="form-grid-3" style={{ marginBottom: '15px' }}>
               <div className="form-group">
-                <label className="form-label" htmlFor="new_prezzo">Prezzo (€) *</label>
+                <label className="form-label" htmlFor="new_prezzo">Prezzo Originale (€) *</label>
                 <input
                   type="number"
                   id="new_prezzo"
@@ -1256,6 +1225,44 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   onChange={(e) => setNuovoArticolo(prev => ({...prev, prezzo: e.target.value}))}
                   required
                   placeholder="Es. 29.90"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="new_sconto">Sconto (%)</label>
+                <input
+                  type="number"
+                  id="new_sconto"
+                  min="0"
+                  max="99"
+                  className="form-control"
+                  value={nuovoArticolo.sconto}
+                  onChange={(e) => setNuovoArticolo(prev => ({...prev, sconto: e.target.value}))}
+                  placeholder="Es. 20"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Prezzo Scontato (€)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  disabled
+                  value={(() => {
+                    const price = parseFloat(nuovoArticolo.prezzo);
+                    const disc = parseInt(nuovoArticolo.sconto);
+                    if (isNaN(price)) return '';
+                    if (isNaN(disc) || disc <= 0) return `€${price.toFixed(2)}`;
+                    const finalPrice = price - (price * disc) / 100;
+                    return `€${finalPrice.toFixed(2)}`;
+                  })()}
+                  style={{
+                    backgroundColor: 'rgba(226, 149, 171, 0.08)',
+                    borderColor: '#E295AB',
+                    color: '#E295AB',
+                    fontWeight: '700',
+                    cursor: 'not-allowed'
+                  }}
                 />
               </div>
             </div>
@@ -1870,6 +1877,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       gap: var(--spacing-lg);
     }
 
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: var(--spacing-lg);
+    }
+
     .form-group {
       display: flex;
       flex-direction: column;
@@ -2124,7 +2137,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         grid-template-columns: 1fr;
       }
 
-      .form-grid-2 {
+      .form-grid-2,
+      .form-grid-3 {
         grid-template-columns: 1fr;
       }
 

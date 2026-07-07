@@ -22,6 +22,11 @@
 
 import { useState, useRef } from 'react';
 import { ShoppingBag, Check } from 'lucide-react';
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/counter.css";
 
 /* Hook leggero per prefers-reduced-motion */
 function useReducedMotion() {
@@ -43,8 +48,11 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [isAdded, setIsAdded] = useState(false);
   const [sizeError, setSizeError] = useState(false);
+  const [zoomImageIndex, setZoomImageIndex] = useState(null);
 
   const sliderRef = useRef(null);
+
+  // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
 
   const scrollSlider = (direction) => {
     if (sliderRef.current) {
@@ -59,6 +67,15 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const taglieList = articolo.taglie
     ? articolo.taglie.split(',').map(s => s.trim()).filter(Boolean)
     : [];
+
+  const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+  const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
+  const cleanDescrizione = articolo.descrizione ? articolo.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+  const prezzoScontato = scontoPercent > 0 
+    ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
+    : articolo.prezzo;
+  const prezzoFormatted = `€${parseFloat(articolo.prezzo).toFixed(2)}`;
+  const prezzoScontatoFormatted = `€${parseFloat(prezzoScontato).toFixed(2)}`;
 
   /* ─── Gestori ───────────────────────────────────────────────────────────── */
 
@@ -98,29 +115,27 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
     <article
       className={`pc-card${reducedMotion ? ' pc-reduced-motion' : ''}`}
       tabIndex={0}
-      aria-label={`${articolo.titolo}, €${parseFloat(articolo.prezzo).toFixed(2)}`}
+      aria-label={`${articolo.titolo}, ${scontoPercent > 0 ? `Scontato a ${prezzoScontatoFormatted} (invece di ${prezzoFormatted})` : prezzoFormatted}`}
       onKeyDown={handleCardKeyDown}
       onClick={onCardClick}
     >
       {/* ── Immagine ──────────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
-        <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+        <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
           {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
             const imgUrl = resolveImageSrc(url.trim());
             return (
               <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
                 <img
                   src={imgUrl}
-                  alt=""
-                  className="pc-image-blur-bg"
-                  aria-hidden="true"
-                  onError={e => { e.target.src = FALLBACK_SRC; }}
-                />
-                <img
-                  src={imgUrl}
                   alt={`${articolo.titolo} - Foto ${idx + 1}`}
                   className="pc-image"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
                   loading={idx === 0 ? "eager" : "lazy"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImageIndex(idx);
+                  }}
                   onError={e => { e.target.src = FALLBACK_SRC; }}
                 />
               </div>
@@ -157,6 +172,26 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           </span>
         )}
 
+        {scontoPercent > 0 && (
+          <span
+            className="pc-discount-badge"
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              backgroundColor: '#E295AB',
+              color: '#fff',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              padding: '0.25rem 0.6rem',
+              borderRadius: '4px',
+              zIndex: 11
+            }}
+          >
+            -{scontoPercent}%
+          </span>
+        )}
+
         {/* Dots per immagini multiple */}
         {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
           <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
@@ -174,14 +209,35 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       <div className="pc-details">
         <h3 className="pc-title">{articolo.titolo}</h3>
 
-        {articolo.descrizione && (
-          <p className="pc-description">{articolo.descrizione}</p>
+        {cleanDescrizione && (
+          <p className="pc-description">{cleanDescrizione}</p>
         )}
 
         <div className="pc-price-row">
-          <span className="pc-price" aria-label={`Prezzo: €${parseFloat(articolo.prezzo).toFixed(2)}`}>
-            €{parseFloat(articolo.prezzo).toFixed(2)}
-          </span>
+          {scontoPercent > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span
+                className="pc-price text-pink"
+                style={{ color: '#E295AB', fontWeight: 700 }}
+                aria-label={`Prezzo Scontato: ${prezzoScontatoFormatted}`}
+              >
+                {prezzoScontatoFormatted}
+              </span>
+              <span
+                style={{ textDecoration: 'line-through', color: 'var(--text-secondary)', fontSize: '0.9rem' }}
+                aria-label={`Prezzo Originale: ${prezzoFormatted}`}
+              >
+                {prezzoFormatted}
+              </span>
+            </div>
+          ) : (
+            <span
+              className="pc-price"
+              aria-label={`Prezzo: ${prezzoFormatted}`}
+            >
+              {prezzoFormatted}
+            </span>
+          )}
         </div>
 
         {/* ── Taglie ──────────────────────────────────────────────────────── */}
@@ -300,20 +356,12 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           position: relative;
           width: 100%;
           padding-top: 125%; /* Aspect ratio 4:5 — standard abbigliamento */
-          background-color: var(--bg-tertiary);
+          background-color: #ffffff;
           overflow: hidden;
         }
 
         .pc-image-blur-bg {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          filter: blur(20px) brightness(0.9);
-          opacity: 0.5;
-          transform: scale(1.15);
-          pointer-events: none;
+          display: none;
         }
 
         .pc-image {
@@ -321,7 +369,8 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          object-position: center;
           z-index: 1;
           transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -574,6 +623,27 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           cursor: not-allowed;
         }
       `}</style>
+
+      <Lightbox
+        open={zoomImageIndex !== null}
+        close={() => setZoomImageIndex(null)}
+        index={zoomImageIndex || 0}
+        slides={articolo.immagine_url.split(',').filter(Boolean).map(url => {
+          const trimmed = url.trim();
+          const src = resolveImageSrc(trimmed);
+          return { src, alt: articolo.titolo };
+        })}
+        plugins={[Zoom, Counter]}
+        zoom={{
+          maxZoomPixelRatio: 4,
+          zoomInMultiplier: 2,
+          doubleTapDelay: 300,
+          doubleClickDelay: 300,
+        }}
+        styles={{
+          container: { backgroundColor: "rgba(0, 0, 0, 0.75)" }
+        }}
+      />
     </article>
   );
 }

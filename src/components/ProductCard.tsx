@@ -15,6 +15,11 @@ import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingBag, Check, Tag } from 'lucide-react';
 import useAccessibilityAnimation from '../hooks/useAccessibilityAnimation';
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/counter.css";
 
 // ─── Tipi pubblici ────────────────────────────────────────────────────────────
 
@@ -60,10 +65,13 @@ export default function ProductCard({
   const { fadeUp } = useAccessibilityAnimation({ duration: 0.45 });
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [isAdded, setIsAdded] = useState(false);
   const [sizeError, setSizeError] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+  const [zoomImageIndex, setZoomImageIndex] = useState<number | null>(null);
 
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
 
   const scrollSlider = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
@@ -79,7 +87,15 @@ export default function ProductCard({
     ? articolo.taglie.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+  const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
+  const cleanDescrizione = articolo.descrizione ? articolo.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+  const prezzoScontato = scontoPercent > 0 
+    ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
+    : articolo.prezzo;
+
   const prezzoFormatted = `€${parseFloat(String(articolo.prezzo)).toFixed(2)}`;
+  const prezzoScontatoFormatted = `€${parseFloat(String(prezzoScontato)).toFixed(2)}`;
 
   // ─── Handlers ────────────────────────────────────────────────────────────
 
@@ -117,7 +133,7 @@ export default function ProductCard({
       /* Usa la variante passata dal genitore stagger, default fadeUp */
       variants={fadeUp}
       tabIndex={0}
-      aria-label={`${articolo.titolo}, ${prezzoFormatted}`}
+      aria-label={`${articolo.titolo}, ${scontoPercent > 0 ? `Scontato a ${prezzoScontatoFormatted} (invece di ${prezzoFormatted})` : prezzoFormatted}`}
       onKeyDown={handleCardKeyDown}
       onClick={onCardClick}
       whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(44,37,32,0.12)' }}
@@ -127,23 +143,21 @@ export default function ProductCard({
     >
       {/* ── Immagine ──────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
-        <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+        <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
           {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
             const imgUrl = resolveImgSrc(url.trim());
             return (
               <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
                 <img
                   src={imgUrl}
-                  alt=""
-                  className="pc-image-blur"
-                  aria-hidden="true"
-                  onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
-                />
-                <img
-                  src={imgUrl}
                   alt={`${articolo.titolo} - Foto ${idx + 1}`}
                   className="pc-image"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
                   loading={idx === 0 ? "eager" : "lazy"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImageIndex(idx);
+                  }}
                   onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
                 />
               </div>
@@ -195,24 +209,62 @@ export default function ProductCard({
             {articolo.categoria}
           </span>
         )}
+
+        {scontoPercent > 0 && (
+          <span
+            className="pc-discount-badge"
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              backgroundColor: '#E295AB',
+              color: '#fff',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              padding: '0.25rem 0.6rem',
+              borderRadius: '4px',
+              zIndex: 11
+            }}
+          >
+            -{scontoPercent}%
+          </span>
+        )}
       </div>
 
       {/* ── Dettagli ──────────────────────────────────────────────────── */}
       <div className="pc-details">
         <h3 className="pc-title">{articolo.titolo}</h3>
 
-        {articolo.descrizione && (
-          <p className="pc-description">{articolo.descrizione}</p>
+        {cleanDescrizione && (
+          <p className="pc-description">{cleanDescrizione}</p>
         )}
 
         {/* Prezzo */}
         <div className="pc-price-row">
-          <span
-            className="pc-price"
-            aria-label={`Prezzo: ${prezzoFormatted}`}
-          >
-            {prezzoFormatted}
-          </span>
+          {scontoPercent > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span
+                className="pc-price text-pink"
+                style={{ color: '#E295AB', fontWeight: 700 }}
+                aria-label={`Prezzo Scontato: ${prezzoScontatoFormatted}`}
+              >
+                {prezzoScontatoFormatted}
+              </span>
+              <span
+                style={{ textDecoration: 'line-through', color: 'var(--text-secondary)', fontSize: '0.9rem' }}
+                aria-label={`Prezzo Originale: ${prezzoFormatted}`}
+              >
+                {prezzoFormatted}
+              </span>
+            </div>
+          ) : (
+            <span
+              className="pc-price"
+              aria-label={`Prezzo: ${prezzoFormatted}`}
+            >
+              {prezzoFormatted}
+            </span>
+          )}
         </div>
 
         {/* ── Selezione taglie ─────────────────────────────────────── */}
@@ -284,6 +336,27 @@ export default function ProductCard({
       </div>
 
       <style>{CSS}</style>
+
+      <Lightbox
+        open={zoomImageIndex !== null}
+        close={() => setZoomImageIndex(null)}
+        index={zoomImageIndex || 0}
+        slides={articolo.immagine_url.split(',').filter(Boolean).map(url => {
+          const trimmed = url.trim();
+          const src = resolveImgSrc(trimmed);
+          return { src, alt: articolo.titolo };
+        })}
+        plugins={[Zoom, Counter]}
+        zoom={{
+          maxZoomPixelRatio: 4,
+          zoomInMultiplier: 2,
+          doubleTapDelay: 300,
+          doubleClickDelay: 300,
+        }}
+        styles={{
+          container: { backgroundColor: "rgba(0, 0, 0, 0.75)" }
+        }}
+      />
     </motion.article>
   );
 }
@@ -323,26 +396,19 @@ const CSS = `
     position: relative;
     width: 100%;
     padding-top: 125%;   /* Aspect ratio 4:5 */
-    background: var(--bg-tertiary);
+    background: #ffffff;
     overflow: hidden;
   }
 
   .pc-image-blur {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    filter: blur(22px) brightness(0.88);
-    opacity: 0.45;
-    transform: scale(1.15);
-    pointer-events: none;
+    display: none;
   }
 
   .pc-image {
     position: absolute;
     inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     z-index: 1;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);

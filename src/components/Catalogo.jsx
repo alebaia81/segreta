@@ -164,19 +164,12 @@ export default function Catalogo({ articoli }) {
           position: relative;
           width: 100%;
           padding-top: 125%; /* 4:5 Aspect Ratio per l'abbigliamento */
-          background-color: var(--bg-tertiary);
+          background-color: #ffffff;
           overflow: hidden;
         }
 
         .prodotto-image-blur-bg {
-          position: absolute;
-          top: 0; left: 0;
-          width: 100%; height: 100%;
-          object-fit: cover;
-          filter: blur(20px) brightness(0.95);
-          opacity: 0.55;
-          transform: scale(1.1);
-          pointer-events: none;
+          display: none;
         }
 
         .prodotto-image {
@@ -185,7 +178,7 @@ export default function Catalogo({ articoli }) {
           left: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           object-position: center;
           z-index: 1;
           transition: var(--transition-smooth);

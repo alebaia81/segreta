@@ -373,7 +373,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
               aria-label="Torna in cima alla pagina"
             >
               <img
-                src="/logo.png"
+                src="/logo-footer.jpg"
                 alt="Segreta Style Logo"
                 className="footer-logo-img"
               />

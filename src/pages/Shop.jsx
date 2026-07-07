@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useCookie } from '../context/CookieContext';
 import { ShoppingBag, Check } from 'lucide-react';
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/counter.css";
 
 
 /**
@@ -13,10 +18,11 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const { addToCart } = useCart();
   const { openCookieSettings } = useCookie();
 
-  const [selectedTarget, setSelectedTarget] = useState('Donna');
   const [selectedCategory, setSelectedCategory] = useState('TUTTI');
   const [selectedSizes, setSelectedSizes] = useState({});
   const [addedAnimation, setAddedAnimation] = useState({});
+  const [zoomArticolo, setZoomArticolo] = useState(null);
+  const [zoomImageIndex, setZoomImageIndex] = useState(null);
 
   const scrollShopSlider = (e, direction) => {
     e.stopPropagation();
@@ -61,14 +67,16 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     };
   }, []);
 
+  // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
+
   const CATEGORIE_SHOP = [
     'TUTTI',
-    'ABITI-BLUES',
-    'CAMICE-MAGLIE-FELPE',
-    'T-SHIRT',
+    'ABITI',
+    'CAMICE-BLUSE',
+    'T-SHIRT-FELPE',
     'JEANS',
     'PANTALONI',
-    'CAPPOTTI & GIACCHE',
+    'CAPPOTTI-GIACCHE',
     'SCARPE',
     'BORSE'
   ];
@@ -76,12 +84,12 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const normalizeCategory = (cat) => {
     if (!cat) return '';
     const c = cat.toUpperCase().trim();
-    if (c === 'ABITI' || c === 'GONNE' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI-BLUES';
-    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'FELPE' || c === 'CAMICE-MAGLIE-FELPE') return 'CAMICE-MAGLIE-FELPE';
-    if (c === 'T-SHIRT') return 'T-SHIRT';
+    if (c === 'ABITI' || c === 'GONNE' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
+    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE' || c === 'CAMICE-BLUSE') return 'CAMICE-BLUSE';
+    if (c === 'T-SHIRT' || c === 'FELPE' || c === 'T-SHIRT-FELPE') return 'T-SHIRT-FELPE';
     if (c === 'JEANS') return 'JEANS';
     if (c === 'PANTALONI') return 'PANTALONI';
-    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE') return 'CAPPOTTI & GIACCHE';
+    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE' || c === 'CAPPOTTI-GIACCHE') return 'CAPPOTTI-GIACCHE';
     if (c === 'SCARPE') return 'SCARPE';
     if (c === 'BORSE' || c === 'ACCESSORI') return 'BORSE';
     return c;
@@ -111,38 +119,6 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     setTimeout(() => setAddedAnimation(prev => ({ ...prev, [articolo.id]: false })), 1500);
   };
 
-  const getDisplayCategory = (category, target) => {
-    if (target === 'Donna') {
-      switch (category) {
-        case 'Abiti':
-          return 'Abiti ed Elegante';
-        case 'Camicie e Bluse':
-          return 'Camicie e Bluse';
-        case 'Giacche':
-        case 'Giacche e Cappotti':
-          return 'Giacche e Cappotti';
-        case 'Pantaloni':
-          return 'Pantaloni e Jeans';
-        default:
-          return category;
-      }
-    } else {
-      switch (category) {
-        case 'Camicie':
-          return 'Camicie';
-        case 'Giacche':
-        case 'Giacche e Cappotti':
-          return 'Giacche';
-        case 'Pantaloni':
-          return 'Pantaloni';
-        case 'T-Shirt':
-        case 'Maglieria':
-          return 'T-Shirt e Maglieria';
-        default:
-          return category;
-      }
-    }
-  };
 
   return (
     <div className="shop-page fade-in">
@@ -190,27 +166,32 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
               const taglieList = articolo.taglie ? articolo.taglie.split(',').map(s => s.trim()) : [];
               const selectedSize = selectedSizes[articolo.id];
               const isAdded = addedAnimation[articolo.id];
+
+              const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+              const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
+              const cleanDescrizione = articolo.descrizione ? articolo.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+              const prezzoScontato = scontoPercent > 0 
+                ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
+                : articolo.prezzo;
+
               return (
                 <article key={articolo.id} className="prodotto-card">
                   <div className="prodotto-image-wrapper">
-                    <div className="prodotto-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%' }}>
+                    <div className="prodotto-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
                       {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
                         const imgUrl = url.trim().startsWith('http') || url.trim().startsWith('blob:') ? url.trim() : (url.trim().startsWith('/') ? url.trim() : `/${url.trim()}`);
                         return (
                           <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
                             <img
                               src={imgUrl}
-                              alt=""
-                              className="prodotto-image-blur-bg"
-                              aria-hidden="true"
-                              onError={e => {
-                                e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                              }}
-                            />
-                            <img
-                              src={imgUrl}
                               alt={`${articolo.titolo} - Foto ${idx + 1}`}
                               className="prodotto-image"
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setZoomArticolo(articolo);
+                                setZoomImageIndex(idx);
+                              }}
                               onError={e => {
                                 e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
                               }}
@@ -245,6 +226,11 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
                     {articolo.categoria && (
                       <span className="prodotto-category-tag">{articolo.categoria}</span>
                     )}
+                    {scontoPercent > 0 && (
+                      <span className="prodotto-discount-tag" style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#E295AB', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '4px', zIndex: 12 }}>
+                        -{scontoPercent}%
+                      </span>
+                    )}
                     {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
                       <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
                         {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
@@ -255,9 +241,20 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
                   </div>
                   <div className="prodotto-details">
                     <h2 className="prodotto-title">{articolo.titolo}</h2>
-                    <p className="prodotto-description">{articolo.descrizione}</p>
+                    <p className="prodotto-description">{cleanDescrizione}</p>
                     <div className="prodotto-price-row">
-                      <span className="prodotto-price">€{parseFloat(articolo.prezzo).toFixed(2)}</span>
+                      {scontoPercent > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span className="prodotto-price text-pink" style={{ color: '#E295AB', fontWeight: 700 }}>
+                            €{prezzoScontato.toFixed(2)}
+                          </span>
+                          <span style={{ textDecoration: 'line-through', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            €{parseFloat(articolo.prezzo).toFixed(2)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="prodotto-price">€{parseFloat(articolo.prezzo).toFixed(2)}</span>
+                      )}
                     </div>
                     {taglieList.length > 0 && (
                       <div className="prodotto-sizes-container">
@@ -307,7 +304,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
               onClick={onNavigateToHome}
               aria-label="Torna alla Home"
             >
-              <img src="/logo.png" alt="Segreta Style Logo" className="footer-logo-img" />
+              <img src="/logo-footer.jpg" alt="Segreta Style Logo" className="footer-logo-img" />
             </button>
             <span className="footer-subtitle">DI GRETA RIGHI</span>
             <div className="footer-social-links">
@@ -527,7 +524,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
             position: relative;
             width: 100%;
             padding-top: 125%;
-            background-color: var(--bg-tertiary);
+            background-color: #ffffff;
             overflow: hidden;
           }
           /* Slider arrows */
@@ -568,20 +565,13 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
             right: 8px;
           }
          .prodotto-image-blur-bg {
-           position: absolute;
-           top: 0; left: 0;
-           width: 100%; height: 100%;
-           object-fit: cover;
-           filter: blur(20px) brightness(0.95);
-           opacity: 0.55;
-           transform: scale(1.1);
-           pointer-events: none;
+           display: none;
          }
           .prodotto-image {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             object-position: center;
             z-index: 1;
             transition: var(--transition-smooth);
@@ -940,6 +930,31 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           }
         }
       `}</style>
+
+      {zoomArticolo && (
+        <Lightbox
+          open={zoomArticolo !== null}
+          close={() => { setZoomArticolo(null); setZoomImageIndex(null); }}
+          index={zoomImageIndex || 0}
+          slides={zoomArticolo.immagine_url.split(',').filter(Boolean).map(url => {
+            const trimmed = url.trim();
+            const src = trimmed.startsWith('http') || trimmed.startsWith('blob:') 
+              ? trimmed 
+              : (trimmed.startsWith('/') ? trimmed : `/${trimmed}`);
+            return { src, alt: zoomArticolo.titolo };
+          })}
+          plugins={[Zoom, Counter]}
+          zoom={{
+            maxZoomPixelRatio: 4,
+            zoomInMultiplier: 2,
+            doubleTapDelay: 300,
+            doubleClickDelay: 300,
+          }}
+          styles={{
+            container: { backgroundColor: "rgba(0, 0, 0, 0.75)" }
+          }}
+        />
+      )}
     </div>
   );
 }

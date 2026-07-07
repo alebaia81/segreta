@@ -22,9 +22,20 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addToCart = (articolo, size) => {
+    const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+    const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
+    const prezzoEffettivo = scontoPercent > 0 
+      ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
+      : articolo.prezzo;
+
+    const articoloConPrezzoScontato = {
+      ...articolo,
+      prezzo: prezzoEffettivo
+    };
+
     setCartItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex(
-        (item) => item.id === articolo.id && item.size === size
+        (item) => item.id === articoloConPrezzoScontato.id && item.size === size
       );
 
       if (existingItemIndex > -1) {
@@ -33,7 +44,7 @@ export const CartProvider = ({ children }) => {
         return newItems;
       }
 
-      return [...prevItems, { ...articolo, size, quantity: 1 }];
+      return [...prevItems, { ...articoloConPrezzoScontato, size, quantity: 1 }];
     });
   };
 
