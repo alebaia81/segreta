@@ -10,6 +10,16 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "./dist"
 
 
+# ─── Variabili d'ambiente (production) ───────────────────────────────────────
+# Le variabili pubbliche vanno qui. La SUPABASE_SECRET_KEY (segreto) va
+# configurata SOLO sulla dashboard di Cloudflare come "Segreto".
+[vars]
+ENVIRONMENT       = "production"
+SUPABASE_URL      = "https://efebewxubvxxzfftesvv.supabase.co"
+VITE_SUPABASE_URL = "https://efebewxubvxxzfftesvv.supabase.co"
+VITE_SUPABASE_ANON_KEY = "sb_publishable_NmIkZKS7_FyhSJ-rGM0rRA_NHYUctZk"
+VITE_ADMIN_PASSWORD    = "Segreta2026"
+
 # ─── Header HTTP ─────────────────────────────────────────────────────────────
 # Cloudflare Pages legge il file public/_headers (più portabile).
 #
