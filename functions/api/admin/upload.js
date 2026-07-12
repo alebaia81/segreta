@@ -1,5 +1,5 @@
-import { createSupabaseClient } from '../../../_lib/supabase.js';
-import { checkAdminAuth, unauthorizedResponse } from '../../../_lib/auth.js';
+import { createSupabaseClient } from '../../_lib/supabase.js';
+import { checkAdminAuth, unauthorizedResponse } from '../../_lib/auth.js';
 
 // POST /api/admin/upload — Upload immagine su Supabase Storage
 // Body: { imageData: "base64string", fileName: "nome.jpg", mimeType: "image/jpeg" }

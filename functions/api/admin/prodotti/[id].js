@@ -1,5 +1,5 @@
-import { createSupabaseClient } from '../../../../_lib/supabase.js';
-import { checkAdminAuth, unauthorizedResponse } from '../../../../_lib/auth.js';
+import { createSupabaseClient } from '../../../_lib/supabase.js';
+import { checkAdminAuth, unauthorizedResponse } from '../../../_lib/auth.js';
 
 // PUT    /api/admin/prodotti/[id] — Modifica articolo (o toggle attivo)
 // DELETE /api/admin/prodotti/[id] — Elimina articolo

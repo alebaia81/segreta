@@ -1,5 +1,5 @@
-import { createSupabaseClient } from '../../../../_lib/supabase.js';
-import { checkAdminAuth, unauthorizedResponse } from '../../../../_lib/auth.js';
+import { createSupabaseClient } from '../../../_lib/supabase.js';
+import { checkAdminAuth, unauthorizedResponse } from '../../../_lib/auth.js';
 
 // PUT    /api/admin/ordini/[id]  con body { action: 'archivia' | 'stato', stato?: string }
 // DELETE /api/admin/ordini/[id]  — Elimina ordine

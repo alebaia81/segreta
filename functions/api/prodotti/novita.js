@@ -1,4 +1,4 @@
-import { createSupabaseClient } from '../../../_lib/supabase.js';
+import { createSupabaseClient } from '../../_lib/supabase.js';
 
 // GET /api/prodotti/novita — Ultimi 8 prodotti attivi
 export async function onRequestGet({ env }) {

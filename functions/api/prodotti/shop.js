@@ -1,4 +1,4 @@
-import { createSupabaseClient } from '../../../_lib/supabase.js';
+import { createSupabaseClient } from '../../_lib/supabase.js';
 
 // GET /api/prodotti/shop — Tutti i prodotti attivi per lo shop
 export async function onRequestGet({ env }) {
