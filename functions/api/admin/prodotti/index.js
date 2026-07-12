@@ -73,7 +73,11 @@ export async function onRequest({ request, env }) {
       status: 405, headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ success: false, error: 'Errore interno serverless: ' + err.message }), {
+    const envKeys = env ? Object.keys(env) : [];
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: `Errore interno serverless: ${err.message}. Chiavi env disponibili: [${envKeys.join(', ')}]` 
+    }), {
       status: 500, headers: { 'Content-Type': 'application/json' },
     });
   }
