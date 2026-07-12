@@ -10,11 +10,14 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "./dist"
 
 # ─── Variabili d'ambiente (production) ───────────────────────────────────────
-# IMPORTANTE: le variabili sensibili (SUPABASE_SECRET_KEY, ecc.) vanno
-# configurate nella dashboard Cloudflare Pages → Settings → Environment variables
-# NON metterle qui in chiaro.
+# IMPORTANTE: SUPABASE_SECRET_KEY va aggiunta come "Segreto" dalla dashboard CF
+# Le VITE_ vengono iniettate da Vite al build e sono già pubbliche nel bundle.
 [vars]
-ENVIRONMENT = "production"
+ENVIRONMENT       = "production"
+SUPABASE_URL      = "https://efebewxubvxxzfftesvv.supabase.co"
+VITE_SUPABASE_URL = "https://efebewxubvxxzfftesvv.supabase.co"
+VITE_SUPABASE_ANON_KEY = "sb_publishable_NmIkZKS7_FyhSJ-rGM0rRA_NHYUctZk"
+VITE_ADMIN_PASSWORD    = "Segreta2026"
 
 # ─── Header HTTP ─────────────────────────────────────────────────────────────
 # Cloudflare Pages legge il file public/_headers (più portabile).
