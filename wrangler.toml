@@ -9,10 +9,6 @@ name               = "segreta"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./dist"
 
-# ─── Build ───────────────────────────────────────────────────────────────────
-[build]
-command = "npm run build"
-
 # ─── Variabili d'ambiente (production) ───────────────────────────────────────
 # IMPORTANTE: le variabili sensibili (SUPABASE_SECRET_KEY, ecc.) vanno
 # configurate nella dashboard Cloudflare Pages → Settings → Environment variables
