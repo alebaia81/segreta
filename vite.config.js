@@ -2,6 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
+//
+// ─── DUAL PLATFORM: Cloudflare Pages (primario) + Vercel (legacy) ────────────
+// Dev Cloudflare: `npm run dev:cf`  → wrangler pages dev (porta 8788, gestisce /api)
+// Dev Vercel:     `npm run dev:api` → vercel dev (porta 3000)
+// Frontend only:  `npm run dev`     → vite dev (nessun proxy API)
+// ─────────────────────────────────────────────────────────────────────────────
 export default defineConfig({
   base: '/',
 

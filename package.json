@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "node dev-server.js",
+    "dev:cf": "wrangler pages dev dist --compatibility-date=2024-09-23",
     "build": "vite build",
+    "build:cf": "vite build && wrangler pages deploy dist --project-name=segreta",
+    "deploy:cf": "wrangler pages deploy dist --project-name=segreta",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -31,6 +34,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "wrangler": "^4.110.0"
   }
 }

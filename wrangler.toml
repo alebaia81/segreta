@@ -1,54 +1,38 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # wrangler.toml — Segreta Style
-# Cloudflare Pages + Workers configuration
+# Cloudflare Pages + Pages Functions configuration
 #
 # Documentazione: https://developers.cloudflare.com/pages/configuration/
 # ─────────────────────────────────────────────────────────────────────────────
 
-name            = "segreta"
+name               = "segreta"
 compatibility_date = "2024-09-23"
+pages_build_output_dir = "./dist"
 
-# ─── Cloudflare Workers Assets (Vite static build) ───────────────────────────
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
+# ─── Build ───────────────────────────────────────────────────────────────────
+[build]
+command = "npm run build"
 
 # ─── Variabili d'ambiente (production) ───────────────────────────────────────
+# IMPORTANTE: le variabili sensibili (SUPABASE_SECRET_KEY, ecc.) vanno
+# configurate nella dashboard Cloudflare Pages → Settings → Environment variables
+# NON metterle qui in chiaro.
 [vars]
 ENVIRONMENT = "production"
 
 # ─── Header HTTP ─────────────────────────────────────────────────────────────
-# Cloudflare Pages legge _headers in public/ oppure usa questa sezione.
-# Qui usiamo il file _headers (più portabile), ma la logica è documentata sotto.
+# Cloudflare Pages legge il file public/_headers (più portabile).
 #
 # STRATEGIA DI CACHE:
 #
 #  /index.html
 #    Cache-Control: no-cache, no-store, must-revalidate
-#    → Sempre fresco: il browser chiede sempre a Cloudflare se è cambiato.
-#    → Cloudflare ha il file in edge ma lo riconvalida in millisecondi.
 #
 #  /assets/* (JS/CSS hashati da Vite)
 #    Cache-Control: public, max-age=31536000, immutable
-#    → Cache immutabile 1 anno: il nome del file CAMBIA a ogni build
-#      (es. index-Abc123.js → index-Def456.js), quindi non serve purge.
 #
 #  /greta.jpg, /logo.png, /boutique_bg.png (asset statici senza hash)
 #    Cache-Control: public, max-age=86400, stale-while-revalidate=3600
-#    → Cache 1 giorno, aggiornamento silenzioso in background.
-#    → La pipeline di purge (vedere deploy.yml) forza il purge di questi
-#      file a ogni deploy per garantire aggiornamenti immediati.
 #
-#  /api/* (se instradato verso il Worker Express)
+#  /api/* (Pages Functions — serverless)
 #    Cache-Control: no-store
-#    → Nessuna cache per le API dinamiche.
-
-# ─── Worker (opzionale — per future API Cloudflare Workers) ──────────────────
-# Decommenta questa sezione se vuoi spostare l'Express backend su CF Workers:
-#
-# [build]
-# command = "npm run build"
-#
-# [[routes]]
-# pattern = "/api/*"
-# script = "workers/api.js"
