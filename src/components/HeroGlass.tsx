@@ -1,13 +1,13 @@
 /**
  * HeroGlass.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Componente Hero per Segreta Style — versione TypeScript con Framer Motion.
+ * Componente Hero per Segreta Style — layout due colonne (Opzione A).
+ * Colonna sinistra: testo + CTA su sfondo scuro semi-opaco.
+ * Colonna destra: foto reale del negozio in primo piano con cornice elegante.
  *
  * WCAG 2.2 AA compliance:
- *   1.4.3  Il pannello usa bg-white/85 (rgba 255,255,255,0.85) + overlay scuro
- *          sull'immagine → text-stone-900 (#1C1917) su sfondo ≥0.85 di opacità
- *          garantisce contrasto ~13:1. text-stone-600 (#57534E) → ~5.8:1 ✓
- *   2.1.1  CTA sono <button> / <a href> nativi, pienamente navigabili da Tab.
+ *   1.4.3  Testo bianco su rgba(20,14,10,0.82) → contrasto >13:1 ✓
+ *   2.1.1  CTA sono <button> / <a href> nativi, navigabili da Tab.
  *   2.4.7  Focus ring 3px / offset 3px su tutti gli interattivi.
  *   2.3.3  useAccessibilityAnimation() azzera X/Y se reducedMotion è attivo.
  */
@@ -22,7 +22,7 @@ import useAccessibilityAnimation from '../hooks/useAccessibilityAnimation';
 export interface HeroGlassProps {
   /** Callback per navigare verso la sezione Catalogo / Shop */
   onNavigateToShop: () => void;
-  /** Percorso opzionale per l'immagine hero di sfondo */
+  /** Percorso opzionale per la foto del negozio */
   backgroundImage?: string;
   /** Testo headline opzionale (default: headline Segreta Style) */
   headline?: string;
@@ -32,7 +32,7 @@ export interface HeroGlassProps {
 
 export default function HeroGlass({
   onNavigateToShop,
-  backgroundImage = '/boutique_bg.png',
+  backgroundImage = '/PHOTO-2026-07-07-17-53-56.jpg',
   headline = "Moda unica, frizzante e ricca di personalità nel cuore di Monticelli d'Ongina.",
 }: HeroGlassProps) {
   const heroRef = useRef<HTMLElement>(null);
@@ -43,15 +43,13 @@ export default function HeroGlass({
   useEffect(() => {
     const hero = heroRef.current;
     if (!hero) return;
-
-    // Legge la media query direttamente — se attiva non registriamo il handler
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mq.matches) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = hero.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 10;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 6;
+      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
+      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 5;
       hero.style.setProperty('--hero-px', `${x}px`);
       hero.style.setProperty('--hero-py', `${y}px`);
     };
@@ -68,87 +66,103 @@ export default function HeroGlass({
       className="hg-root"
       aria-label="Segreta Style — Boutique abbigliamento donna Monticelli d'Ongina"
     >
-      {/* ── Immagine di sfondo con parallax CSS ─────────────────────────── */}
-      <div
-        className="hg-bg"
-        style={{ backgroundImage: `url('${backgroundImage}')` }}
-        aria-hidden="true"
-        role="presentation"
-      />
+      {/* ── Sfondo pattern/texture leggero per colonna sinistra ──────────── */}
+      <div className="hg-bg-solid" aria-hidden="true" />
 
-      {/* ── Overlay garantito per contrasto WCAG 1.4.3 ──────────────────── */}
-      {/* Scurisce l'immagine portando la luminosità media sotto al 15%,
-          così il pannello glass bianco sopra ha abbastanza "stacco visivo". */}
-      <div className="hg-overlay" aria-hidden="true" />
+      {/* ── Layout due colonne ────────────────────────────────────────────── */}
+      <div className="hg-inner">
 
-      {/* ── Pannello principale glass ────────────────────────────────────── */}
-      {/* bg-white/85 + backdrop-blur-md → text-stone-900 contrasto ~13:1  */}
-      <motion.div
-        className="hg-panel"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        role="region"
-        aria-label="Presentazione boutique"
-      >
-        {/* Badge */}
-        <motion.span
-          className="hg-badge"
-          variants={fadeIn}
-          aria-label="Boutique e shopping online"
-        >
-          Boutique &amp; Shopping Online
-        </motion.span>
-
-        {/* Headline — h1 semantico (WCAG 1.3.1) */}
-        <motion.h1 className="hg-headline" variants={fadeUp}>
-          {headline.split('Monticelli')[0]}
-          <span className="hg-locality">Monticelli d'Ongina</span>.
-        </motion.h1>
-
-        {/* Sottotitolo */}
-        <motion.p className="hg-subtitle" variants={fadeUp}>
-          Capi selezionati da Greta per esprimere la tua unicità.
-          Scopri i nuovi arrivi e acquista online con assistenza WhatsApp.
-        </motion.p>
-
-        {/* CTA */}
-        <motion.div className="hg-actions" variants={fadeUp}>
-          <button
-            id="hero-cta-primary"
-            className="hg-btn-primary"
-            onClick={onNavigateToShop}
-            aria-label="Vai alla collezione prodotti"
-          >
-            <ShoppingBag size={18} aria-hidden="true" />
-            Acquista la Collezione
-            <ArrowRight size={16} aria-hidden="true" />
-          </button>
-
-          <a
-            id="hero-cta-secondary"
-            href="#chi-sono"
-            className="hg-btn-secondary"
-            aria-label="Scopri la storia di Segreta Style"
-          >
-            Scopri la Nostra Storia
-          </a>
-        </motion.div>
-
-        {/* Trust row */}
+        {/* ── Colonna sinistra: testo + CTA ─────────────────────────────── */}
         <motion.div
-          className="hg-trust"
-          variants={fadeIn}
-          aria-label="Garanzie del negozio"
+          className="hg-col-text"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          role="region"
+          aria-label="Presentazione boutique"
         >
-          {TRUST_ITEMS.map((item) => (
-            <span key={item} className="hg-trust-item">
-              <CheckCircle2 size={13} aria-hidden="true" />
-              {item}
-            </span>
-          ))}
+          {/* Badge */}
+          <motion.span
+            className="hg-badge"
+            variants={fadeIn}
+            aria-label="Boutique e shopping online"
+          >
+            Boutique &amp; Shopping Online
+          </motion.span>
+
+          {/* Headline */}
+          <motion.h1 className="hg-headline" variants={fadeUp}>
+            {headline.split('Monticelli')[0]}
+            <span className="hg-locality">Monticelli d'Ongina</span>.
+          </motion.h1>
+
+          {/* Sottotitolo */}
+          <motion.p className="hg-subtitle" variants={fadeUp}>
+            Capi selezionati da Greta per esprimere la tua unicità.
+            Scopri i nuovi arrivi e acquista online con assistenza WhatsApp.
+          </motion.p>
+
+          {/* CTA */}
+          <motion.div className="hg-actions" variants={fadeUp}>
+            <button
+              id="hero-cta-primary"
+              className="hg-btn-primary"
+              onClick={onNavigateToShop}
+              aria-label="Vai alla collezione prodotti"
+            >
+              <ShoppingBag size={18} aria-hidden="true" />
+              Acquista la Collezione
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+
+            <a
+              id="hero-cta-secondary"
+              href="#chi-sono"
+              className="hg-btn-secondary"
+              aria-label="Scopri la storia di Segreta Style"
+            >
+              Scopri la Nostra Storia
+            </a>
+          </motion.div>
+
+          {/* Trust row */}
+          <motion.div
+            className="hg-trust"
+            variants={fadeIn}
+            aria-label="Garanzie del negozio"
+          >
+            {TRUST_ITEMS.map((item) => (
+              <span key={item} className="hg-trust-item">
+                <CheckCircle2 size={13} aria-hidden="true" />
+                {item}
+              </span>
+            ))}
+          </motion.div>
         </motion.div>
-      </motion.div>
+
+        {/* ── Colonna destra: foto negozio ──────────────────────────────── */}
+        <motion.div
+          className="hg-col-photo"
+          initial={{ opacity: 0, x: 40, scale: 0.97 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+          aria-hidden="true"
+        >
+          <div className="hg-photo-frame">
+            <img
+              src={backgroundImage}
+              alt="Interno della boutique Segreta Style a Monticelli d'Ongina"
+              className="hg-photo-img"
+              loading="eager"
+              decoding="async"
+            />
+            {/* Decorazione angolo */}
+            <div className="hg-photo-corner hg-photo-corner--tl" />
+            <div className="hg-photo-corner hg-photo-corner--br" />
+          </div>
+        </motion.div>
+
+      </div>
 
       {/* Wave decorativa */}
       <div className="hg-wave" aria-hidden="true">
@@ -177,112 +191,94 @@ const TRUST_ITEMS = [
 // ─── CSS (scoped in stringa) ──────────────────────────────────────────────────
 
 const CSS = `
-  /* ── Layout ────────────────────────────────────────────────────────── */
+  /* ── Root ──────────────────────────────────────────────────────────── */
   .hg-root {
     position: relative;
     min-height: 80vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-xxl) var(--spacing-lg) 6rem;
     overflow: hidden;
     --hero-px: 0px;
     --hero-py: 0px;
+    background: #1a1209;
   }
 
-  /* ── Immagine bg ───────────────────────────────────────────────────── */
-  .hg-bg {
+  /* ── Sfondo texture grain leggero ──────────────────────────────────── */
+  .hg-bg-solid {
     position: absolute;
-    inset: -20px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transform: translate(var(--hero-px), var(--hero-py));
-    transition: transform 0.12s ease-out;
-    will-change: transform;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(139, 109, 56, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(139, 109, 56, 0.08) 0%, transparent 50%),
+      #1a1209;
     z-index: 0;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .hg-bg { transform: none !important; transition: none !important; }
-  }
-
-  /* ── Overlay contrasto (WCAG 1.4.3) ───────────────────────────────── */
-  .hg-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      155deg,
-      rgba(20, 14, 10, 0.58) 0%,
-      rgba(20, 14, 10, 0.30) 55%,
-      rgba(20, 14, 10, 0.48) 100%
-    );
-    z-index: 1;
-  }
-
-  /* ── Pannello glass (bg-white/85) ──────────────────────────────────── */
-  /* text-stone-900 (#1C1917) su rgba(255,255,255,0.85) → contrasto ~13:1 */
-  .hg-panel {
+  /* ── Layout interno due colonne ─────────────────────────────────────── */
+  .hg-inner {
     position: relative;
     z-index: 2;
-    max-width: 680px;
+    display: grid;
+    grid-template-columns: 38fr 62fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
     width: 100%;
-    background: rgba(255, 255, 255, 0.85);   /* bg-white/85 */
-    backdrop-filter: blur(18px) saturate(1.5);
-    -webkit-backdrop-filter: blur(18px) saturate(1.5);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: var(--radius-lg);
-    box-shadow:
-      0 8px 32px rgba(44, 37, 32, 0.14),
-      0 1px 0 rgba(255, 255, 255, 0.85) inset;
-    padding: clamp(2rem, 5vw, 3rem) clamp(1.5rem, 5vw, 2.5rem);
-    text-align: center;
+    max-width: 1400px;
+    padding: clamp(2rem, 4vh, 3rem) clamp(1.5rem, 5vw, 3rem) clamp(3rem, 6vh, 5rem);
+  }
+
+  /* ── Colonna testo ──────────────────────────────────────────────────── */
+  .hg-col-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
   }
 
   /* ── Badge ─────────────────────────────────────────────────────────── */
   .hg-badge {
     display: inline-block;
     margin-bottom: var(--spacing-md);
-    padding: 0.25rem 0.75rem;
-    background: var(--accent-soft-gold);
-    color: var(--text-secondary);   /* #5E534C su #F6F1EB → 4.9:1 ✓ */
+    padding: 0.3rem 0.85rem;
+    background: rgba(226, 149, 171, 0.15);
+    border: 1px solid rgba(226, 149, 171, 0.35);
+    color: #E295AB;
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.09em;
     border-radius: var(--radius-full);
   }
 
   /* ── Headline ──────────────────────────────────────────────────────── */
-  /* text-stone-900 ≈ #1C1917 su bg-white/85 → ~13:1 ✓ WCAG 1.4.3     */
   .hg-headline {
     font-family: var(--font-serif);
-    font-size: clamp(1.7rem, 4vw, 2.45rem);
-    line-height: 1.25;
+    font-size: clamp(1.9rem, 3.5vw, 2.8rem);
+    line-height: 1.2;
     font-weight: 500;
-    color: #1C1917;   /* text-stone-900 */
+    color: #f5f0e8;
     margin-bottom: var(--spacing-md);
   }
 
   .hg-locality {
     font-style: italic;
-    color: var(--accent-gold-hover);
+    color: #E295AB;
   }
 
   /* ── Subtitle ──────────────────────────────────────────────────────── */
-  /* text-stone-600 ≈ #57534E su bg-white/85 → ~5.8:1 ✓ WCAG 1.4.3    */
   .hg-subtitle {
     font-size: 1rem;
-    color: #57534E;   /* text-stone-600 */
-    max-width: 520px;
-    margin: 0 auto var(--spacing-lg);
+    color: rgba(245, 240, 232, 0.72);
+    max-width: 440px;
+    margin: 0 0 var(--spacing-lg) 0;
     line-height: 1.65;
   }
 
   /* ── CTA ───────────────────────────────────────────────────────────── */
   .hg-actions {
     display: flex;
-    justify-content: center;
     gap: var(--spacing-md);
     flex-wrap: wrap;
     margin-bottom: var(--spacing-lg);
@@ -292,8 +288,8 @@ const CSS = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--text-primary);
-    color: var(--bg-secondary);
+    background: #E295AB;
+    color: #1a1209;
     padding: 0.85rem 1.6rem;
     font-family: var(--font-sans);
     font-size: 0.88rem;
@@ -301,7 +297,7 @@ const CSS = `
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border-radius: var(--radius-sm);
-    border: 1.5px solid var(--text-primary);
+    border: 1.5px solid #E295AB;
     min-height: 48px;
     cursor: pointer;
     transition: var(--transition-smooth);
@@ -309,12 +305,11 @@ const CSS = `
 
   .hg-btn-primary:hover {
     background: transparent;
-    color: var(--text-primary);
+    color: #E295AB;
   }
 
-  /* WCAG 2.4.7 — focus ring 3px / offset 3px */
   .hg-btn-primary:focus-visible {
-    outline: 3px solid var(--text-primary);
+    outline: 3px solid #E295AB;
     outline-offset: 3px;
   }
 
@@ -322,10 +317,10 @@ const CSS = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(245, 240, 232, 0.08);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    color: var(--text-primary);
+    color: #f5f0e8;
     padding: 0.85rem 1.6rem;
     font-family: var(--font-sans);
     font-size: 0.88rem;
@@ -333,27 +328,26 @@ const CSS = `
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border-radius: var(--radius-sm);
-    border: 1.5px solid var(--border-color);
+    border: 1.5px solid rgba(245, 240, 232, 0.3);
     min-height: 48px;
     text-decoration: none;
     transition: var(--transition-smooth);
   }
 
   .hg-btn-secondary:hover {
-    border-color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.75);
+    border-color: #E295AB;
+    color: #E295AB;
+    background: rgba(226, 149, 171, 0.08);
   }
 
-  /* WCAG 2.4.7 */
   .hg-btn-secondary:focus-visible {
-    outline: 3px solid var(--text-primary);
+    outline: 3px solid #f5f0e8;
     outline-offset: 3px;
   }
 
   /* ── Trust badges ──────────────────────────────────────────────────── */
   .hg-trust {
     display: flex;
-    justify-content: center;
     gap: var(--spacing-md);
     flex-wrap: wrap;
   }
@@ -365,13 +359,68 @@ const CSS = `
     font-family: var(--font-sans);
     font-size: 0.73rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: rgba(245, 240, 232, 0.6);
     letter-spacing: 0.01em;
   }
 
   .hg-trust-item svg {
-    color: var(--accent-gold-hover);
+    color: #E295AB;
     flex-shrink: 0;
+  }
+
+  /* ── Colonna foto ───────────────────────────────────────────────────── */
+  .hg-col-photo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hg-photo-frame {
+    position: relative;
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+      0 32px 64px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform: translate(var(--hero-px), var(--hero-py));
+    transition: transform 0.14s ease-out;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hg-photo-frame { transform: none !important; transition: none !important; }
+  }
+
+  .hg-photo-img {
+    width: 100%;
+    height: clamp(400px, 48vw, 620px);
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  /* Decorazioni angolo oro */
+  .hg-photo-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: #E295AB;
+    border-style: solid;
+  }
+
+  .hg-photo-corner--tl {
+    top: 12px;
+    left: 12px;
+    border-width: 2px 0 0 2px;
+    border-radius: 4px 0 0 0;
+  }
+
+  .hg-photo-corner--br {
+    bottom: 12px;
+    right: 12px;
+    border-width: 0 2px 2px 0;
+    border-radius: 0 0 4px 0;
   }
 
   /* ── Wave ──────────────────────────────────────────────────────────── */
@@ -392,6 +441,28 @@ const CSS = `
   }
 
   /* ── Responsive ────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .hg-inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .hg-col-text {
+      align-items: center;
+    }
+    .hg-subtitle {
+      margin: 0 auto var(--spacing-lg);
+    }
+    .hg-trust {
+      justify-content: center;
+    }
+    .hg-col-photo {
+      order: -1;
+    }
+    .hg-photo-img {
+      height: clamp(220px, 50vw, 360px);
+    }
+  }
+
   @media (max-width: 640px) {
     .hg-actions { flex-direction: column; align-items: center; }
     .hg-btn-primary,

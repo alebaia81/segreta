@@ -300,7 +300,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
       </section>
 
       {/* Contact & Map Section (Local SEO info) */}
-      <section className="contact-info-section container">
+      <section id="contatti" className="contact-info-section container">
         <div className="contact-card">
           <div className="contact-info-column">
             <h3>Vieni a Trovarci</h3>
@@ -343,6 +343,46 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
                 </div>
               </li>
             </ul>
+
+            {/* Social links */}
+            <div className="contact-social-row">
+              <span className="contact-social-label">Seguici su:</span>
+              <div className="contact-social-icons">
+                <a
+                  href="https://www.facebook.com/SegretaAbbigliamento"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Seguici su Facebook"
+                  className="contact-social-btn contact-social-btn--fb"
+                  title="Facebook"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  <span>Facebook</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/segreta_style/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Seguici su Instagram"
+                  className="contact-social-btn contact-social-btn--ig"
+                  title="Instagram"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href="https://whatsapp.com/channel/0029Vazn2RAHQbS0KG6T4x3P"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Iscriviti al canale WhatsApp di Segreta Style"
+                  className="contact-social-btn contact-social-btn--wa"
+                  title="Canale WhatsApp"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.089.537 4.049 1.475 5.757L.057 23.882a.5.5 0 0 0 .61.61l6.125-1.418A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.9 0-3.676-.513-5.2-1.408l-.372-.219-3.863.893.912-3.771-.24-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                  <span>Canale WhatsApp</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           <div className="contact-map-column">
@@ -385,6 +425,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
               </a>
               <a href="https://www.instagram.com/segreta_style/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-footer-icon-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              </a>
+              <a href="https://whatsapp.com/channel/0029Vazn2RAHQbS0KG6T4x3P" target="_blank" rel="noopener noreferrer" aria-label="Canale WhatsApp" className="social-footer-icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2C6.5 2 2 6.5 2 12c0 2.2.7 4.2 2 5.9L2.6 23l5.3-1.4c1.6 1 3.6 1.6 5.6 1.6 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+                  <path d="M16.5 13.9c-.3-.2-1.6-.8-1.9-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.4.2-.7.1-1-.4-1.8-1.2-2.2-2.2 0-.3.1-.5.2-.7l1.1-.9c.3-.2.3-.4.2-.7-.1-.3-.7-1.6-.9-1.9-.2-.3-.4-.3-.7-.3h-.6c-.2 0-.5.1-.7.3-1 1-1 2.5 0 3.8 2.5 3.3 4.5 4.3 6.3 4.7.6.1 1.2 0 1.6-.4.9-.9.9-.9 1.1-1.1.2-.2.2-.4 0-.6z" />
+                </svg>
               </a>
             </div>
           </div>
@@ -639,7 +685,75 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           border: 1px solid var(--border-color);
         }
 
+
+        /* Social nella scheda Vieni a Trovarci */
+        .contact-social-row {
+          margin-top: var(--spacing-lg);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .contact-social-label {
+          font-size: 0.78rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-secondary);
+        }
+
+        .contact-social-icons {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .contact-social-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 0.45rem 0.9rem;
+          border-radius: var(--radius-sm);
+          font-size: 0.82rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: var(--transition-smooth);
+          border: 1.5px solid transparent;
+        }
+
+        .contact-social-btn--fb {
+          background: #1877f215;
+          color: #1877f2;
+          border-color: #1877f230;
+        }
+        .contact-social-btn--fb:hover {
+          background: #1877f2;
+          color: #fff;
+        }
+
+        .contact-social-btn--ig {
+          background: #e1306c15;
+          color: #e1306c;
+          border-color: #e1306c30;
+        }
+        .contact-social-btn--ig:hover {
+          background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+          color: #fff;
+          border-color: transparent;
+        }
+
+        .contact-social-btn--wa {
+          background: #25d36615;
+          color: #25d366;
+          border-color: #25d36630;
+        }
+        .contact-social-btn--wa:hover {
+          background: #25d366;
+          color: #fff;
+        }
+
         /* Footer */
+
         .store-footer {
           background-color: var(--text-primary);
           color: var(--bg-primary);

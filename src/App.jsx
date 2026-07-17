@@ -6,7 +6,8 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import AdminDashboard from './pages/AdminDashboard';
 import Carrello from './components/Carrello';
-import Checkout from './components/Checkout';
+import CheckoutPage from './pages/CheckoutPage';
+import ThankYouPage from './pages/ThankYouPage';
 import CookieBanner from './components/CookieBanner';
 
 // Articoli predefiniti inseriti come seed se localStorage è vuoto
@@ -169,15 +170,16 @@ function MainApp() {
   };
 
   const isAdminPath = currentPath === '/admin';
+  const hideHeaderNav = currentPath === '/admin' || currentPath === '/checkout' || currentPath === '/thank-you';
 
   return (
     <>
-      {!isAdminPath && (
+      {!hideHeaderNav && (
         <div className="promo-banner-top" role="banner" aria-label="Offerta promozionale">
           <span>✨ SPEDIZIONE GRATUITA PER ORDINI SUPERIORI A 50€ ✨</span>
         </div>
       )}
-      {!isAdminPath && (
+      {!hideHeaderNav && (
         <Navbar
           onOpenCart={() => setCartOpen(true)}
           activeSection={activeSection}
@@ -222,11 +224,15 @@ function MainApp() {
         )}
 
         {currentPath === '/checkout' && (
-          <Checkout onBackToShopping={handleBackToShopping} />
+          <CheckoutPage onBackToShopping={handleBackToShopping} setCurrentPath={setCurrentPath} />
+        )}
+
+        {currentPath === '/thank-you' && (
+          <ThankYouPage onBackToShopping={handleBackToShopping} />
         )}
       </main>
 
-      {!isAdminPath && (
+      {!hideHeaderNav && (
         <Carrello
           isOpen={cartOpen}
           onClose={() => setCartOpen(false)}
