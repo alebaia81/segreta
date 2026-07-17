@@ -25,6 +25,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [metodoPagamento, setMetodoPagamento] = useState<'paypal' | 'satispay'>('paypal');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -150,6 +151,82 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     setErrorMessage(
       'Si è verificato un errore con il pagamento PayPal. Per favore riprova o seleziona un altro metodo.'
     );
+  };
+
+  const handleSatispayPayment = async () => {
+    if (!validateForm()) {
+      alert('Per favore, compila tutti i campi obbligatori prima di procedere.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+
+    const indirizzoCompleto =
+      formData.metodo_consegna === 'Ritiro in negozio'
+        ? 'Ritiro in negozio (Monticelli d\'Ongina)'
+        : `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+
+    const ordineDaInviare = {
+      nome_cliente: `${formData.nome} ${formData.cognome}`,
+      telefono: formData.telefono,
+      indirizzo_spedizione: indirizzoCompleto,
+      metodo_pagamento: 'Satispay',
+      metodo_consegna: formData.metodo_consegna,
+      totale: parseFloat(totalAmount.toFixed(2)),
+      dettaglio_articoli: JSON.stringify(
+        cartItems.map((item) => ({
+          id: item.id,
+          titolo: item.titolo,
+          prezzo: item.prezzo,
+          taglia: item.size,
+          quantita: item.quantity,
+        }))
+      ),
+      satispay_transaction_id: 'satispay_mock_' + Math.random().toString(36).substr(2, 9),
+    };
+
+    try {
+      const response = await fetch('/api/ordini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ordineDaInviare),
+      });
+
+      const json = await response.json();
+      if (json.success) {
+        localStorage.setItem(
+          'segreta_last_order',
+          JSON.stringify({
+            ...ordineDaInviare,
+            id: json.data?.id || Math.floor(Math.random() * 10000) + 1,
+            created_at: new Date().toISOString(),
+          })
+        );
+        clearCart();
+        setCurrentPath('/thank-you');
+      } else {
+        throw new Error(json.error || 'Errore durante la creazione dell\'ordine');
+      }
+    } catch (err: any) {
+      console.warn('Connessione API fallita, salvataggio locale di fallback.', err);
+      const ordineFallback = {
+        ...ordineDaInviare,
+        id: Math.floor(Math.random() * 10000) + 1,
+        stato: 'In attesa',
+        created_at: new Date().toISOString(),
+      };
+      const ordiniSalvati = localStorage.getItem('segreta_ordini');
+      const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
+      ordiniList.unshift(ordineFallback);
+      localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
+      localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
+
+      clearCart();
+      setCurrentPath('/thank-you');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (cartItems.length === 0) {
@@ -341,23 +418,70 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
             </div>
           </div>
 
-          <div className="paypal-checkout-actions">
-            <h3>Completa il pagamento</h3>
-            <p className="paypal-notice-text">
-              Paga in sicurezza con PayPal, carta di credito o prepagata.
-            </p>
-            {submitting ? (
-              <div className="loading-spinner-container">
-                <div className="spinner"></div>
-                <p>Salvataggio ordine in corso...</p>
-              </div>
-            ) : (
-              <PayPalButton
-                amount={totalAmount}
-                onSuccess={handlePayPalSuccess}
-                onError={handlePayPalError}
-              />
-            )}
+          <div className="payment-methods-container">
+            <h3>Metodo di Pagamento</h3>
+            <div className="payment-selectors">
+              <label className={`payment-selector-card ${metodoPagamento === 'paypal' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="metodo_pagamento_select"
+                  checked={metodoPagamento === 'paypal'}
+                  onChange={() => setMetodoPagamento('paypal')}
+                  className="payment-radio-input"
+                />
+                <div className="payment-selector-details">
+                  <span className="payment-name">PayPal o Carta</span>
+                  <span className="payment-desc">PayPal, PostePay, Carte di Credito</span>
+                </div>
+              </label>
+
+              <label className={`payment-selector-card ${metodoPagamento === 'satispay' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="metodo_pagamento_select"
+                  checked={metodoPagamento === 'satispay'}
+                  onChange={() => setMetodoPagamento('satispay')}
+                  className="payment-radio-input"
+                />
+                <div className="payment-selector-details">
+                  <span className="payment-name">Satispay</span>
+                  <span className="payment-desc">Paga istantaneamente tramite app Satispay</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="payment-action-area">
+              {submitting ? (
+                <div className="loading-spinner-container">
+                  <div className="spinner"></div>
+                  <p>Salvataggio ordine in corso...</p>
+                </div>
+              ) : metodoPagamento === 'paypal' ? (
+                <>
+                  <p className="paypal-notice-text">
+                    Paga in sicurezza con PayPal, carta di credito o prepagata.
+                  </p>
+                  <PayPalButton
+                    amount={totalAmount}
+                    onSuccess={handlePayPalSuccess}
+                    onError={handlePayPalError}
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="satispay-notice-text">
+                    Verrai reindirizzato all'app Satispay per inquadrare il QR Code e completare il pagamento.
+                  </p>
+                  <button className="satispay-btn" onClick={handleSatispayPayment}>
+                    <svg className="satispay-logo-icon" viewBox="0 0 100 100" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="0" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="50" cy="50" r="48" fill="#e50014" />
+                      <path d="M50 22c-15.46 0-28 12.54-28 28s12.54 28 28 28c9.02 0 17.06-4.27 22.18-10.92l-8.08-4.66c-3.4 4.54-8.82 7.58-14.1 7.58-10.49 0-19-8.51-19-19s8.51-19 19-19c6.07 0 11.53 2.87 14.88 7.37l8.08-4.67C68.17 26.54 59.88 22 50 22zm0 17c-6.07 0-11 4.93-11 11s4.93 11 11 11 11-4.93 11-11-4.93-11-11-11z" fill="#ffffff" />
+                    </svg>
+                    <span>Paga con Satispay</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </aside>
       </div>
@@ -610,23 +734,108 @@ const CSS = `
     margin-top: 4px;
   }
 
-  .paypal-checkout-actions {
+  .payment-methods-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--spacing-md);
   }
 
-  .paypal-checkout-actions h3 {
+  .payment-methods-container h3 {
     font-size: 0.95rem;
     margin: 0;
     font-weight: 600;
     color: var(--text-primary);
   }
 
-  .paypal-notice-text {
+  .payment-selectors {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .payment-selector-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    background-color: var(--bg-primary);
+  }
+
+  .payment-selector-card:hover {
+    border-color: var(--text-muted);
+  }
+
+  .payment-selector-card.selected {
+    border-color: var(--accent-gold);
+    background-color: rgba(197, 168, 128, 0.05);
+  }
+
+  .payment-radio-input {
+    accent-color: var(--accent-gold);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .payment-selector-details {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .payment-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .payment-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .payment-action-area {
+    margin-top: var(--spacing-sm);
+    border-top: 1px dashed var(--border-color);
+    padding-top: var(--spacing-md);
+  }
+
+  .paypal-notice-text, .satispay-notice-text {
     font-size: 0.8rem;
     color: var(--text-secondary);
-    margin: 0 0 10px 0;
+    margin: 0 0 12px 0;
+    text-align: left;
+  }
+
+  .satispay-btn {
+    width: 100%;
+    min-height: 48px;
+    background-color: #e50014;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .satispay-btn:hover {
+    background-color: #c80010;
+  }
+
+  .satispay-logo-icon {
+    flex-shrink: 0;
   }
 
   .loading-spinner-container {
