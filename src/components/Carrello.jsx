@@ -1,7 +1,7 @@
 import { useCart } from '../context/CartContext';
 import { X, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 
-export default function Carrello({ isOpen, onClose, onCheckout }) {
+export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop }) {
   const { cartItems, updateQuantity, removeFromCart, cartTotal } = useCart();
 
   if (!isOpen) return null;
@@ -54,7 +54,10 @@ export default function Carrello({ isOpen, onClose, onCheckout }) {
           {cartItems.length === 0 ? (
             <div className="empty-cart-state">
               <p>Il tuo carrello è vuoto.</p>
-              <button className="btn-primary" onClick={onClose}>
+              <button className="btn-primary" onClick={() => {
+                onClose();
+                if (onNavigateToShop) onNavigateToShop();
+              }}>
                 Inizia lo Shopping
               </button>
             </div>

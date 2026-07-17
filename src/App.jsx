@@ -237,6 +237,7 @@ function MainApp() {
           isOpen={cartOpen}
           onClose={() => setCartOpen(false)}
           onCheckout={handleCheckoutTransition}
+          onNavigateToShop={handleNavigateToShop}
         />
       )}
 
