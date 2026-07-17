@@ -1,4 +1,5 @@
 import { useState } from 'react';
+// @ts-ignore
 import { useCart } from '../context/CartContext';
 import { ArrowLeft, ShoppingBag } from 'lucide-react';
 import PayPalButton from '../components/PayPalButton';
@@ -91,7 +92,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       metodo_consegna: formData.metodo_consegna,
       totale: parseFloat(totalAmount.toFixed(2)),
       dettaglio_articoli: JSON.stringify(
-        cartItems.map((item) => ({
+        cartItems.map((item: any) => ({
           id: item.id,
           titolo: item.titolo,
           prezzo: item.prezzo,
@@ -148,6 +149,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
   };
 
   const handlePayPalError = (error: any) => {
+    console.error('PayPal checkout error:', error);
     setErrorMessage(
       'Si è verificato un errore con il pagamento PayPal. Per favore riprova o seleziona un altro metodo.'
     );
@@ -175,7 +177,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       metodo_consegna: formData.metodo_consegna,
       totale: parseFloat(totalAmount.toFixed(2)),
       dettaglio_articoli: JSON.stringify(
-        cartItems.map((item) => ({
+        cartItems.map((item: any) => ({
           id: item.id,
           titolo: item.titolo,
           prezzo: item.prezzo,
@@ -385,7 +387,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
           <div className="accent-line-left"></div>
 
           <ul className="checkout-summary-list">
-            {cartItems.map((item) => (
+            {cartItems.map((item: any) => (
               <li key={`${item.id}-${item.size}`} className="summary-item">
                 <span className="summary-item-name">
                   {item.titolo}
