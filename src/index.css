@@ -276,3 +276,36 @@ button {
   50% { transform: scale(1.02); color: var(--accent-gold); }
   100% { transform: scale(1); }
 }
+
+/* Footer Legal Info Styling */
+.footer-company-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+  color: var(--border-color);
+  line-height: 1.4;
+}
+
+.footer-company-title {
+  font-weight: 600;
+  color: var(--accent-gold);
+  font-size: 0.85rem;
+}
+
+.footer-company-address,
+.footer-company-contacts {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.footer-company-contacts a {
+  color: inherit;
+  text-decoration: underline;
+  transition: var(--transition-fast);
+}
+
+.footer-company-contacts a:hover {
+  color: var(--accent-gold);
+}
+
