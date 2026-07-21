@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { Truck, Store } from 'lucide-react';
 
 /* Hook leggero per leggere prefers-reduced-motion senza dipendenze extra */
 function useReducedMotion() {
@@ -98,22 +99,19 @@ export default function HeroGlass({ onNavigateToShop }) {
         {/* Trust badge */}
         <div className="hero-trust-row" aria-label="Garanzie del negozio">
           <span className="hero-trust-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-            Spedizione gratuita sopra 50€
+            <Truck size={16} aria-hidden="true" />
+            La spedizione te la regaliamo noi dai 50€ in su
           </span>
           <span className="hero-trust-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-            Ritiro in negozio disponibile
+            <Store size={16} aria-hidden="true" />
+            Scegli il comodo ritiro nel nostro punto vendita
           </span>
           <span className="hero-trust-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-              <path d="M20 6L9 17l-5-5"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2C6.5 2 2 6.5 2 12c0 2.2.7 4.2 2 5.9L2.6 23l5.3-1.4c1.6 1 3.6 1.6 5.6 1.6 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+              <path d="M16.5 13.9c-.3-.2-1.6-.8-1.9-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.4.2-.7.1-1-.4-1.8-1.2-2.2-2.2 0-.3.1-.5.2-.7l1.1-.9c.3-.2.3-.4.2-.7-.1-.3-.7-1.6-.9-1.9-.2-.3-.4-.3-.7-.3h-.6c-.2 0-.5.1-.7.3-1 1-1 2.5 0 3.8 2.5 3.3 4.5 4.3 6.3 4.7.6.1 1.2 0 1.6-.4.9-.9.9-.9 1.1-1.1.2-.2.2-.4 0-.6z" />
             </svg>
-            Assistenza WhatsApp
+            Supporto diretto e assistenza via WhatsApp
           </span>
         </div>
       </div>

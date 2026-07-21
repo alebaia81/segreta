@@ -14,7 +14,7 @@
 
 import { useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ShoppingBag, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Truck, Store } from 'lucide-react';
 import useAccessibilityAnimation from '../hooks/useAccessibilityAnimation';
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
@@ -131,12 +131,22 @@ export default function HeroGlass({
             variants={fadeIn}
             aria-label="Garanzie del negozio"
           >
-            {TRUST_ITEMS.map((item) => (
-              <span key={item} className="hg-trust-item">
-                <CheckCircle2 size={13} aria-hidden="true" />
-                {item}
-              </span>
-            ))}
+            {TRUST_ITEMS.map((item) => {
+              const Icon = 'icon' in item ? item.icon : null;
+              return (
+                <span key={item.id} className="hg-trust-item">
+                  {'isWhatsapp' in item && item.isWhatsapp ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 2C6.5 2 2 6.5 2 12c0 2.2.7 4.2 2 5.9L2.6 23l5.3-1.4c1.6 1 3.6 1.6 5.6 1.6 5.5 0 10-4.5 10-10S17.5 2 12 2z" />
+                      <path d="M16.5 13.9c-.3-.2-1.6-.8-1.9-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.4.2-.7.1-1-.4-1.8-1.2-2.2-2.2 0-.3.1-.5.2-.7l1.1-.9c.3-.2.3-.4.2-.7-.1-.3-.7-1.6-.9-1.9-.2-.3-.4-.3-.7-.3h-.6c-.2 0-.5.1-.7.3-1 1-1 2.5 0 3.8 2.5 3.3 4.5 4.3 6.3 4.7.6.1 1.2 0 1.6-.4.9-.9.9-.9 1.1-1.1.2-.2.2-.4 0-.6z" />
+                    </svg>
+                  ) : (
+                    Icon && <Icon size={16} aria-hidden="true" />
+                  )}
+                  <span>{item.text}</span>
+                </span>
+              );
+            })}
           </motion.div>
         </motion.div>
 
@@ -183,9 +193,21 @@ export default function HeroGlass({
 // ─── Dati statici ─────────────────────────────────────────────────────────────
 
 const TRUST_ITEMS = [
-  'Spedizione gratuita sopra 50€',
-  'Ritiro in negozio disponibile',
-  'Assistenza WhatsApp',
+  {
+    id: 'shipping',
+    text: 'La spedizione te la regaliamo noi dai 50€ in su',
+    icon: Truck,
+  },
+  {
+    id: 'pickup',
+    text: 'Scegli il comodo ritiro nel nostro punto vendita',
+    icon: Store,
+  },
+  {
+    id: 'whatsapp',
+    text: 'Supporto diretto e assistenza via WhatsApp',
+    isWhatsapp: true,
+  },
 ] as const;
 
 // ─── CSS (scoped in stringa) ──────────────────────────────────────────────────
@@ -348,18 +370,19 @@ const CSS = `
   /* ── Trust badges ──────────────────────────────────────────────────── */
   .hg-trust {
     display: flex;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: var(--spacing-sm);
   }
 
   .hg-trust-item {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
     font-family: var(--font-sans);
-    font-size: 0.73rem;
-    font-weight: 600;
-    color: rgba(245, 240, 232, 0.6);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: rgba(245, 240, 232, 0.9);
     letter-spacing: 0.01em;
   }
 
