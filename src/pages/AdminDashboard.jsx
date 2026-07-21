@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings } from 'lucide-react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home } from 'lucide-react';
 
 const TARGET_CATEGORIES = {
   Donna: [
@@ -16,7 +16,7 @@ const TARGET_CATEGORIES = {
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
-export default function AdminDashboard({ articoli, onToggleArticolo }) {
+export default function AdminDashboard({ articoli, onToggleArticolo, onNavigateToHome }) {
   const [activeTab, setActiveTab] = useState('ordini');
   const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('segreta_admin_logged') === 'true');
   const [password, setPassword] = useState('');
@@ -224,6 +224,11 @@ export default function AdminDashboard({ articoli, onToggleArticolo }) {
     sessionStorage.removeItem('segreta_admin_password');
     setIsLoggedIn(false);
     setPassword('');
+    if (onNavigateToHome) {
+      onNavigateToHome();
+    } else {
+      window.location.href = '/';
+    }
   };
 
   // --- CARICAMENTO IMMAGINI MULTIPLE (Nativo) ---
@@ -885,6 +890,19 @@ export default function AdminDashboard({ articoli, onToggleArticolo }) {
           <div>
             <h2>{getTabTitle()}</h2>
             <p className="dashboard-sub">{getTabSubtitle()}</p>
+          </div>
+          <div className="admin-header-actions">
+            <a 
+              href="/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-view-site"
+              title="Apri il sito in una nuova scheda per verificare le modifiche"
+            >
+              <Home size={16} />
+              <span>Vedi Sito (Home)</span>
+              <ExternalLink size={14} style={{ opacity: 0.8 }} />
+            </a>
           </div>
         </header>
 
@@ -1668,9 +1686,38 @@ export default function AdminDashboard({ articoli, onToggleArticolo }) {
     }
 
     .admin-content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: var(--spacing-xl);
       border-bottom: 1px solid var(--border-color);
       padding-bottom: var(--spacing-md);
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+    }
+
+    .btn-view-site {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-view-site:hover {
+      background-color: var(--accent-gold);
+      color: #ffffff;
+      border-color: var(--accent-gold);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
 
     .admin-content-header h2 {

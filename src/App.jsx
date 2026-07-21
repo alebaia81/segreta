@@ -220,6 +220,7 @@ function MainApp() {
             articoli={articoli}
             onAddArticolo={handleAddArticolo}
             onToggleArticolo={handleToggleArticolo}
+            onNavigateToHome={handleNavigateToHome}
           />
         )}
 
