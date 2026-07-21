@@ -277,11 +277,11 @@ button {
   100% { transform: scale(1); }
 }
 
-/* Footer Single Level Inline Styling */
+/* Footer Layout - Dati Aziendali a capo */
 .store-footer {
   background-color: var(--text-primary);
   color: var(--bg-primary);
-  padding: 1.25rem 0;
+  padding: 2rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -289,42 +289,64 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xl);
   flex-wrap: wrap;
 }
 
-.footer-info-inline,
-.footer-links-inline {
+.footer-left-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: var(--border-color);
-  opacity: 0.9;
 }
 
-.footer-info-inline a,
-.footer-links-inline a {
+.footer-company-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.82rem;
+  color: var(--border-color);
+  opacity: 0.9;
+  line-height: 1.45;
+}
+
+.footer-company-block a {
   color: inherit;
   text-decoration: underline;
   transition: var(--transition-fast);
 }
 
-.footer-info-inline a:hover,
-.footer-links-inline a:hover {
+.footer-company-block a:hover {
   color: var(--accent-gold);
 }
 
 .footer-company-title {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent-gold);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
-.footer-dot {
-  opacity: 0.4;
-  font-size: 0.75rem;
+.footer-right-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+  text-align: right;
 }
+
+.footer-copyright-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--border-color);
+  opacity: 0.75;
+}
+
+.footer-copyright-row a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 
 
