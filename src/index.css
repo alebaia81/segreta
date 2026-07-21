@@ -277,14 +277,43 @@ button {
   100% { transform: scale(1); }
 }
 
-/* Footer Legal Info Styling */
-.footer-company-details {
+/* Footer Single Level Inline Styling */
+.store-footer {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-content {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.footer-info-inline,
+.footer-links-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 0.8rem;
   color: var(--border-color);
-  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.footer-info-inline a,
+.footer-links-inline a {
+  color: inherit;
+  text-decoration: underline;
+  transition: var(--transition-fast);
+}
+
+.footer-info-inline a:hover,
+.footer-links-inline a:hover {
+  color: var(--accent-gold);
 }
 
 .footer-company-title {
@@ -293,19 +322,9 @@ button {
   font-size: 0.85rem;
 }
 
-.footer-company-address,
-.footer-company-contacts {
-  font-size: 0.78rem;
-  opacity: 0.85;
+.footer-dot {
+  opacity: 0.4;
+  font-size: 0.75rem;
 }
 
-.footer-company-contacts a {
-  color: inherit;
-  text-decoration: underline;
-  transition: var(--transition-fast);
-}
-
-.footer-company-contacts a:hover {
-  color: var(--accent-gold);
-}
 
