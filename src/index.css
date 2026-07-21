@@ -251,6 +251,14 @@ button {
   background: var(--accent-gold);
 }
 
+/* Header Sticky Global Wrapper */
+.sticky-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+}
+
 /* Promo Banner Top */
 .promo-banner-top {
   background-color: var(--text-primary);

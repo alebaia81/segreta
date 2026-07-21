@@ -175,20 +175,20 @@ function MainApp() {
   return (
     <>
       {!hideHeaderNav && (
-        <div className="promo-banner-top" role="banner" aria-label="Offerta promozionale">
-          <span>✨ SPEDIZIONE GRATUITA PER ORDINI SUPERIORI A 50€ ✨</span>
-        </div>
-      )}
-      {!hideHeaderNav && (
-        <Navbar
-          onOpenCart={() => setCartOpen(true)}
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          currentPath={currentPath}
-          setCurrentPath={setCurrentPath}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
+        <header className="sticky-header-wrapper">
+          <div className="promo-banner-top" role="banner" aria-label="Offerta promozionale">
+            <span>✨ SPEDIZIONE GRATUITA PER ORDINI SUPERIORI A 50€ ✨</span>
+          </div>
+          <Navbar
+            onOpenCart={() => setCartOpen(true)}
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            currentPath={currentPath}
+            setCurrentPath={setCurrentPath}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+        </header>
       )}
 
       <main>
