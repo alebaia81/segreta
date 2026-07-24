@@ -142,32 +142,32 @@ export default function Navbar({ onOpenCart, activeSection, setActiveSection, cu
             </button>
           </div>
         </div>
-      </nav>
 
-      {/* Mobile Navigation Panel */}
-      <div className={`mobile-nav-panel ${mobileMenuOpen ? 'open' : ''}`}>
-        <ul className="mobile-nav-links">
-          {navItems.map((item) => (
-            <li key={item.id}>
-              <button
-                className={`mobile-nav-btn ${
-                  (currentPath === item.path && item.path !== '/') ||
-                  (item.path === '/' && currentPath === '/' && activeSection === item.id)
-                    ? 'active'
-                    : ''
-                }`}
-                onClick={() => handleNavClick(item)}
-              >
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+        {/* Mobile Navigation Panel */}
+        <div className={`mobile-nav-panel ${mobileMenuOpen ? 'open' : ''}`}>
+          <ul className="mobile-nav-links">
+            {navItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  className={`mobile-nav-btn ${
+                    (currentPath === item.path && item.path !== '/') ||
+                    (item.path === '/' && currentPath === '/' && activeSection === item.id)
+                      ? 'active'
+                      : ''
+                  }`}
+                  onClick={() => handleNavClick(item)}
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
 
       <style>{`
         .navbar-container {
-          position: sticky;
+          position: relative;
           top: 0;
           z-index: 100;
           background-color: rgba(255, 255, 255, 0.85);
@@ -336,17 +336,17 @@ export default function Navbar({ onOpenCart, activeSection, setActiveSection, cu
         }
 
         .mobile-nav-panel {
-          position: fixed;
-          top: 70px;
+          position: absolute;
+          top: 100%;
           left: 0;
           width: 100%;
           background-color: var(--bg-secondary);
           border-bottom: 1px solid var(--border-color);
           z-index: 99;
-          transform: translateY(-100%);
+          transform: translateY(-10px);
           opacity: 0;
           visibility: hidden;
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           box-shadow: var(--shadow-md);
         }
 
