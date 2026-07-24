@@ -487,9 +487,29 @@ const CSS = `
   }
 
   @media (max-width: 640px) {
+    .hg-root {
+      padding-bottom: 6rem; /* spazio tra contenuto e onda */
+    }
+    .hg-wave {
+      bottom: -20px; /* onda leggermente più in basso */
+    }
+    .hg-wave svg {
+      height: 60px;
+    }
     .hg-actions { flex-direction: column; align-items: center; }
     .hg-btn-primary,
     .hg-btn-secondary { width: 100%; max-width: 320px; justify-content: center; }
-    .hg-trust { flex-direction: column; align-items: center; gap: var(--spacing-xs); }
+    .hg-trust {
+      flex-direction: column;
+      align-items: stretch; /* ogni riga prende tutta la larghezza */
+      gap: var(--spacing-xs);
+      width: 100%;
+      text-align: left;
+    }
+    .hg-trust-item {
+      display: flex; /* sovrascrive inline-flex */
+      justify-content: flex-start;
+      align-items: center;
+    }
   }
 `;
