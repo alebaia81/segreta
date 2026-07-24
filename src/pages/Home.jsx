@@ -1091,15 +1091,23 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
             text-align: center;
             align-items: center;
           }
-          .footer-left {
+          .footer-left,
+          .footer-left-group {
             flex-direction: column;
             gap: var(--spacing-xs);
             align-items: center;
+            text-align: center;
           }
-          .footer-right {
+          .footer-right,
+          .footer-right-group {
             align-items: center;
             text-align: center;
             gap: var(--spacing-sm);
+            width: 100%;
+          }
+          .footer-social-links {
+            justify-content: center;
+            width: 100%;
           }
           .footer-links-row {
             justify-content: center;
