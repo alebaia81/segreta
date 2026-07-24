@@ -1216,6 +1216,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         }
 
         @media (max-width: 768px) {
+          .ultimi-arrivi-section {
+            padding-bottom: var(--spacing-lg); /* era --spacing-xxl (4rem), ora 1.5rem */
+          }
+          .testimonials-section {
+            padding-top: var(--spacing-lg); /* era --spacing-xxl (4rem), ora 1.5rem */
+          }
           .testimonials-grid {
             display: flex;
             overflow-x: auto;
