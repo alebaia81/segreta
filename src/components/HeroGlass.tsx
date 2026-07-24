@@ -488,7 +488,7 @@ const CSS = `
 
   @media (max-width: 640px) {
     .hg-root {
-      padding-bottom: 6rem; /* spazio tra contenuto e onda */
+      padding-bottom: 2.5rem; /* spazio tra contenuto e onda */
     }
     .hg-wave {
       bottom: -20px; /* onda leggermente più in basso */
