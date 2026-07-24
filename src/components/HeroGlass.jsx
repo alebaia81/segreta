@@ -310,6 +310,15 @@ export default function HeroGlass({ onNavigateToShop }) {
 
         /* ── Responsive ────────────────────────────────────────────────── */
         @media (max-width: 640px) {
+          .hero-glass-section {
+            padding-bottom: 8rem; /* più spazio tra il pannello e l'onda */
+          }
+          .hero-glass-wave {
+            bottom: -20px; /* onda leggermente più in basso su mobile */
+          }
+          .hero-glass-wave svg {
+            height: 60px;
+          }
           .hero-glass-actions {
             flex-direction: column;
             align-items: center;
@@ -321,8 +330,15 @@ export default function HeroGlass({ onNavigateToShop }) {
           }
           .hero-trust-row {
             flex-direction: column;
-            align-items: center;
+            align-items: stretch; /* ogni badge prende tutta la larghezza */
             gap: var(--spacing-xs);
+            width: 100%;
+            text-align: left; /* annulla il text-align: center del pannello */
+          }
+          .hero-trust-badge {
+            display: flex; /* sovrascrive inline-flex */
+            justify-content: flex-start;
+            align-items: center;
           }
         }
       `}</style>
