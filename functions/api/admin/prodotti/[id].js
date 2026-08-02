@@ -96,8 +96,13 @@ export async function onRequest({ request, env, params }) {
           let b64 = '';
           if (variantiData) {
             try {
-              b64 = Buffer.from(variantiData).toString('base64');
-            } catch {
+              if (typeof btoa === 'function') {
+                b64 = btoa(unescape(encodeURIComponent(variantiData)));
+              } else if (typeof Buffer !== 'undefined') {
+                b64 = Buffer.from(variantiData, 'utf-8').toString('base64');
+              }
+            } catch (e) {
+              console.error('Errore codifica b64 varianti:', e);
               b64 = '';
             }
           }
