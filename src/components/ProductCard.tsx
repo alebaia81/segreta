@@ -76,7 +76,7 @@ export default function ProductCard({
   const [sizeError, setSizeError] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState<number | null>(null);
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number | null>(null);
 
   const sliderRef = useRef<HTMLDivElement>(null);
 
@@ -109,7 +109,7 @@ export default function ProductCard({
 
   const variantiList: VarianteColore[] = safeParseVarianti(articolo.varianti, articolo.descrizione);
 
-  const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
+  const currentVariant = selectedVariantIndex !== null ? variantiList[selectedVariantIndex] : null;
 
   // Immagini correnti — deduplicazione con Set per evitare foto doppie
   const rawImagesList = currentVariant && Array.isArray(currentVariant.immagini) && currentVariant.immagini.length > 0
@@ -332,7 +332,7 @@ export default function ProductCard({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedVariantIndex(idx);
+                    setSelectedVariantIndex(prev => prev === idx ? null : idx);
                     setSelectedSize(null);
                   }}
                   style={{

@@ -56,7 +56,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const [isAdded, setIsAdded] = useState(false);
   const [sizeError, setSizeError] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState(null);
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(null);
 
   const sliderRef = useRef(null);
 
@@ -89,7 +89,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
 
   const variantiList = safeParseVarianti(articolo.varianti, articolo.descrizione);
 
-  const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
+  const currentVariant = selectedVariantIndex !== null ? variantiList[selectedVariantIndex] : null;
 
   // Immagini correnti — deduplicazione con Set per evitare foto doppie
   const rawImagesList = currentVariant && Array.isArray(currentVariant.immagini) && currentVariant.immagini.length > 0
@@ -304,7 +304,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedVariantIndex(idx);
+                    setSelectedVariantIndex(prev => prev === idx ? null : idx);
                     setSelectedSize(null); // Reset taglia selezionata al cambio colore
                   }}
                   style={{
