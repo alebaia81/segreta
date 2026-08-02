@@ -180,6 +180,15 @@ function MainApp() {
     }, 100);
   };
 
+  const filterBySearch = useCallback((art) => {
+    if (!searchQuery || !searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const t = String(art.titolo || '').toLowerCase();
+    const d = String(art.descrizione || '').toLowerCase();
+    const c = String(art.categoria || '').toLowerCase();
+    return t.includes(q) || d.includes(q) || c.includes(q);
+  }, [searchQuery]);
+
   const isAdminPath = currentPath === '/admin';
   const hideHeaderNav = currentPath === '/admin' || currentPath === '/checkout' || currentPath === '/thank-you';
 
