@@ -44,7 +44,8 @@ export async function onRequest({ request, env }) {
       const validTarget = target === 'Uomo' ? 'Uomo' : 'Donna';
       const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
 
-      const { data, error } = await supabase
+      // Tentativo 1: Salva con la colonna varianti nativa
+      let { data, error } = await supabase
         .from('articoli')
         .insert([{
           titolo,
@@ -59,6 +60,32 @@ export async function onRequest({ request, env }) {
         }])
         .select()
         .single();
+
+      // Fallback: Se la colonna 'varianti' non esiste su Supabase (PGRST204), salva integrando varianti in descrizione
+      if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('varianti')))) {
+        const descPulita = (descrizione || '').replace(/\[VARIANTI:[^\]]+\]/g, '').trim();
+        const descrizioneConVarianti = variantiData 
+          ? `[VARIANTI:${variantiData}] ${descPulita}`.trim()
+          : descPulita;
+
+        const retryRes = await supabase
+          .from('articoli')
+          .insert([{
+            titolo,
+            descrizione: descrizioneConVarianti,
+            prezzo: parseFloat(prezzo),
+            immagine_url,
+            target: validTarget,
+            categoria,
+            taglie,
+            attivo: true,
+          }])
+          .select()
+          .single();
+
+        data = retryRes.data;
+        error = retryRes.error;
+      }
 
       if (error) {
         return new Response(JSON.stringify({ success: false, error: error.message }), {

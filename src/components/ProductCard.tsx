@@ -80,10 +80,15 @@ export default function ProductCard({
 
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Parsing ultra-robusto delle varianti (array, stringa JSON, stringa annidata)
-  const safeParseVarianti = (raw: any): VarianteColore[] => {
-    if (!raw) return [];
-    let parsed = raw;
+  // Parsing ultra-robusto delle varianti (array, stringa JSON, tag [VARIANTI:...])
+  const safeParseVarianti = (raw: any, descrizione?: string): VarianteColore[] => {
+    let source = raw;
+    if (!source && descrizione && typeof descrizione === 'string') {
+      const matchVar = descrizione.match(/\[VARIANTI:(.+?)\]/);
+      if (matchVar) source = matchVar[1];
+    }
+    if (!source) return [];
+    let parsed = source;
     if (typeof parsed === 'string') {
       try { parsed = JSON.parse(parsed); } catch { return []; }
     }
@@ -94,7 +99,7 @@ export default function ProductCard({
     return parsed.filter(v => v && typeof v === 'object');
   };
 
-  const variantiList: VarianteColore[] = safeParseVarianti(articolo.varianti);
+  const variantiList: VarianteColore[] = safeParseVarianti(articolo.varianti, articolo.descrizione);
 
   const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
 
@@ -121,7 +126,9 @@ export default function ProductCard({
 
   const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
   const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
-  const cleanDescrizione = articolo.descrizione ? articolo.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+  const cleanDescrizione = articolo.descrizione 
+    ? articolo.descrizione.replace(/\[SCONTO:\d+\]/g, '').replace(/\[VARIANTI:[^\]]+\]/g, '').trim() 
+    : '';
   const prezzoScontato = scontoPercent > 0 
     ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
     : articolo.prezzo;
