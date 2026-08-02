@@ -99,7 +99,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   };
 
   const articoliAttivi = articoli.filter(a => a.attivo !== false && a.attivo !== 0);
-  const articoliTarget = articoliAttivi.filter(a => !a.target || a.target.trim().toLowerCase() === 'donna');
+  const articoliTarget = articoliAttivi.filter(a => !a.target || String(a.target).trim().toLowerCase() === 'donna');
 
   // Recupera categorie personalizzate salvate ed estrai quelle presenti nei prodotti
   const savedCustomCats = (() => {

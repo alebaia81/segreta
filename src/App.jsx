@@ -205,11 +205,7 @@ function MainApp() {
       <main>
         {currentPath === '/' && (
           <Home 
-            articoli={articoli.filter(art => 
-              art.titolo.toLowerCase().includes(searchQuery.toLowerCase()) || 
-              art.descrizione.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              art.categoria.toLowerCase().includes(searchQuery.toLowerCase())
-            )}
+            articoli={articoli.filter(filterBySearch)}
             onNavigateToShop={handleNavigateToShop}
             onNavigateToAdmin={() => setCurrentPath('/admin')}
           />
@@ -217,11 +213,7 @@ function MainApp() {
 
         {currentPath === '/shop' && (
           <Shop
-            articoli={articoli.filter(art =>
-              art.titolo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              art.descrizione.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              art.categoria.toLowerCase().includes(searchQuery.toLowerCase())
-            )}
+            articoli={articoli.filter(filterBySearch)}
             onNavigateToHome={handleNavigateToHome}
             onNavigateToAdmin={() => setCurrentPath('/admin')}
           />
