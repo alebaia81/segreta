@@ -621,21 +621,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           if (editingId) {
             setArticoliAPI(prev => prev.map(a => a.id === editingId ? json.data : a));
             if (onAddArticolo) onAddArticolo(json.data);
-            alert('Articolo modificato con successo!');
+            alert('✅ Articolo modificato con successo sul database!');
           } else {
             setArticoliAPI(prev => [json.data, ...prev]);
             if (onAddArticolo) onAddArticolo(json.data);
-            alert('Articolo salvato sul database!');
+            alert('✅ Articolo salvato sul database!');
           }
           resetNuovoArticoloForm();
           setActiveTab('articoli');
         } else {
-          console.warn('Risposta API non valida o endpoint locale non attivo. Salvo in fallback locale.');
-          saveLocalFallback();
+          alert(`❌ Salvataggio fallito sul database: ${json.error || 'Password admin non valida o sessione scaduta.'}`);
         }
       } catch (err) {
-        console.warn('Errore di rete durante il salvataggio API. Salvo in fallback locale.', err);
-        saveLocalFallback();
+        alert(`❌ Errore di rete durante il salvataggio: ${err.message}`);
       } finally {
         setLoading(false);
       }
