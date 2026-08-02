@@ -6,12 +6,14 @@ export default function Catalogo({ articoli }) {
   const { addToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('TUTTI');
 
+  const isAttivo = a => a.attivo !== false && a.attivo !== 0 && a.attivo !== 'false' && a.attivo !== '0';
+
   // Estrarre le categorie uniche
-  const categorie = ['TUTTI', ...new Set(articoli.filter(a => a.attivo).map(a => a.categoria))];
+  const categorie = ['TUTTI', ...new Set(articoli.filter(isAttivo).map(a => a.categoria))];
 
   const articoliFiltrati = selectedCategory === 'TUTTI'
-    ? articoli.filter(a => a.attivo)
-    : articoli.filter(a => a.attivo && a.categoria === selectedCategory);
+    ? articoli.filter(isAttivo)
+    : articoli.filter(a => isAttivo(a) && a.categoria === selectedCategory);
 
 
 

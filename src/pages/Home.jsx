@@ -31,7 +31,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
   // Ultimi 4 articoli attivi (ordinati per id decrescente come proxy per data)
   const ultimiArrivi = articoli
-    .filter(a => a.attivo)
+    .filter(a => a.attivo !== false && a.attivo !== 0 && a.attivo !== 'false' && a.attivo !== '0')
     .slice(0, 4);
   const { addToCart } = useCart();
 

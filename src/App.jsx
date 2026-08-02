@@ -112,7 +112,7 @@ function MainApp() {
             categoria: String(item.categoria || ''),
             taglie: String(item.taglie || ''),
             varianti: item.varianti || null,
-            attivo: Boolean(Number(item.attivo))
+            attivo: item.attivo !== false && item.attivo !== 0 && item.attivo !== 'false' && item.attivo !== '0'
           }));
           setArticoli(parsedData);
         }
