@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useCookie } from '../context/CookieContext';
+import ProductCard from '../components/ProductCard.jsx';
 import Footer from '../components/Footer.jsx';
 import { ShoppingBag, Check } from 'lucide-react';
 import Lightbox from "yet-another-react-lightbox";
@@ -70,8 +71,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
 
   // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
 
-  const CATEGORIE_SHOP = [
-    'TUTTI',
+  const DEFAULT_PRESET_CATEGORIES = [
     'ABITI',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
@@ -85,20 +85,35 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const normalizeCategory = (cat) => {
     if (!cat) return '';
     const c = cat.toUpperCase().trim();
-    if (c === 'ABITI' || c === 'GONNE' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
-    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE' || c === 'CAMICE-BLUSE') return 'CAMICE-BLUSE';
-    if (c === 'T-SHIRT' || c === 'FELPE' || c === 'T-SHIRT-FELPE') return 'T-SHIRT-FELPE';
-    if (c === 'JEANS') return 'JEANS';
-    if (c === 'PANTALONI') return 'PANTALONI';
-    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE' || c === 'CAPPOTTI-GIACCHE') return 'CAPPOTTI-GIACCHE';
-    if (c === 'SCARPE') return 'SCARPE';
-    if (c === 'BORSE' || c === 'ACCESSORI') return 'BORSE';
+    if (c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
+    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE') return 'CAMICE-BLUSE';
+    if (c === 'T-SHIRT' || c === 'FELPE') return 'T-SHIRT-FELPE';
+    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE') return 'CAPPOTTI-GIACCHE';
     return c;
   };
 
-  const articoliAttivi = articoli.filter(a => a.attivo);
-  const articoliTarget = articoliAttivi.filter(a => a.target === 'Donna');
-  const categorie = CATEGORIE_SHOP;
+  const articoliAttivi = articoli.filter(a => a.attivo !== false && a.attivo !== 0);
+  const articoliTarget = articoliAttivi.filter(a => !a.target || a.target.trim().toLowerCase() === 'donna');
+
+  // Recupera categorie personalizzate salvate ed estrai quelle presenti nei prodotti
+  const savedCustomCats = (() => {
+    try {
+      const saved = localStorage.getItem('segreta_custom_categories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const categoriesFromProducts = Array.from(
+    new Set(articoliTarget.map(a => normalizeCategory(a.categoria)).filter(Boolean))
+  );
+
+  const categorie = ['TUTTI', ...Array.from(new Set([
+    ...DEFAULT_PRESET_CATEGORIES,
+    ...savedCustomCats.map(c => normalizeCategory(c)),
+    ...categoriesFromProducts
+  ]))];
 
   const articoliFiltrati = selectedCategory === 'TUTTI'
     ? articoliTarget
@@ -163,135 +178,13 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           </div>
         ) : (
           <div className="shop-prodotti-grid">
-            {articoliFiltrati.map(articolo => {
-              const taglieList = articolo.taglie ? articolo.taglie.split(',').map(s => s.trim()) : [];
-              const selectedSize = selectedSizes[articolo.id];
-              const isAdded = addedAnimation[articolo.id];
-
-              const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
-              const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
-              const cleanDescrizione = articolo.descrizione ? articolo.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
-              const prezzoScontato = scontoPercent > 0 
-                ? articolo.prezzo - (articolo.prezzo * scontoPercent) / 100 
-                : articolo.prezzo;
-
-              return (
-                <article key={articolo.id} className="prodotto-card">
-                  <div className="prodotto-image-wrapper">
-                    <div className="prodotto-slider" style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
-                      {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
-                        const imgUrl = url.trim().startsWith('http') || url.trim().startsWith('blob:') ? url.trim() : (url.trim().startsWith('/') ? url.trim() : `/${url.trim()}`);
-                        return (
-                          <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
-                            <img
-                              src={imgUrl}
-                              alt={`${articolo.titolo} - Foto ${idx + 1}`}
-                              className="prodotto-image"
-                              style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setZoomArticolo(articolo);
-                                setZoomImageIndex(idx);
-                              }}
-                              onError={e => {
-                                e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-                              }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Navigazione frecce se più di 1 immagine */}
-                    {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          className="shop-slider-arrow shop-arrow-left"
-                          onClick={(e) => scrollShopSlider(e, 'left')}
-                          aria-label="Immagine precedente"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          type="button"
-                          className="shop-slider-arrow shop-arrow-right"
-                          onClick={(e) => scrollShopSlider(e, 'right')}
-                          aria-label="Immagine successiva"
-                        >
-                          ›
-                        </button>
-                      </>
-                    )}
-
-                    {articolo.categoria && (
-                      <span className="prodotto-category-tag">{articolo.categoria}</span>
-                    )}
-                    {scontoPercent > 0 && (
-                      <span className="prodotto-discount-tag" style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#E295AB', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '4px', zIndex: 12 }}>
-                        -{scontoPercent}%
-                      </span>
-                    )}
-                    {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
-                      <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
-                        {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
-                          <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="prodotto-details">
-                    <h2 className="prodotto-title">{articolo.titolo}</h2>
-                    <p className="prodotto-description">{cleanDescrizione}</p>
-                    <div className="prodotto-price-row">
-                      {scontoPercent > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                          <span className="prodotto-price text-pink" style={{ color: '#E295AB', fontWeight: 700 }}>
-                            €{prezzoScontato.toFixed(2)}
-                          </span>
-                          <span style={{ textDecoration: 'line-through', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            €{parseFloat(articolo.prezzo).toFixed(2)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="prodotto-price">€{parseFloat(articolo.prezzo).toFixed(2)}</span>
-                      )}
-                    </div>
-                    {taglieList.length > 0 && (
-                      <div className="prodotto-sizes-container">
-                        <span className="sizes-label">Seleziona Taglia:</span>
-                        <div className="sizes-row" role="group" aria-label={`Taglie per ${articolo.titolo}`}>
-                          {taglieList.map(size => (
-                            <button
-                              key={size}
-                              type="button"
-                              className={`size-btn ${selectedSize === size ? 'selected' : ''}`}
-                              onClick={() => handleSelectSize(articolo.id, size)}
-                              aria-pressed={selectedSize === size}
-                              aria-label={`Taglia ${size}`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      className={`btn-add-to-cart ${isAdded ? 'success' : ''}`}
-                      onClick={() => handleAddToCart(articolo)}
-                      disabled={isAdded}
-                      aria-label={`Aggiungi ${articolo.titolo} al carrello`}
-                    >
-                      {isAdded ? (
-                        <><Check size={18} style={{ marginRight: '8px' }} />Aggiunto</>
-                      ) : (
-                        <><ShoppingBag size={18} style={{ marginRight: '8px' }} />Aggiungi al Carrello</>
-                      )}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+            {articoliFiltrati.map(articolo => (
+              <ProductCard
+                key={articolo.id}
+                articolo={articolo}
+                onAddToCart={(art, size, color, customImg) => addToCart(art, size, color, customImg)}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -890,8 +783,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
           open={zoomArticolo !== null}
           close={() => { setZoomArticolo(null); setZoomImageIndex(null); }}
           index={zoomImageIndex || 0}
-          slides={zoomArticolo.immagine_url.split(',').filter(Boolean).map(url => {
-            const trimmed = url.trim();
+          slides={(Array.isArray(zoomArticolo.immagine_url) ? zoomArticolo.immagine_url : (typeof zoomArticolo.immagine_url === 'string' ? zoomArticolo.immagine_url.split(',') : [])).map(url => {
+            const trimmed = String(url).trim();
             const src = trimmed.startsWith('http') || trimmed.startsWith('blob:') 
               ? trimmed 
               : (trimmed.startsWith('/') ? trimmed : `/${trimmed}`);

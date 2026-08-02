@@ -36,12 +36,19 @@ function useReducedMotion() {
 
 /* Normalizza il percorso dell'immagine */
 function resolveImageSrc(url) {
-  if (!url) return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+  if (!url) return 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80';
   if (url.startsWith('http') || url.startsWith('blob:')) return url;
   return url.startsWith('/') ? url : `/${url}`;
 }
 
-const FALLBACK_SRC = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+const FALLBACK_SRC = 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80';
+
+function safeSplit(str, delimiter = ',') {
+  if (!str) return [];
+  if (Array.isArray(str)) return str.map(s => String(s).trim()).filter(Boolean);
+  if (typeof str === 'string') return str.split(delimiter).map(s => s.trim()).filter(Boolean);
+  return [String(str)];
+}
 
 export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const reducedMotion = useReducedMotion();
@@ -49,10 +56,29 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const [isAdded, setIsAdded] = useState(false);
   const [sizeError, setSizeError] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState(null);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
 
   const sliderRef = useRef(null);
 
-  // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
+  // Parsing delle varianti (array o stringa JSON)
+  const variantiList = Array.isArray(articolo.varianti)
+    ? articolo.varianti
+    : (typeof articolo.varianti === 'string'
+        ? (() => { try { return JSON.parse(articolo.varianti); } catch { return []; } })()
+        : []);
+
+  const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
+
+  // Immagini correnti — deduplicazione con Set per evitare foto doppie
+  const rawImagesList = currentVariant && Array.isArray(currentVariant.immagini) && currentVariant.immagini.length > 0
+    ? currentVariant.immagini
+    : safeSplit(articolo.immagine_url);
+  const currentImagesList = [...new Set(rawImagesList.map(u => u.trim()).filter(Boolean))];
+
+  // Taglie correnti
+  const taglieList = currentVariant && Array.isArray(currentVariant.taglie) && currentVariant.taglie.length > 0
+    ? currentVariant.taglie
+    : safeSplit(articolo.taglie);
 
   const scrollSlider = (direction) => {
     if (sliderRef.current) {
@@ -63,10 +89,6 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       });
     }
   };
-
-  const taglieList = articolo.taglie
-    ? articolo.taglie.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
 
   const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
   const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
@@ -84,13 +106,16 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
 
     if (taglieList.length > 0 && !selectedSize) {
       setSizeError(true);
-      // Focus automatico sul gruppo taglie per assistive tech
       document.getElementById(`sizes-group-${articolo.id}`)?.focus();
       return;
     }
     setSizeError(false);
 
-    if (onAddToCart) onAddToCart(articolo, selectedSize || 'Unica');
+    if (onAddToCart) {
+      const colorName = currentVariant ? currentVariant.colore : null;
+      const customImg = currentImagesList.length > 0 ? currentImagesList[0] : articolo.immagine_url;
+      onAddToCart(articolo, selectedSize || 'Unica', colorName, customImg);
+    }
 
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
@@ -122,7 +147,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       {/* ── Immagine ──────────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
         <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
-          {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
+          {currentImagesList.map((url, idx) => {
             const imgUrl = resolveImageSrc(url.trim());
             return (
               <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
@@ -144,7 +169,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
         </div>
 
         {/* Navigazione frecce se più di 1 immagine */}
-        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+        {currentImagesList.length > 1 && (
           <>
             <button
               type="button"
@@ -165,7 +190,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
           </>
         )}
 
-        {/* Badge categoria: testo scuro su sfondo molto opaco → contrasto > 10:1 */}
+        {/* Badge categoria */}
         {articolo.categoria && (
           <span className="pc-category-badge" aria-label={`Categoria: ${articolo.categoria}`}>
             {articolo.categoria}
@@ -193,15 +218,14 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
         )}
 
         {/* Dots per immagini multiple */}
-        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+        {currentImagesList.length > 1 && (
           <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
-            {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
+            {currentImagesList.map((_, i) => (
               <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
             ))}
           </div>
         )}
 
-        {/* Overlay scuro nell'area immagine per evitare testo illeggibile sotto */}
         <div className="pc-image-overlay" aria-hidden="true" style={{ pointerEvents: 'none' }} />
       </div>
 
@@ -239,6 +263,54 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
             </span>
           )}
         </div>
+
+        {/* ── Sezione Selettore Varianti Colore ────────────────────────────────────────── */}
+        {variantiList.length > 0 && (
+          <div className="pc-variants-bar" style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', width: '100%' }}>Colore:</span>
+            {variantiList.map((v, idx) => {
+              const isSelected = selectedVariantIndex === idx;
+              return (
+                <button
+                  key={v.colore || idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVariantIndex(idx);
+                    setSelectedSize(null); // Reset taglia selezionata al cambio colore
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '0.78rem',
+                    fontWeight: isSelected ? '700' : '500',
+                    border: isSelected ? '2px solid #E295AB' : '1px solid var(--border-color, #CCC)',
+                    background: isSelected ? 'rgba(226, 149, 171, 0.15)' : 'var(--bg-secondary, #FFF)',
+                    color: 'var(--text-primary, #2C2520)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {v.hex && (
+                    <span
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: v.hex,
+                        border: '1px solid rgba(0,0,0,0.2)'
+                      }}
+                    />
+                  )}
+                  {v.colore}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Taglie ──────────────────────────────────────────────────────── */}
         {taglieList.length > 0 && (
@@ -628,8 +700,8 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
         open={zoomImageIndex !== null}
         close={() => setZoomImageIndex(null)}
         index={zoomImageIndex || 0}
-        slides={articolo.immagine_url.split(',').filter(Boolean).map(url => {
-          const trimmed = url.trim();
+        slides={currentImagesList.map(url => {
+          const trimmed = String(url).trim();
           const src = resolveImageSrc(trimmed);
           return { src, alt: articolo.titolo };
         })}

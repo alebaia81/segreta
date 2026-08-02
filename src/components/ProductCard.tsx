@@ -23,6 +23,13 @@ import "yet-another-react-lightbox/plugins/counter.css";
 
 // ─── Tipi pubblici ────────────────────────────────────────────────────────────
 
+export interface VarianteColore {
+  colore: string;
+  hex?: string;
+  immagini: string[];
+  taglie: string[];
+}
+
 /** Shape del singolo articolo — rispecchia il modello del DB Segreta */
 export interface Articolo {
   id: number;
@@ -34,12 +41,13 @@ export interface Articolo {
   taglie?: string;   // CSV: "S,M,L,XL"
   target?: string;
   attivo?: boolean;
+  varianti?: VarianteColore[] | string;
 }
 
 export interface ProductCardProps {
   articolo: Articolo;
-  /** Callback invocata con (articolo, taglia) al click di "Aggiungi al Carrello" */
-  onAddToCart?: (articolo: Articolo, size: string) => void;
+  /** Callback invocata al click di "Aggiungi al Carrello" */
+  onAddToCart?: (articolo: Articolo, size: string, color?: string | null, customImage?: string | null) => void;
   /** Callback opzionale al click della card (es. navigazione dettaglio) */
   onCardClick?: () => void;
 }
@@ -47,7 +55,7 @@ export interface ProductCardProps {
 // ─── Costante fallback immagine ───────────────────────────────────────────────
 
 const FALLBACK_IMG =
-  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+  'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80';
 
 function resolveImgSrc(url: string): string {
   if (!url) return FALLBACK_IMG;

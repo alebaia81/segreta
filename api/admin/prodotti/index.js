@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   // ── POST ─────────────────────────────────────────────────────────
   if (req.method === 'POST') {
-    const { titolo, descrizione, prezzo, immagine_url, target, categoria, taglie } = req.body;
+    const { titolo, descrizione, prezzo, immagine_url, target, categoria, taglie, varianti } = req.body;
 
     if (!titolo || prezzo === undefined || !categoria || !target) {
       return res.status(400).json({
@@ -33,6 +33,7 @@ export default async function handler(req, res) {
     }
 
     const validTarget = target === 'Uomo' ? 'Uomo' : 'Donna';
+    const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
 
     const { data, error } = await supabase
       .from('articoli')
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
         target: validTarget,
         categoria,
         taglie,
+        varianti: variantiData,
         attivo: true,
       }])
       .select()

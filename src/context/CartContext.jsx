@@ -21,7 +21,7 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('segreta_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (articolo, size) => {
+  const addToCart = (articolo, size, color = null, customImage = null) => {
     const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
     const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
     const prezzoEffettivo = scontoPercent > 0 
@@ -30,12 +30,13 @@ export const CartProvider = ({ children }) => {
 
     const articoloConPrezzoScontato = {
       ...articolo,
-      prezzo: prezzoEffettivo
+      prezzo: prezzoEffettivo,
+      immagine_url: customImage || articolo.immagine_url
     };
 
     setCartItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex(
-        (item) => item.id === articoloConPrezzoScontato.id && item.size === size
+        (item) => item.id === articoloConPrezzoScontato.id && item.size === size && (item.color || null) === (color || null)
       );
 
       if (existingItemIndex > -1) {
@@ -44,24 +45,24 @@ export const CartProvider = ({ children }) => {
         return newItems;
       }
 
-      return [...prevItems, { ...articoloConPrezzoScontato, size, quantity: 1 }];
+      return [...prevItems, { ...articoloConPrezzoScontato, size, color, quantity: 1 }];
     });
   };
 
-  const removeFromCart = (articoloId, size) => {
+  const removeFromCart = (articoloId, size, color = null) => {
     setCartItems((prevItems) =>
-      prevItems.filter((item) => !(item.id === articoloId && item.size === size))
+      prevItems.filter((item) => !(item.id === articoloId && item.size === size && (item.color || null) === (color || null)))
     );
   };
 
-  const updateQuantity = (articoloId, size, newQty) => {
+  const updateQuantity = (articoloId, size, newQty, color = null) => {
     if (newQty <= 0) {
-      removeFromCart(articoloId, size);
+      removeFromCart(articoloId, size, color);
       return;
     }
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === articoloId && item.size === size
+        item.id === articoloId && item.size === size && (item.color || null) === (color || null)
           ? { ...item, quantity: newQty }
           : item
       )

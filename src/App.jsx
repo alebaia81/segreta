@@ -17,7 +17,7 @@ const ARTICOLI_SEED = [
     titolo: 'Abito Lungo Floreale Spring',
     descrizione: 'Abito lungo fresco e colorato, ideale per le serate estive. Fantasia floreale accesa.',
     prezzo: 39.90,
-    immagine_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+    immagine_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80',
     target: 'Donna',
     categoria: 'Abiti',
     taglie: 'S,M,L',
@@ -86,7 +86,8 @@ function MainApp() {
   const [articoli, setArticoli] = useState(() => {
     const saved = localStorage.getItem('segreta_articoli');
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return parsed.map(item => ({ ...item, attivo: item.attivo !== false && item.attivo !== 0 }));
     } else {
       localStorage.setItem('segreta_articoli', JSON.stringify(ARTICOLI_SEED));
       return ARTICOLI_SEED;
@@ -126,9 +127,15 @@ function MainApp() {
     localStorage.setItem('segreta_articoli', JSON.stringify(articoli));
   }, [articoli]);
 
-  // Gestione aggiunta articolo da admin
+  // Gestione aggiunta/modifica articolo da admin
   const handleAddArticolo = (nuovoArt) => {
-    setArticoli(prev => [nuovoArt, ...prev]);
+    setArticoli(prev => {
+      const exists = prev.some(art => art.id === nuovoArt.id);
+      if (exists) {
+        return prev.map(art => art.id === nuovoArt.id ? { ...art, ...nuovoArt } : art);
+      }
+      return [nuovoArt, ...prev];
+    });
   };
 
   // Gestione attivazione/disattivazione da admin

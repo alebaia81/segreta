@@ -64,18 +64,21 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
           ) : (
             <ul className="cart-items-list">
               {cartItems.map((item) => (
-                <li key={`${item.id}-${item.size}`} className="cart-item">
+                <li key={`${item.id}-${item.color || 'def'}-${item.size}`} className="cart-item">
                   <img
                     src={item.immagine_url.startsWith('http') || item.immagine_url.startsWith('blob:') ? item.immagine_url : (item.immagine_url.startsWith('/') ? item.immagine_url : `/${item.immagine_url}`)}
                     alt={item.titolo}
                     className="cart-item-image"
                     onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+                      e.target.src = 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80';
                     }}
                   />
                   <div className="cart-item-details">
                     <h4 className="cart-item-title">{item.titolo}</h4>
-                    <p className="cart-item-meta">Taglia: <strong>{item.size}</strong></p>
+                    <p className="cart-item-meta">
+                      {item.color && <span>Colore: <strong>{item.color}</strong> &nbsp;|&nbsp; </span>}
+                      Taglia: <strong>{item.size}</strong>
+                    </p>
                     <span className="cart-item-price">€{(item.prezzo * item.quantity).toFixed(2)}</span>
 
                     {/* Quantità & Rimozione */}
@@ -84,7 +87,7 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
                         <button
                           type="button"
                           className="qty-btn"
-                          onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.id, item.size, item.quantity - 1, item.color)}
                           aria-label="Riduci quantità di 1"
                         >
                           <Minus size={14} />
@@ -93,7 +96,7 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
                         <button
                           type="button"
                           className="qty-btn"
-                          onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.id, item.size, item.quantity + 1, item.color)}
                           aria-label="Aumenta quantità di 1"
                         >
                           <Plus size={14} />
@@ -103,7 +106,7 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
                       <button
                         type="button"
                         className="remove-item-btn"
-                        onClick={() => removeFromCart(item.id, item.size)}
+                        onClick={() => removeFromCart(item.id, item.size, item.color)}
                         aria-label={`Rimuovi ${item.titolo} taglia ${item.size} dal carrello`}
                       >
                         <Trash2 size={16} />

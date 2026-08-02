@@ -48,6 +48,8 @@ export default async function handler(req, res) {
         return res.json({ success: true, id: productId, attivo: nextState });
       } else {
         // Modifica globale
+        const { action, titolo, descrizione, prezzo, immagine_url, target, categoria, taglie, varianti } = req.body || {};
+
         if (!titolo || prezzo === undefined || !categoria || !target) {
           return res.status(400).json({
             success: false,
@@ -59,6 +61,8 @@ export default async function handler(req, res) {
           return res.status(500).json({ success: false, error: 'Supabase client non inizializzato' });
         }
 
+        const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
+
         const { data, error } = await supabase
           .from('articoli')
           .update({
@@ -68,7 +72,8 @@ export default async function handler(req, res) {
             immagine_url,
             target: target === 'Uomo' ? 'Uomo' : 'Donna',
             categoria,
-            taglie
+            taglie,
+            varianti: variantiData
           })
           .eq('id', productId)
           .select()
