@@ -21,7 +21,7 @@ export async function onRequest({ request, env, params }) {
     // ── PUT ────────────────────────────────────────────────────────────
     if (request.method === 'PUT') {
       const body = await request.json();
-      const { action, titolo, descrizione, prezzo, immagine_url, target, categoria, taglie } = body || {};
+      const { action, titolo, descrizione, prezzo, immagine_url, target, categoria, taglie, varianti } = body || {};
 
       if (action === 'toggle') {
         const { data: product, error: fetchErr } = await supabase
@@ -66,6 +66,8 @@ export async function onRequest({ request, env, params }) {
           );
         }
 
+        const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
+
         const { data, error } = await supabase
           .from('articoli')
           .update({
@@ -76,6 +78,7 @@ export async function onRequest({ request, env, params }) {
             target: target === 'Uomo' ? 'Uomo' : 'Donna',
             categoria,
             taglie,
+            varianti: variantiData,
           })
           .eq('id', productId)
           .select()

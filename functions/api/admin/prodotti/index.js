@@ -32,7 +32,7 @@ export async function onRequest({ request, env }) {
     // ── POST ─────────────────────────────────────────────────────────
     if (request.method === 'POST') {
       const body = await request.json();
-      const { titolo, descrizione, prezzo, immagine_url, target, categoria, taglie } = body;
+      const { titolo, descrizione, prezzo, immagine_url, target, categoria, taglie, varianti } = body;
 
       if (!titolo || prezzo === undefined || !categoria || !target) {
         return new Response(
@@ -42,6 +42,7 @@ export async function onRequest({ request, env }) {
       }
 
       const validTarget = target === 'Uomo' ? 'Uomo' : 'Donna';
+      const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
 
       const { data, error } = await supabase
         .from('articoli')
@@ -53,6 +54,7 @@ export async function onRequest({ request, env }) {
           target: validTarget,
           categoria,
           taglie,
+          varianti: variantiData,
           attivo: true,
         }])
         .select()
