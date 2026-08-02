@@ -73,6 +73,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
 
   const DEFAULT_PRESET_CATEGORIES = [
     'ABITI',
+    'GONNE',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',
@@ -85,10 +86,15 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const normalizeCategory = (cat) => {
     if (!cat) return '';
     const c = cat.toUpperCase().trim();
-    if (c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
-    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE') return 'CAMICE-BLUSE';
-    if (c === 'T-SHIRT' || c === 'FELPE') return 'T-SHIRT-FELPE';
-    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE') return 'CAPPOTTI-GIACCHE';
+    if (c === 'GONNE' || c === 'GONNA') return 'GONNE';
+    if (c === 'ABITI' || c === 'ABITO' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
+    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE' || c === 'CAMICIA' || c === 'BLUSA') return 'CAMICE-BLUSE';
+    if (c === 'T-SHIRT' || c === 'FELPE' || c === 'T-SHIRT E FELPE' || c === 'TSHIRT') return 'T-SHIRT-FELPE';
+    if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE' || c === 'GIACCA' || c === 'CAPPOTTO') return 'CAPPOTTI-GIACCHE';
+    if (c === 'JEAN' || c === 'JEANS') return 'JEANS';
+    if (c === 'PANTALONE' || c === 'PANTALONI') return 'PANTALONI';
+    if (c === 'SCARPA' || c === 'SCARPE') return 'SCARPE';
+    if (c === 'BORSA' || c === 'BORSE') return 'BORSE';
     return c;
   };
 
@@ -117,7 +123,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
 
   const articoliFiltrati = selectedCategory === 'TUTTI'
     ? articoliTarget
-    : articoliTarget.filter(a => normalizeCategory(a.categoria) === selectedCategory);
+    : articoliTarget.filter(a => normalizeCategory(a.categoria) === normalizeCategory(selectedCategory));
 
   const handleSelectSize = (articoloId, size) => {
     setSelectedSizes(prev => ({ ...prev, [articoloId]: size }));

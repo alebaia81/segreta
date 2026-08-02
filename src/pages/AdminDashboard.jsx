@@ -5,6 +5,7 @@ import { supabase as supabaseClient } from '../lib/supabaseClient.js';
 const TARGET_CATEGORIES = {
   Donna: [
     'ABITI',
+    'GONNE',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',
@@ -35,6 +36,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   // Categorie predefinite di base per il catalogo
   const DEFAULT_CATEGORIES_DONNA = [
     'ABITI',
+    'GONNE',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',
