@@ -128,6 +128,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
   // Stato per la gestione delle varianti colore
   const [variantiState, setVariantiState] = useState([]);
+  const [uploadingVariante, setUploadingVariante] = useState(null); // indice variante in upload, o null
 
   const handleAddVariante = () => {
     setVariantiState(prev => [
@@ -142,6 +143,83 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
   const handleRemoveVariante = (index) => {
     setVariantiState(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Upload foto per una specifica variante colore
+  const handleVarianteImageUpload = async (e, variantIndex) => {
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+
+    setUploadingVariante(variantIndex);
+
+    try {
+      const uploadedUrls = [];
+      const pass = sessionStorage.getItem('segreta_admin_password') || password;
+
+      for (const imageFile of files) {
+        let publicUrl = null;
+
+        // ── Tentativo 1: API serverless ──────────────────────────────────
+        try {
+          const base64data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(imageFile);
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+          });
+
+          const response = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-password': pass },
+            body: JSON.stringify({
+              imageData: base64data,
+              fileName: imageFile.name || `variante-${Date.now()}.jpg`,
+              mimeType: imageFile.type || 'image/jpeg'
+            })
+          });
+
+          if (response.ok) {
+            const json = await response.json();
+            if (json.success && json.url) publicUrl = json.url;
+          }
+        } catch { /* API non disponibile in locale */ }
+
+        // ── Tentativo 2: Upload diretto Supabase ─────────────────────────
+        if (!publicUrl && supabaseClient) {
+          const ext = (imageFile.name.split('.').pop() || 'jpg').toLowerCase();
+          const uniqueName = `var-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+          const { error: uploadErr } = await supabaseClient.storage
+            .from('immagini-prodotti')
+            .upload(uniqueName, imageFile, { contentType: imageFile.type || 'image/jpeg', upsert: false });
+          if (!uploadErr) {
+            const { data: urlData } = supabaseClient.storage.from('immagini-prodotti').getPublicUrl(uniqueName);
+            publicUrl = urlData?.publicUrl || null;
+          }
+        }
+
+        if (!publicUrl) {
+          alert('❌ Impossibile caricare la foto.\nIn locale usa: npm run dev:api\nIn produzione funziona automaticamente.');
+          return;
+        }
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length === 0) return;
+
+      // Aggiunge le nuove foto a quelle già presenti nella variante
+      setVariantiState(prev => prev.map((v, i) => {
+        if (i !== variantIndex) return v;
+        const existing = Array.isArray(v.immagini) ? v.immagini : [];
+        const unique = [...new Set([...existing, ...uploadedUrls])];
+        return { ...v, immagini: unique };
+      }));
+
+    } catch (error) {
+      alert(`❌ Errore: ${error.message}`);
+    } finally {
+      setUploadingVariante(null);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const [editingId, setEditingId] = useState(null);
@@ -1388,6 +1466,32 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       {activeTab === 'nuovo' && !loading && (
         <div className="dashboard-content fade-in">
           <form onSubmit={handleCreateArticolo} className="new-article-form">
+
+            {/* ── Pulsante Torna Indietro ── */}
+            <div style={{ marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => { resetNuovoArticoloForm(); setActiveTab('articoli'); }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                ← Torna al Catalogo
+              </button>
+            </div>
+
             <div className="form-group" style={{ marginBottom: '15px' }}>
               <label className="form-label" htmlFor="new_titolo">Titolo Articolo *</label>
               <input
@@ -1666,16 +1770,56 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         </button>
                       </div>
 
-                      {/* URL Foto variante */}
+                      {/* Upload Foto variante */}
                       <div style={{ marginBottom: '12px' }}>
-                        <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '4px' }}>Foto per colore {varItem.colore || `#${vIdx+1}`}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Inserisci URL foto per questo colore (es. https://...)"
-                          value={varItem.immagini ? varItem.immagini.join(',') : ''}
-                          onChange={(e) => handleUpdateVariante(vIdx, { immagini: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                        />
+                        <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '6px' }}>
+                          Foto per colore {varItem.colore || `#${vIdx+1}`}
+                        </label>
+                        <div className="upload-btn-wrapper">
+                          <button type="button" className="btn-secondary upload-btn-trigger" style={{ fontSize: '0.8rem', padding: '8px 14px' }}>
+                            {uploadingVariante === vIdx ? (
+                              <div className="upload-placeholder loading">
+                                <Loader className="spin" size={16} />
+                                <span>Caricamento...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <Upload size={14} style={{ marginRight: '6px' }} />
+                                Carica foto {varItem.colore || 'colore'} (anche multiple)
+                              </>
+                            )}
+                          </button>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="file-input-hidden"
+                            disabled={uploadingVariante === vIdx}
+                            onChange={(e) => handleVarianteImageUpload(e, vIdx)}
+                            aria-label={`Carica foto per variante ${varItem.colore || vIdx+1}`}
+                          />
+                        </div>
+
+                        {/* Preview miniature foto variante */}
+                        {varItem.immagini && varItem.immagini.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                            {varItem.immagini.map((url, imgIdx) => (
+                              <div key={imgIdx} style={{ position: 'relative', width: '70px', height: '84px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                                <img src={url} alt={`Foto ${imgIdx+1} - ${varItem.colore}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newImgs = varItem.immagini.filter((_, i) => i !== imgIdx);
+                                    handleUpdateVariante(vIdx, { immagini: newImgs });
+                                  }}
+                                  style={{ position: 'absolute', top: '3px', right: '3px', background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                                >
+                                  <Trash size={11} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* Selection Taglie per colore */}
