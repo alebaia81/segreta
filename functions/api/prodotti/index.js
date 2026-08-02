@@ -8,7 +8,7 @@ export async function onRequestGet({ env }) {
     const { data, error } = await supabase
       .from('articoli')
       .select('*')
-      .eq('attivo', true)
+      .neq('attivo', false)
       .order('id', { ascending: false });
 
     if (error) {
@@ -18,7 +18,13 @@ export async function onRequestGet({ env }) {
     }
 
     return new Response(JSON.stringify({ success: true, data }), {
-      status: 200, headers: { 'Content-Type': 'application/json' },
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
     });
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: err.message }), {

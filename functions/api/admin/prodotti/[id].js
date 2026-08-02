@@ -79,6 +79,7 @@ export async function onRequest({ request, env, params }) {
             categoria,
             taglie,
             varianti: variantiData,
+            attivo: true,
           })
           .eq('id', productId)
           .select()

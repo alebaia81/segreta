@@ -8,7 +8,7 @@ export async function onRequestGet({ env }) {
     const { data, error } = await supabase
       .from('articoli')
       .select('*')
-      .eq('attivo', true)
+      .neq('attivo', false)
       .order('id', { ascending: false });
 
     if (error) {
