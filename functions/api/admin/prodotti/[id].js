@@ -86,11 +86,24 @@ export async function onRequest({ request, env, params }) {
           .select()
           .maybeSingle();
 
-        // Fallback: Se la colonna 'varianti' non esiste su Supabase (PGRST204), aggiorna integrando varianti in descrizione
+        // Fallback: Se la colonna 'varianti' non esiste su Supabase (PGRST204), aggiorna integrando varianti in B64 in descrizione
         if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('varianti')))) {
-          const descPulita = (descrizione || '').replace(/\[VARIANTI:[^\]]+\]/g, '').trim();
-          const descrizioneConVarianti = variantiData 
-            ? `[VARIANTI:${variantiData}] ${descPulita}`.trim()
+          const descPulita = (descrizione || '')
+            .replace(/\[VARIANTI_B64:[A-Za-z0-9+/=]+\]/g, '')
+            .replace(/\[VARIANTI:[\s\S]+?\](?=\s*$|\s+[A-Za-z0-9])/g, '')
+            .trim();
+
+          let b64 = '';
+          if (variantiData) {
+            try {
+              b64 = Buffer.from(variantiData).toString('base64');
+            } catch {
+              b64 = '';
+            }
+          }
+
+          const descrizioneConVarianti = b64 
+            ? `[VARIANTI_B64:${b64}] ${descPulita}`.trim()
             : descPulita;
 
           const retryRes = await supabase

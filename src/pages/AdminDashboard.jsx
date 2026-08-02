@@ -677,9 +677,31 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
   const handleAvviaModifica = (art) => {
     setEditingId(art.id);
-    const matchSconto = art.descrizione ? art.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
+    let desc = art.descrizione || '';
+
+    // Estrarre varianti da B64 o testo se presenti in descrizione
+    let variantiFromDesc = null;
+    const matchB64 = desc.match(/\[VARIANTI_B64:([A-Za-z0-9+/=]+)\]/);
+    if (matchB64) {
+      try {
+        const jsonStr = decodeURIComponent(escape(atob(matchB64[1])));
+        variantiFromDesc = JSON.parse(jsonStr);
+        desc = desc.replace(matchB64[0], '').trim();
+      } catch {}
+    }
+    if (!variantiFromDesc) {
+      const matchPlain = desc.match(/\[VARIANTI:([\s\S]+?)\](?=\s*$|\s+[A-Za-z0-9])/);
+      if (matchPlain) {
+        try {
+          variantiFromDesc = JSON.parse(matchPlain[1]);
+          desc = desc.replace(matchPlain[0], '').trim();
+        } catch {}
+      }
+    }
+
+    const matchSconto = desc.match(/\[SCONTO:(\d+)\]/);
     const scontoValue = matchSconto ? matchSconto[1] : '';
-    const descrizionePulita = art.descrizione ? art.descrizione.replace(/\[SCONTO:\d+\]/, '').trim() : '';
+    const descrizionePulita = desc.replace(/\[SCONTO:\d+\]/g, '').replace(/\[VARIANTI_B64:[A-Za-z0-9+/=]+\]/g, '').trim();
 
     setNuovoArticolo({
       titolo: art.titolo,
@@ -709,9 +731,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     setSelectedSizes(newSelectedSizes);
     setCustomSizesList(newCustomSizes);
 
-    if (art.varianti) {
+    // Imposta varianti da colonna nativa o da fallback in descrizione
+    const rawVarianti = art.varianti || variantiFromDesc;
+    if (rawVarianti) {
       try {
-        const parsed = Array.isArray(art.varianti) ? art.varianti : JSON.parse(art.varianti);
+        const parsed = Array.isArray(rawVarianti) ? rawVarianti : JSON.parse(rawVarianti);
         setVariantiState(parsed);
       } catch {
         setVariantiState([]);
