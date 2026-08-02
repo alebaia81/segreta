@@ -94,34 +94,35 @@ function MainApp() {
     }
   });
 
-  // Recupera gli articoli aggiornati dal database all'avvio
-  useEffect(() => {
-    const fetchArticoli = async () => {
-      try {
-        const response = await fetch(`/api/prodotti/shop?_t=${Date.now()}`);
-        if (!response.ok) throw new Error('API Response not OK');
-        const json = await response.json();
-        if (json.success && Array.isArray(json.data)) {
-          const parsedData = json.data.map(item => ({
-            id: Number(item.id),
-            titolo: String(item.titolo),
-            descrizione: String(item.descrizione || ''),
-            prezzo: parseFloat(item.prezzo) || 0,
-            immagine_url: String(item.immagine_url || ''),
-            target: String(item.target || 'Donna'),
-            categoria: String(item.categoria || ''),
-            taglie: String(item.taglie || ''),
-            varianti: item.varianti || null,
-            attivo: item.attivo !== false && item.attivo !== 0 && item.attivo !== 'false' && item.attivo !== '0'
-          }));
-          setArticoli(parsedData);
-        }
-      } catch (err) {
-        console.warn('Connessione al database fallita. Caricamento articoli da cache locale.', err);
+  // Recupera gli articoli aggiornati dal database
+  const fetchArticoli = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/prodotti/shop?_t=${Date.now()}`);
+      if (!response.ok) throw new Error('API Response not OK');
+      const json = await response.json();
+      if (json.success && Array.isArray(json.data)) {
+        const parsedData = json.data.map(item => ({
+          id: Number(item.id),
+          titolo: String(item.titolo || ''),
+          descrizione: String(item.descrizione || ''),
+          prezzo: parseFloat(item.prezzo) || 0,
+          immagine_url: String(item.immagine_url || ''),
+          target: String(item.target || 'Donna'),
+          categoria: String(item.categoria || ''),
+          taglie: String(item.taglie || ''),
+          varianti: item.varianti || null,
+          attivo: item.attivo !== false && item.attivo !== 0 && item.attivo !== 'false' && item.attivo !== '0'
+        }));
+        setArticoli(parsedData);
       }
-    };
-    fetchArticoli();
+    } catch (err) {
+      console.warn('Connessione al database fallita. Caricamento articoli da cache locale.', err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchArticoli();
+  }, [fetchArticoli, currentPath]);
 
   // Salva articoli quando cambiano per mantenere aggiornata la cache offline
   useEffect(() => {
@@ -137,6 +138,8 @@ function MainApp() {
       }
       return [nuovoArt, ...prev];
     });
+    // Re-fetch immediato per sincronizzare al 100% dal DB
+    setTimeout(fetchArticoli, 300);
   };
 
   // Gestione attivazione/disattivazione da admin

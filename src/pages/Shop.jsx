@@ -123,7 +123,13 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
 
   const articoliFiltrati = selectedCategory === 'TUTTI'
     ? articoliTarget
-    : articoliTarget.filter(a => normalizeCategory(a.categoria) === normalizeCategory(selectedCategory));
+    : articoliTarget.filter(a => {
+        const catA = normalizeCategory(a.categoria);
+        const catSel = normalizeCategory(selectedCategory);
+        const rawA = String(a.categoria || '').trim().toUpperCase();
+        const rawSel = String(selectedCategory || '').trim().toUpperCase();
+        return catA === catSel || rawA === rawSel;
+      });
 
   const handleSelectSize = (articoloId, size) => {
     setSelectedSizes(prev => ({ ...prev, [articoloId]: size }));
