@@ -1123,7 +1123,32 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
             <h2>{getTabTitle()}</h2>
             <p className="dashboard-sub">{getTabSubtitle()}</p>
           </div>
-          <div className="admin-header-actions">
+          <div className="admin-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {activeTab === 'nuovo' && (
+              <button
+                type="button"
+                onClick={() => { resetNuovoArticoloForm(); setActiveTab('articoli'); }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#E295AB',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 5px rgba(226, 149, 171, 0.4)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#d48197'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#E295AB'; }}
+              >
+                ← Torna al Catalogo Articoli
+              </button>
+            )}
             <a 
               href="/" 
               target="_blank" 
@@ -1475,20 +1500,22 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  background: 'none',
-                  border: '1px solid var(--border-color)',
+                  gap: '8px',
+                  background: 'var(--bg-secondary, #F4F4F5)',
+                  border: '1.5px solid var(--border-color, #E4E4E7)',
                   borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary)',
+                  padding: '10px 18px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: 'var(--text-primary, #2C2520)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#E295AB'; e.currentTarget.style.color = '#E295AB'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color, #E4E4E7)'; e.currentTarget.style.color = 'var(--text-primary, #2C2520)'; }}
               >
-                ← Torna al Catalogo
+                ← Torna al Catalogo Articoli
               </button>
             </div>
 

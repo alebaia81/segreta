@@ -98,7 +98,7 @@ function MainApp() {
   useEffect(() => {
     const fetchArticoli = async () => {
       try {
-        const response = await fetch('/api/prodotti/shop');
+        const response = await fetch(`/api/prodotti/shop?_t=${Date.now()}`);
         if (!response.ok) throw new Error('API Response not OK');
         const json = await response.json();
         if (json.success && Array.isArray(json.data)) {

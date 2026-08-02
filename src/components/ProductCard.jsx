@@ -60,12 +60,21 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
 
   const sliderRef = useRef(null);
 
-  // Parsing delle varianti (array o stringa JSON)
-  const variantiList = Array.isArray(articolo.varianti)
-    ? articolo.varianti
-    : (typeof articolo.varianti === 'string'
-        ? (() => { try { return JSON.parse(articolo.varianti); } catch { return []; } })()
-        : []);
+  // Parsing ultra-robusto delle varianti (array, stringa JSON, stringa annidata)
+  const safeParseVarianti = (raw) => {
+    if (!raw) return [];
+    let parsed = raw;
+    if (typeof parsed === 'string') {
+      try { parsed = JSON.parse(parsed); } catch { return []; }
+    }
+    if (typeof parsed === 'string') {
+      try { parsed = JSON.parse(parsed); } catch { }
+    }
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(v => v && typeof v === 'object');
+  };
+
+  const variantiList = safeParseVarianti(articolo.varianti);
 
   const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
 
