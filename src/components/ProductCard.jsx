@@ -296,6 +296,33 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
         {variantiList.length > 0 && (
           <div className="pc-variants-bar" style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', width: '100%' }}>Colore:</span>
+            
+            {/* Pulsante Tutti (Ripristina Foto e Taglie Principali) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedVariantIndex(null);
+                setSelectedSize(null);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '0.78rem',
+                fontWeight: selectedVariantIndex === null ? '700' : '500',
+                border: selectedVariantIndex === null ? '2px solid #E295AB' : '1px solid var(--border-color, #CCC)',
+                background: selectedVariantIndex === null ? 'rgba(226, 149, 171, 0.15)' : 'var(--bg-secondary, #FFF)',
+                color: 'var(--text-primary, #2C2520)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Tutti
+            </button>
+
             {variantiList.map((v, idx) => {
               const isSelected = selectedVariantIndex === idx;
               return (
@@ -304,8 +331,8 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedVariantIndex(prev => prev === idx ? null : idx);
-                    setSelectedSize(null); // Reset taglia selezionata al cambio colore
+                    setSelectedVariantIndex(idx);
+                    setSelectedSize(null);
                   }}
                   style={{
                     display: 'inline-flex',
