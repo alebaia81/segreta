@@ -76,10 +76,29 @@ export default function ProductCard({
   const [sizeError, setSizeError] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState<number | null>(null);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
 
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Lightbox keydowns and gestures are natively managed by the yet-another-react-lightbox library
+  // Parsing delle varianti (array o stringa JSON)
+  const variantiList: VarianteColore[] = Array.isArray(articolo.varianti)
+    ? articolo.varianti
+    : (typeof articolo.varianti === 'string'
+        ? (() => { try { return JSON.parse(articolo.varianti); } catch { return []; } })()
+        : []);
+
+  const currentVariant = variantiList.length > 0 ? (variantiList[selectedVariantIndex] || variantiList[0]) : null;
+
+  // Immagini correnti — deduplicazione con Set per evitare foto doppie
+  const rawImagesList = currentVariant && Array.isArray(currentVariant.immagini) && currentVariant.immagini.length > 0
+    ? currentVariant.immagini
+    : (articolo.immagine_url ? articolo.immagine_url.split(',').map(s => s.trim()).filter(Boolean) : []);
+  const currentImagesList = [...new Set(rawImagesList.map(u => u.trim()).filter(Boolean))];
+
+  // Taglie correnti
+  const taglieList: string[] = currentVariant && Array.isArray(currentVariant.taglie) && currentVariant.taglie.length > 0
+    ? currentVariant.taglie
+    : (articolo.taglie ? articolo.taglie.split(',').map((s) => s.trim()).filter(Boolean) : []);
 
   const scrollSlider = (direction: 'left' | 'right') => {
     if (sliderRef.current) {
@@ -90,10 +109,6 @@ export default function ProductCard({
       });
     }
   };
-
-  const taglieList: string[] = articolo.taglie
-    ? articolo.taglie.split(',').map((s) => s.trim()).filter(Boolean)
-    : [];
 
   const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
   const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
@@ -119,7 +134,9 @@ export default function ProductCard({
     }
 
     setSizeError(false);
-    onAddToCart?.(articolo, selectedSize ?? 'Unica');
+    const colorName = currentVariant ? currentVariant.colore : null;
+    const customImg = currentImagesList.length > 0 ? currentImagesList[0] : articolo.immagine_url;
+    onAddToCart?.(articolo, selectedSize ?? 'Unica', colorName, customImg);
 
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
@@ -152,7 +169,7 @@ export default function ProductCard({
       {/* ── Immagine ──────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
         <div className="pc-slider" ref={sliderRef} style={{ position: 'absolute', top: 0, left: 0, display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', scrollbarWidth: 'none', width: '100%', height: '100%', backgroundColor: '#ffffff' }}>
-          {articolo.immagine_url.split(',').filter(Boolean).map((url, idx) => {
+          {currentImagesList.map((url, idx) => {
             const imgUrl = resolveImgSrc(url.trim());
             return (
               <div key={idx} style={{ flex: '0 0 100%', width: '100%', height: '100%', scrollSnapAlign: 'start', position: 'relative' }}>
@@ -177,7 +194,7 @@ export default function ProductCard({
         <div className="pc-image-overlay" aria-hidden="true" style={{ pointerEvents: 'none' }} />
 
         {/* Navigazione frecce se più di 1 immagine */}
-        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+        {currentImagesList.length > 1 && (
           <>
             <button
               type="button"
@@ -199,9 +216,9 @@ export default function ProductCard({
         )}
 
         {/* Dots per immagini multiple */}
-        {articolo.immagine_url.split(',').filter(Boolean).length > 1 && (
+        {currentImagesList.length > 1 && (
           <div className="slider-dots" style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 10 }}>
-            {articolo.immagine_url.split(',').filter(Boolean).map((_, i) => (
+            {currentImagesList.map((_, i) => (
               <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.5)' }} />
             ))}
           </div>
@@ -274,6 +291,54 @@ export default function ProductCard({
             </span>
           )}
         </div>
+
+        {/* ── Sezione Selettore Varianti Colore ────────────────────────────────────────── */}
+        {variantiList.length > 0 && (
+          <div className="pc-variants-bar" style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', width: '100%' }}>Colore:</span>
+            {variantiList.map((v, idx) => {
+              const isSelected = selectedVariantIndex === idx;
+              return (
+                <button
+                  key={v.colore || idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVariantIndex(idx);
+                    setSelectedSize(null);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '0.78rem',
+                    fontWeight: isSelected ? '700' : '500',
+                    border: isSelected ? '2px solid #E295AB' : '1px solid var(--border-color, #CCC)',
+                    background: isSelected ? 'rgba(226, 149, 171, 0.15)' : 'var(--bg-secondary, #FFF)',
+                    color: 'var(--text-primary, #2C2520)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {v.hex && (
+                    <span
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: v.hex,
+                        border: '1px solid rgba(0,0,0,0.2)'
+                      }}
+                    />
+                  )}
+                  {v.colore}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Selezione taglie ─────────────────────────────────────── */}
         {taglieList.length > 0 && (

@@ -111,6 +111,7 @@ function MainApp() {
             target: String(item.target || 'Donna'),
             categoria: String(item.categoria || ''),
             taglie: String(item.taglie || ''),
+            varianti: item.varianti || null,
             attivo: Boolean(Number(item.attivo))
           }));
           setArticoli(parsedData);
