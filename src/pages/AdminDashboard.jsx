@@ -374,17 +374,19 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const fetchOrdini = useCallback(async (archivio = false) => {
     try {
       const pass = sessionStorage.getItem('segreta_admin_password') || password;
-      const url = `/api/admin/ordini${archivio ? '?archivio=true' : ''}`;
+      const cacheBuster = `_t=${Date.now()}`;
+      const url = `/api/admin/ordini?${cacheBuster}${archivio ? '&archivio=true' : ''}`;
       const response = await fetch(url, {
         headers: {
-          'x-admin-password': pass
+          'x-admin-password': pass,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       if (response.status === 401) {
         return;
       }
       const json = await response.json();
-      if (json.success) {
+      if (json.success && Array.isArray(json.data)) {
         setOrdini(json.data);
       }
     } catch (err) {
@@ -394,17 +396,29 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   }, [password]);
 
-  // Effetto per caricare i dati non appena si è loggati + Polling automatico ogni 10 secondi
+  // Effetto per caricare i dati non appena si è loggati + Polling automatico ogni 5 secondi
   useEffect(() => {
     if (isLoggedIn) {
       fetchArticoli();
       fetchOrdini(mostraArchivio);
 
+      // Polling rapido ogni 5 secondi per aggiornare gli ordini quasi all'istante
       const interval = setInterval(() => {
         fetchOrdini(mostraArchivio);
-      }, 10000);
+      }, 5000);
 
-      return () => clearInterval(interval);
+      // Listener per aggiornamenti tra schede del browser in tempo reale
+      const handleStorageChange = (e) => {
+        if (e.key === 'segreta_ordini' || e.key === 'segreta_last_order') {
+          fetchOrdini(mostraArchivio);
+        }
+      };
+      window.addEventListener('storage', handleStorageChange);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('storage', handleStorageChange);
+      };
     }
   }, [isLoggedIn, fetchArticoli, fetchOrdini, mostraArchivio]);
 

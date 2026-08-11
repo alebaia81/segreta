@@ -29,7 +29,10 @@ export async function onRequestGet({ request, env }) {
     }
 
     return new Response(JSON.stringify({ success: true, data }), {
-      status: 200, headers: { 'Content-Type': 'application/json' },
+      status: 200, headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      },
     });
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: err.message }), {
