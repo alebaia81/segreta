@@ -215,24 +215,24 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     } finally {
       localStorage.setItem('segreta_last_order', JSON.stringify(finalOrder));
       setCreatedOrderDetails(finalOrder);
-      clearCart();
       setSubmitting(false);
 
       // Rilevamento smartphone (iOS / Android / screen width)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
       if (isMobile) {
-        // Su Smartphone apre direttamente l'app/link Satispay e poi va a ThankYou
+        // Su Smartphone svuota il carrello, apre il link Satispay e va a ThankYou
+        clearCart();
         window.open(SATISPAY_SHOP_LINK, '_blank');
         setCurrentPath('/thank-you');
       } else {
-        // Su PC mostra il Modal con QR code
+        // Su PC mostra il Modal con QR code senza svuotare prima il carrello
         setShowSatispayModal(true);
       }
     }
   };
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && !showSatispayModal) {
     return (
       <div className="checkout-empty-container container">
         <ShoppingBag size={48} className="empty-icon" />
@@ -533,7 +533,10 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
             <div className="satispay-modal-actions">
               <button
                 className="satispay-confirm-btn"
-                onClick={() => setCurrentPath('/thank-you')}
+                onClick={() => {
+                  clearCart();
+                  setCurrentPath('/thank-you');
+                }}
               >
                 Ho inviato il pagamento su Satispay
               </button>
