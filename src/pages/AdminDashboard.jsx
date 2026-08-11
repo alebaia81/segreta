@@ -110,11 +110,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   ];
 
   // Stati locali per la selezione delle taglie tramite checkbox/flag
-  const [selectedSizes, setSelectedSizes] = useState({
-    S: true,
-    M: true,
-    L: true
-  });
+  const [selectedSizes, setSelectedSizes] = useState({});
   const [customSizesList, setCustomSizesList] = useState([]);
   const [newCustomSizeInput, setNewCustomSizeInput] = useState('');
 
@@ -187,7 +183,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     immagine_url: '',
     target: 'Donna',
     categoria: '',
-    taglie: 'S,M,L',
+    taglie: '',
     sconto: ''
   });
 
@@ -198,7 +194,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const handleAddVariante = () => {
     setVariantiState(prev => [
       ...prev,
-      { colore: '', hex: '#E295AB', immagini: [], taglie: ['S', 'M', 'L'] }
+      { colore: '', hex: '#E295AB', immagini: [], taglie: [] }
     ]);
   };
 
@@ -608,10 +604,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       immagine_url: '',
       target: 'Donna',
       categoria: '',
-      taglie: 'S,M,L',
+      taglie: '',
       sconto: ''
     });
-    setSelectedSizes({ S: true, M: true, L: true });
+    setSelectedSizes({});
     setCustomSizesList([]);
     setNewCustomSizeInput('');
     setVariantiState([]);
