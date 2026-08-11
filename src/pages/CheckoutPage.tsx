@@ -155,6 +155,11 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     );
   };
 
+  const [showSatispayModal, setShowSatispayModal] = useState(false);
+  const [createdOrderDetails, setCreatedOrderDetails] = useState<any>(null);
+
+  const SATISPAY_SHOP_LINK = 'https://www.satispay.com/app/pay/shops/af986dff-094d-4a0f-ba4b-cea5fbeef43b';
+
   const handleSatispayPayment = async () => {
     if (!validateForm()) {
       alert('Per favore, compila tutti i campi obbligatori prima di procedere.');
@@ -185,8 +190,10 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
           quantita: item.quantity,
         }))
       ),
-      satispay_transaction_id: 'satispay_mock_' + Math.random().toString(36).substr(2, 9),
+      satispay_transaction_id: 'satispay_shop_af986dff',
     };
+
+    let finalOrder = { ...ordineDaInviare, id: Math.floor(Math.random() * 10000) + 1, created_at: new Date().toISOString() };
 
     try {
       const response = await fetch('/api/ordini', {
@@ -196,38 +203,32 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       });
 
       const json = await response.json();
-      if (json.success) {
-        localStorage.setItem(
-          'segreta_last_order',
-          JSON.stringify({
-            ...ordineDaInviare,
-            id: json.data?.id || Math.floor(Math.random() * 10000) + 1,
-            created_at: new Date().toISOString(),
-          })
-        );
-        clearCart();
-        setCurrentPath('/thank-you');
-      } else {
-        throw new Error(json.error || 'Errore durante la creazione dell\'ordine');
+      if (json.success && json.data) {
+        finalOrder = { ...ordineDaInviare, ...json.data };
       }
     } catch (err: any) {
       console.warn('Connessione API fallita, salvataggio locale di fallback.', err);
-      const ordineFallback = {
-        ...ordineDaInviare,
-        id: Math.floor(Math.random() * 10000) + 1,
-        stato: 'In attesa',
-        created_at: new Date().toISOString(),
-      };
       const ordiniSalvati = localStorage.getItem('segreta_ordini');
       const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
-      ordiniList.unshift(ordineFallback);
+      ordiniList.unshift(finalOrder);
       localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-      localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
-
-      clearCart();
-      setCurrentPath('/thank-you');
     } finally {
+      localStorage.setItem('segreta_last_order', JSON.stringify(finalOrder));
+      setCreatedOrderDetails(finalOrder);
+      clearCart();
       setSubmitting(false);
+
+      // Rilevamento smartphone (iOS / Android / screen width)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+      if (isMobile) {
+        // Su Smartphone apre direttamente l'app/link Satispay e poi va a ThankYou
+        window.open(SATISPAY_SHOP_LINK, '_blank');
+        setCurrentPath('/thank-you');
+      } else {
+        // Su PC mostra il Modal con QR code
+        setShowSatispayModal(true);
+      }
     }
   };
 
@@ -487,6 +488,67 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
           </div>
         </aside>
       </div>
+
+      {/* MODAL SATISPAY DESKTOP */}
+      {showSatispayModal && (
+        <div className="satispay-modal-overlay fade-in">
+          <div className="satispay-modal-card">
+            <div className="satispay-modal-header">
+              <div className="satispay-badge">
+                <svg className="satispay-logo-icon" viewBox="0 0 100 100" width="24" height="24" fill="none">
+                  <circle cx="50" cy="50" r="48" fill="#e50014" />
+                  <path d="M50 22c-15.46 0-28 12.54-28 28s12.54 28 28 28c9.02 0 17.06-4.27 22.18-10.92l-8.08-4.66c-3.4 4.54-8.82 7.58-14.1 7.58-10.49 0-19-8.51-19-19s8.51-19 19-19c6.07 0 11.53 2.87 14.88 7.37l8.08-4.67C68.17 26.54 59.88 22 50 22zm0 17c-6.07 0-11 4.93-11 11s4.93 11 11 11 11-4.93 11-11-4.93-11-11-11z" fill="#ffffff" />
+                </svg>
+                <span>Satispay Business</span>
+              </div>
+              <h2>Completa il pagamento con Satispay</h2>
+              <p className="satispay-subtext">Inquadra il QR Code con l'app Satispay del tuo telefono</p>
+            </div>
+
+            <div className="satispay-modal-body">
+              <div className="satispay-qr-container">
+                <img src="/satispay-qr.png" alt="Satispay QR Code Segreta" className="satispay-qr-img" />
+                <div className="satispay-shop-name">Segreta Style</div>
+              </div>
+
+              <div className="satispay-instructions">
+                <div className="instruction-step">
+                  <span className="step-num">1</span>
+                  <span>Apri l'app <strong>Satispay</strong> sullo smartphone e inquadra il QR Code.</span>
+                </div>
+                <div className="instruction-step">
+                  <span className="step-num">2</span>
+                  <span>
+                    Inserisci l'importo esatto dell'ordine:
+                    <strong className="amount-highlight"> €{(createdOrderDetails?.totale || totalAmount).toFixed(2)}</strong>
+                  </span>
+                </div>
+                <div className="instruction-step">
+                  <span className="step-num">3</span>
+                  <span>Conferma l'invio del pagamento nell'app.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="satispay-modal-actions">
+              <button
+                className="satispay-confirm-btn"
+                onClick={() => setCurrentPath('/thank-you')}
+              >
+                Ho inviato il pagamento su Satispay
+              </button>
+              <a
+                href={SATISPAY_SHOP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="satispay-link-secondary"
+              >
+                Oppure apri il link Satispay nel browser ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{CSS}</style>
     </section>
@@ -864,4 +926,172 @@ const CSS = `
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  /* MODAL SATISPAY STYLES */
+  .satispay-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .satispay-modal-card {
+    background: var(--bg-primary);
+    border: 2px solid #e50014;
+    border-radius: var(--radius-lg);
+    max-width: 480px;
+    width: 100%;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+
+  .satispay-modal-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .satispay-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #e50014;
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .satispay-modal-header h2 {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    margin: 0 0 6px 0;
+    color: var(--text-primary);
+  }
+
+  .satispay-subtext {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .satispay-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .satispay-qr-container {
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 2px solid #e50014;
+    box-shadow: 0 4px 12px rgba(229, 0, 20, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .satispay-qr-img {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+
+  }
+
+  .satispay-shop-name {
+    font-weight: 700;
+    color: #e50014;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+
+  .satispay-instructions {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    width: 100%;
+  }
+
+  .instruction-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+  }
+
+  .step-num {
+    background-color: #e50014;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .amount-highlight {
+    color: #e50014;
+    font-size: 1.05rem;
+  }
+
+  .satispay-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .satispay-confirm-btn {
+    background-color: #e50014;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .satispay-confirm-btn:hover {
+    background-color: #c80010;
+    transform: translateY(-1px);
+  }
+
+  .satispay-link-secondary {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    text-decoration: underline;
+    transition: var(--transition-smooth);
+  }
+
+  .satispay-link-secondary:hover {
+    color: #e50014;
+  }
 `;
+

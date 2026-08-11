@@ -43,8 +43,11 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
         <CheckCircle size={64} className="success-icon" />
         <h2>Grazie del tuo ordine!</h2>
         <p className="success-desc">
-          Il tuo ordine <strong>#{orderDetails.id}</strong> è stato registrato ed il pagamento con **PayPal** è andato a buon fine.
-          Riceverai a breve una chiamata o un messaggio da Greta per la conferma finale dei tempi di spedizione.
+          Il tuo ordine <strong>#{orderDetails.id}</strong> è stato registrato con successo.
+          {orderDetails.metodo_pagamento === 'Satispay'
+            ? ' Se hai già inviato il pagamento tramite l\'app Satispay, Greta verificherà l\'accredito e ti contatterà a breve.'
+            : ' Il pagamento con PayPal è andato a buon fine.'}
+          {' '}Riceverai a breve un messaggio da Greta per la conferma finale dei tempi di spedizione.
         </p>
 
         <div className="order-summary-box">
@@ -56,7 +59,10 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
             <p><strong>Telefono:</strong> {orderDetails.telefono}</p>
             <p><strong>Metodo di Consegna:</strong> {orderDetails.metodo_consegna}</p>
             <p><strong>Indirizzo Spedizione:</strong> {orderDetails.indirizzo_spedizione}</p>
-            <p><strong>Stato Pagamento:</strong> PayPal (Transazione completata)</p>
+            <p>
+              <strong>Metodo Pagamento:</strong> {orderDetails.metodo_pagamento || 'Online'}
+              {orderDetails.metodo_pagamento === 'Satispay' ? ' (Inviato via App)' : ' (Completato)'}
+            </p>
           </div>
 
           <table className="order-items-table">
