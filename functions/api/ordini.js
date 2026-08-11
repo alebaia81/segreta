@@ -9,6 +9,7 @@ export async function onRequestPost({ request, env }) {
     const {
       nome_cliente,
       telefono,
+      email,
       indirizzo_spedizione,
       metodo_pagamento,
       metodo_consegna,
@@ -28,18 +29,22 @@ export async function onRequestPost({ request, env }) {
       ? JSON.parse(dettaglio_articoli)
       : dettaglio_articoli;
 
+    const insertData = {
+      nome_cliente,
+      telefono,
+      indirizzo_spedizione,
+      metodo_pagamento: metodo_pagamento || 'Satispay',
+      metodo_consegna: metodo_consegna || 'Spedizione',
+      totale: parseFloat(totale),
+      dettaglio_articoli: dettaglio,
+      stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
+    };
+    // Aggiunge email solo se presente (la colonna potrebbe non esistere nel DB)
+    if (email) insertData.email = email;
+
     const { data, error } = await supabase
       .from('ordini')
-      .insert([{
-        nome_cliente,
-        telefono,
-        indirizzo_spedizione,
-        metodo_pagamento: metodo_pagamento || 'Satispay',
-        metodo_consegna: metodo_consegna || 'Spedizione',
-        totale: parseFloat(totale),
-        dettaglio_articoli: dettaglio,
-        stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
-      }])
+      .insert([insertData])
       .select()
       .single();
 

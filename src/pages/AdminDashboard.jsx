@@ -1408,7 +1408,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-value" style={{fontWeight: 600}}>{ord.metodo_consegna}</span>
                         
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo || ord.indirizzo_spedizione || 'Ritiro in negozio'}</span>
+                        <span className="info-value">{ord.indirizzo_spedizione || ord.indirizzo || (ord.metodo_consegna === 'Ritiro in negozio' ? 'Ritiro in negozio' : '⚠️ Da confermare')}</span>
+                        
+                        {ord.email && (
+                          <>
+                            <span className="info-label">Email:</span>
+                            <span className="info-value">{ord.email}</span>
+                          </>
+                        )}
                         
                         {ord.note && (
                           <>
@@ -1543,7 +1550,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-label">Metodo:</span>
                         <span className="info-value">{ord.metodo_consegna}</span>
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo || ord.indirizzo_spedizione || 'Ritiro in negozio'}</span>
+                        <span className="info-value">{ord.indirizzo_spedizione || ord.indirizzo || (ord.metodo_consegna === 'Ritiro in negozio' ? 'Ritiro in negozio' : '⚠️ Da confermare')}</span>
+                        
+                        {ord.email && (
+                          <>
+                            <span className="info-label">Email:</span>
+                            <span className="info-value">{ord.email}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     

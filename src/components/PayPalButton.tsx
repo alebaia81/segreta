@@ -4,9 +4,10 @@ interface PayPalButtonProps {
   amount: number;
   onSuccess: (details: any) => void;
   onError: (error: any) => void;
+  onValidate?: () => boolean;
 }
 
-export default function PayPalButton({ amount, onSuccess, onError }: PayPalButtonProps) {
+export default function PayPalButton({ amount, onSuccess, onError, onValidate }: PayPalButtonProps) {
   const initialOptions = {
     clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID as string,
     currency: 'EUR',
@@ -25,6 +26,10 @@ export default function PayPalButton({ amount, onSuccess, onError }: PayPalButto
             height: 48,
           }}
           createOrder={(data, actions) => {
+            // Valida il form PRIMA di creare l'ordine su PayPal
+            if (onValidate && !onValidate()) {
+              return Promise.reject(new Error('Form non valido'));
+            }
             return actions.order.create({
               intent: 'CAPTURE',
               purchase_units: [

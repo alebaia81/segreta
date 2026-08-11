@@ -75,19 +75,57 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
 
   const totalAmount = cartTotal + shippingFee;
 
+  const handlePayPalValidate = (): boolean => {
+    if (!validateForm()) {
+      setErrorMessage('⚠️ Compila tutti i campi obbligatori (nome, cognome, telefono, email e indirizzo) prima di procedere con il pagamento.');
+      // Scorri su per mostrare i campi con errori
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
+    }
+    setErrorMessage('');
+    return true;
+  };
+
   const handlePayPalSuccess = async (details: any) => {
     setSubmitting(true);
     setErrorMessage('');
 
-    const indirizzoCompleto =
-      formData.metodo_consegna === 'Ritiro in negozio'
-        ? 'Ritiro in negozio (Monticelli d\'Ongina)'
-        : `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+    // Dati da form o fallback da PayPal details
+    const paypalShipping = details?.purchase_units?.[0]?.shipping;
+    const paypalAddress = paypalShipping?.address;
+    const paypalPayer = details?.payer;
+
+    const nomeForm = `${formData.nome} ${formData.cognome}`.trim();
+    const nomePaypal = paypalShipping?.name?.full_name || `${paypalPayer?.name?.given_name || ''} ${paypalPayer?.name?.surname || ''}`.trim();
+    const nomeFinale = nomeForm || nomePaypal || 'Cliente PayPal';
+
+    const telefonoForm = formData.telefono.trim();
+    const telefonoPaypal = paypalPayer?.phone?.phone_number?.national_number || '';
+    const telefonoFinale = telefonoForm || telefonoPaypal || 'Da confermare';
+
+    let indirizzoFinale = '';
+    if (formData.metodo_consegna === 'Ritiro in negozio') {
+      indirizzoFinale = 'Ritiro in negozio (Monticelli d\'Ongina)';
+    } else {
+      const hasFormAddress = formData.indirizzo.trim() && formData.citta.trim();
+      if (hasFormAddress) {
+        indirizzoFinale = `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+      } else if (paypalAddress && (paypalAddress.address_line_1 || paypalAddress.admin_area_2)) {
+        const line1 = paypalAddress.address_line_1 || '';
+        const line2 = paypalAddress.address_line_2 || '';
+        const city = paypalAddress.admin_area_2 || '';
+        const cap = paypalAddress.postal_code || '';
+        indirizzoFinale = `${line1} ${line2}`.trim() + (city ? `, ${city}` : '') + (cap ? ` (${cap})` : '');
+      } else {
+        indirizzoFinale = 'Indirizzo da confermare via WhatsApp';
+      }
+    }
 
     const ordineDaInviare = {
-      nome_cliente: `${formData.nome} ${formData.cognome}`,
-      telefono: formData.telefono,
-      indirizzo_spedizione: indirizzoCompleto,
+      nome_cliente: nomeFinale,
+      telefono: telefonoFinale,
+      email: formData.email || paypalPayer?.email_address || '',
+      indirizzo_spedizione: indirizzoFinale,
       metodo_pagamento: 'PayPal',
       metodo_consegna: formData.metodo_consegna,
       stato: 'Pagamento Ricevuto - In Lavorazione',
@@ -470,6 +508,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                     amount={totalAmount}
                     onSuccess={handlePayPalSuccess}
                     onError={handlePayPalError}
+                    onValidate={handlePayPalValidate}
                   />
                 </>
               ) : (
