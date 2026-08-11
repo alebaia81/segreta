@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home } from 'lucide-react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle } from 'lucide-react';
 import { supabase as supabaseClient } from '../lib/supabaseClient.js';
 
 const TARGET_CATEGORIES = {
@@ -28,6 +28,57 @@ const safeParseJSON = (data, fallback = []) => {
   } catch {
     return fallback;
   }
+};
+
+const getWhatsAppUrl = (ord) => {
+  if (!ord || !ord.telefono) return '#';
+  let cleanPhone = String(ord.telefono).replace(/\D/g, '');
+  if (cleanPhone.length === 10 && !cleanPhone.startsWith('39')) {
+    cleanPhone = '39' + cleanPhone;
+  }
+
+  const metodoPag = ord.metodo_pagamento || 'Satispay';
+  const nomeCliente = ord.nome_cliente ? ord.nome_cliente.split(' ')[0] : 'Cliente';
+  const totale = parseFloat(ord.totale || 0).toFixed(2);
+  const orderId = ord.id;
+
+  let messaggio = '';
+
+  switch (ord.stato) {
+    case 'Verifica Pagamento':
+      messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nStiamo effettuando la verifica del tuo pagamento di €${totale} inviato tramite ${metodoPag}. Ti confermeremo l'accredito a brevissimo!`;
+      break;
+
+    case 'Pagamento Ricevuto':
+      messaggio = `Ciao ${nomeCliente}! 🌸\nAbbiamo ricevuto e verificato con successo il pagamento di €${totale} via ${metodoPag} per l'ordine #${orderId}.\nStiamo ora preparando i tuoi articoli per la consegna! ✨`;
+      break;
+
+    case 'In Lavorazione':
+      messaggio = `Ciao ${nomeCliente}! 🌸\nIl tuo ordine #${orderId} è attualmente in fase di preparazione nei nostri locali da Segreta Style. Ti aggiorneremo non appena sarà pronto!`;
+      break;
+
+    case 'Spedito':
+      messaggio = `Ciao ${nomeCliente}! 🚚\nOttime notizie: il tuo ordine #${orderId} è stato spedito ed è in viaggio verso l'indirizzo da te indicato!`;
+      break;
+
+    case 'Pronto al Ritiro':
+      messaggio = `Ciao ${nomeCliente}! 🛍️\nIl tuo ordine #${orderId} è PRONTO per il ritiro in negozio presso Segreta Style a Monticelli d'Ongina! Ti aspettiamo negli orari di apertura.`;
+      break;
+
+    case 'Completato':
+      messaggio = `Ciao ${nomeCliente}! ✨\nIl tuo ordine #${orderId} è stato completato con successo. Grazie di cuore per aver scelto Segreta Style! Per qualsiasi cosa siamo a disposizione.`;
+      break;
+
+    case 'Annullato':
+      messaggio = `Ciao ${nomeCliente}, ti informiamo che l'ordine #${orderId} è stato annullato. Per qualsiasi dubbio siamo a tua disposizione.`;
+      break;
+
+    default:
+      messaggio = `Ciao ${nomeCliente}! Ti contattiamo da Segreta Style in merito al tuo ordine #${orderId} di €${totale}.`;
+      break;
+  }
+
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messaggio)}`;
 };
 
 export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo, onNavigateToHome }) {
@@ -1238,8 +1289,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               {filteredOrdini.map(ord => (
                 <div key={ord.id} className="order-admin-card">
                   <div className="order-admin-header">
-                    <div className="order-admin-title">
+                    <div className="order-admin-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <h4>Ordine #{ord.id}</h4>
+                      <span className={`payment-method-badge ${(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? 'paypal' : 'satispay'}`}>
+                        {(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? '🟡 PayPal / Carta' : '🔴 Satispay'}
+                      </span>
                       <div className="order-admin-meta">
                         <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
@@ -1247,16 +1301,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                     <div className="order-admin-status-area">
                       <select 
                         className="select-status"
-                        value={ord.stato}
+                        value={ord.stato || 'Verifica Pagamento'}
                         onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
                         aria-label="Stato ordine"
                       >
-                        <option value="Nuovo">Nuovo</option>
-                        <option value="In Elaborazione">In Lavorazione</option>
-                        <option value="Spedito">Spedito</option>
-                        <option value="Pronto al Ritiro">Ritiro Pronto</option>
-                        <option value="Completato">Completato</option>
-                        <option value="Annullato">Annullato</option>
+                        <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
+                        <option value="Pagamento Ricevuto">💳 Pagamento Ricevuto</option>
+                        <option value="In Lavorazione">📦 In Lavorazione</option>
+                        <option value="Spedito">🚚 Spedito</option>
+                        <option value="Pronto al Ritiro">🛍️ Ritiro Pronto</option>
+                        <option value="Completato">✅ Completato</option>
+                        <option value="Annullato">❌ Annullato</option>
                       </select>
                       
                       <button 
@@ -1277,13 +1332,25 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-value">{ord.nome_cliente}</span>
                         
                         <span className="info-label">Telefono:</span>
-                        <span className="info-value">{ord.telefono}</span>
+                        <div className="info-value-with-action">
+                          <span>{ord.telefono}</span>
+                          <a
+                            href={getWhatsAppUrl(ord)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-whatsapp-direct"
+                            title={`Avvisa ${ord.nome_cliente} su WhatsApp`}
+                          >
+                            <MessageCircle size={14} />
+                            <span>WhatsApp</span>
+                          </a>
+                        </div>
                         
                         <span className="info-label">Metodo:</span>
                         <span className="info-value" style={{fontWeight: 600}}>{ord.metodo_consegna}</span>
                         
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo || 'Ritiro in negozio'}</span>
+                        <span className="info-value">{ord.indirizzo || ord.indirizzo_spedizione || 'Ritiro in negozio'}</span>
                         
                         {ord.note && (
                           <>
@@ -1353,8 +1420,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               {filteredOrdini.map(ord => (
                 <div key={ord.id} className="order-admin-card" style={{ opacity: 0.85 }}>
                   <div className="order-admin-header">
-                    <div className="order-admin-title">
+                    <div className="order-admin-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <h4>Ordine #{ord.id}</h4>
+                      <span className={`payment-method-badge ${(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? 'paypal' : 'satispay'}`}>
+                        {(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? '🟡 PayPal / Carta' : '🔴 Satispay'}
+                      </span>
                       <div className="order-admin-meta">
                         <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
@@ -1362,16 +1432,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                     <div className="order-admin-status-area">
                       <select 
                         className="select-status"
-                        value={ord.stato}
+                        value={ord.stato || 'Verifica Pagamento'}
                         onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
                         aria-label="Stato ordine"
                       >
-                        <option value="Nuovo">Nuovo</option>
-                        <option value="In Elaborazione">In Lavorazione</option>
-                        <option value="Spedito">Spedito</option>
-                        <option value="Pronto al Ritiro">Ritiro Pronto</option>
-                        <option value="Completato">Completato</option>
-                        <option value="Annullato">Annullato</option>
+                        <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
+                        <option value="Pagamento Ricevuto">💳 Pagamento Ricevuto</option>
+                        <option value="In Lavorazione">📦 In Lavorazione</option>
+                        <option value="Spedito">🚚 Spedito</option>
+                        <option value="Pronto al Ritiro">🛍️ Ritiro Pronto</option>
+                        <option value="Completato">✅ Completato</option>
+                        <option value="Annullato">❌ Annullato</option>
                       </select>
                       
                       <button 
@@ -1391,11 +1462,23 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-label">Nome:</span>
                         <span className="info-value">{ord.nome_cliente}</span>
                         <span className="info-label">Telefono:</span>
-                        <span className="info-value">{ord.telefono}</span>
+                        <div className="info-value-with-action">
+                          <span>{ord.telefono}</span>
+                          <a
+                            href={getWhatsAppUrl(ord)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-whatsapp-direct"
+                            title={`Avvisa ${ord.nome_cliente} su WhatsApp`}
+                          >
+                            <MessageCircle size={14} />
+                            <span>WhatsApp</span>
+                          </a>
+                        </div>
                         <span className="info-label">Metodo:</span>
                         <span className="info-value">{ord.metodo_consegna}</span>
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo || 'Ritiro in negozio'}</span>
+                        <span className="info-value">{ord.indirizzo || ord.indirizzo_spedizione || 'Ritiro in negozio'}</span>
                       </div>
                     </div>
                     
@@ -2449,12 +2532,67 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     .select-status {
       min-height: 34px;
       padding: 0 10px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
       background-color: var(--bg-primary);
       color: var(--text-primary);
       cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .payment-method-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .payment-method-badge.satispay {
+      background-color: #ffe6e8;
+      color: #e50014;
+      border: 1px solid #ffccd0;
+    }
+
+    .payment-method-badge.paypal {
+      background-color: #fff8e6;
+      color: #b7791f;
+      border: 1px solid #fbd38d;
+    }
+
+    .info-value-with-action {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-whatsapp-direct {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background-color: #25D366;
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(37, 211, 102, 0.25);
+    }
+
+    .btn-whatsapp-direct:hover {
+      background-color: #1eb956;
+      color: #ffffff;
+      transform: translateY(-1px);
     }
 
     .order-admin-body {

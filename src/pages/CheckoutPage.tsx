@@ -90,6 +90,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       indirizzo_spedizione: indirizzoCompleto,
       metodo_pagamento: 'PayPal',
       metodo_consegna: formData.metodo_consegna,
+      stato: 'Pagamento Ricevuto',
       totale: parseFloat(totalAmount.toFixed(2)),
       dettaglio_articoli: JSON.stringify(
         cartItems.map((item: any) => ({
@@ -180,6 +181,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       indirizzo_spedizione: indirizzoCompleto,
       metodo_pagamento: 'Satispay',
       metodo_consegna: formData.metodo_consegna,
+      stato: 'Verifica Pagamento',
       totale: parseFloat(totalAmount.toFixed(2)),
       dettaglio_articoli: JSON.stringify(
         cartItems.map((item: any) => ({
