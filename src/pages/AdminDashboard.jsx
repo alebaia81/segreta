@@ -292,9 +292,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [confirmDashboardPassword, setConfirmDashboardPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const ARCHIVE_STATUSES = ['Completato', 'Annullato', 'Archiviato'];
+  const ordiniAttiviList = ordini.filter(o => !ARCHIVE_STATUSES.includes(o.stato));
 
   const filteredOrdini = ordini.filter(ord => {
+    const isArchivedStatus = ARCHIVE_STATUSES.includes(ord.stato);
+    if (activeTab === 'ordini' && isArchivedStatus) return false;
+    if (activeTab === 'archivio' && !isArchivedStatus) return false;
+
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -1169,8 +1174,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           >
             <ClipboardList size={18} />
             <span>Ordini Attivi</span>
-            {ordini.length > 0 && activeTab !== 'archivio' && (
-              <span className="nav-badge">{ordini.length}</span>
+            {ordiniAttiviList.length > 0 && activeTab !== 'archivio' && (
+              <span className="nav-badge">{ordiniAttiviList.length}</span>
             )}
           </button>
 

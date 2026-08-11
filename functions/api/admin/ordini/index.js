@@ -19,8 +19,8 @@ export async function onRequestGet({ request, env }) {
       .order('id', { ascending: false });
 
     const { data, error } = showArchive
-      ? await query.eq('stato', 'Archiviato')
-      : await query.neq('stato', 'Archiviato');
+      ? await query.in('stato', ['Archiviato', 'Completato', 'Annullato'])
+      : await query.not('stato', 'in', '("Archiviato","Completato","Annullato")');
 
     if (error) {
       return new Response(JSON.stringify({ success: false, error: error.message }), {
