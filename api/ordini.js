@@ -20,11 +20,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: "Campi obbligatori dell'ordine mancanti." });
   }
 
-  // dettaglio_articoli può arrivare come stringa JSON o già come oggetto
-  const dettaglio =
-    typeof dettaglio_articoli === 'string'
-      ? JSON.parse(dettaglio_articoli)
-      : dettaglio_articoli;
+  const dettaglioStr = typeof dettaglio_articoli === 'string'
+    ? dettaglio_articoli
+    : JSON.stringify(dettaglio_articoli);
 
   const { data, error } = await supabase
     .from('ordini')
@@ -32,11 +30,12 @@ export default async function handler(req, res) {
       nome_cliente,
       telefono,
       indirizzo_spedizione,
-      metodo_pagamento,
-      metodo_consegna,
+      metodo_pagamento: metodo_pagamento || 'Satispay',
+      metodo_consegna: metodo_consegna || 'Spedizione',
       totale: parseFloat(totale),
-      dettaglio_articoli: dettaglio,
-      stato: 'In attesa',
+      dettaglio_articoli: dettaglioStr,
+      articoli: dettaglioStr,
+      stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
     }])
     .select()
     .single();

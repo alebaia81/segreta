@@ -13,14 +13,10 @@ export async function onRequestGet({ request, env }) {
     const url = new URL(request.url);
     const showArchive = url.searchParams.get('archivio') === 'true';
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('ordini')
       .select('*')
       .order('id', { ascending: false });
-
-    const { data, error } = showArchive
-      ? await query.in('stato', ['Archiviato', 'Completato', 'Annullato'])
-      : await query.not('stato', 'in', '("Archiviato","Completato","Annullato")');
 
     if (error) {
       return new Response(JSON.stringify({ success: false, error: error.message }), {
@@ -28,7 +24,12 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    return new Response(JSON.stringify({ success: true, data }), {
+    const archiveStatuses = ['Archiviato', 'Completato', 'Annullato'];
+    const filteredData = (data || []).filter(item => 
+      showArchive ? archiveStatuses.includes(item.stato) : !archiveStatuses.includes(item.stato)
+    );
+
+    return new Response(JSON.stringify({ success: true, data: filteredData }), {
       status: 200, headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'

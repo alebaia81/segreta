@@ -12,15 +12,18 @@ export default async function handler(req, res) {
 
   const showArchive = req.query.archivio === 'true';
 
-  const query = supabase
+  const { data, error } = await supabase
     .from('ordini')
     .select('*')
     .order('id', { ascending: false });
 
-  const { data, error } = showArchive
-    ? await query.eq('stato', 'Archiviato')
-    : await query.neq('stato', 'Archiviato');
-
   if (error) return res.status(500).json({ success: false, error: error.message });
-  return res.json({ success: true, data });
+
+  const archiveStatuses = ['Archiviato', 'Completato', 'Annullato'];
+  const filteredData = (data || []).filter(item => 
+    showArchive ? archiveStatuses.includes(item.stato) : !archiveStatuses.includes(item.stato)
+  );
+
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  return res.json({ success: true, data: filteredData });
 }
