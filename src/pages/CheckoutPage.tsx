@@ -509,22 +509,33 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
               <div className="satispay-qr-container">
                 <img src="/satispay-qr.png" alt="Satispay QR Code Segreta" className="satispay-qr-img" />
                 <div className="satispay-shop-name">Segreta Style</div>
+                <div className="satispay-order-number-badge">
+                  <span className="order-badge-label">Causale da inserire:</span>
+                  <strong className="order-badge-code">Ordine #{createdOrderDetails?.id}</strong>
+                </div>
               </div>
 
               <div className="satispay-instructions">
                 <div className="instruction-step">
                   <span className="step-num">1</span>
-                  <span>Apri l'app <strong>Satispay</strong> sullo smartphone e inquadra il QR Code.</span>
+                  <span>Apri l'app <strong>Satispay</strong> e inquadra il QR Code.</span>
                 </div>
                 <div className="instruction-step">
                   <span className="step-num">2</span>
                   <span>
-                    Inserisci l'importo esatto dell'ordine:
+                    Inserisci l'importo esatto:
                     <strong className="amount-highlight"> €{(createdOrderDetails?.totale || totalAmount).toFixed(2)}</strong>
                   </span>
                 </div>
                 <div className="instruction-step">
                   <span className="step-num">3</span>
+                  <span>
+                    Inserisci nelle note/causale:
+                    <strong className="code-highlight"> Ordine #{createdOrderDetails?.id}</strong>
+                  </span>
+                </div>
+                <div className="instruction-step">
+                  <span className="step-num">4</span>
                   <span>Conferma l'invio del pagamento nell'app.</span>
                 </div>
               </div>
@@ -1021,6 +1032,40 @@ const CSS = `
     color: #e50014;
     font-size: 0.9rem;
     letter-spacing: 0.05em;
+  }
+
+  .satispay-order-number-badge {
+    background-color: #fff0f1;
+    border: 1px dashed #e50014;
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .order-badge-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .order-badge-code {
+    font-size: 1.1rem;
+    color: #e50014;
+    font-weight: 800;
+  }
+
+  .code-highlight {
+    color: #e50014;
+    font-weight: 700;
+    background: #fff0f1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #ffccd0;
   }
 
   .satispay-instructions {
