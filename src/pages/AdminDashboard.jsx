@@ -291,7 +291,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [newDashboardPassword, setNewDashboardPassword] = useState('');
   const [confirmDashboardPassword, setConfirmDashboardPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const ARCHIVE_STATUSES = ['Completato', 'Annullato', 'Archiviato'];
   const ordiniAttiviList = ordini.filter(o => !ARCHIVE_STATUSES.includes(o.stato));
 
