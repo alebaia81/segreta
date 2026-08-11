@@ -24,9 +24,9 @@ export async function onRequestPost({ request, env }) {
       );
     }
 
-    const dettaglioStr = typeof dettaglio_articoli === 'string'
-      ? dettaglio_articoli
-      : JSON.stringify(dettaglio_articoli);
+    const dettaglio = typeof dettaglio_articoli === 'string'
+      ? JSON.parse(dettaglio_articoli)
+      : dettaglio_articoli;
 
     const { data, error } = await supabase
       .from('ordini')
@@ -37,8 +37,7 @@ export async function onRequestPost({ request, env }) {
         metodo_pagamento: metodo_pagamento || 'Satispay',
         metodo_consegna: metodo_consegna || 'Spedizione',
         totale: parseFloat(totale),
-        dettaglio_articoli: dettaglioStr,
-        articoli: dettaglioStr,
+        dettaglio_articoli: dettaglio,
         stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
       }])
       .select()
