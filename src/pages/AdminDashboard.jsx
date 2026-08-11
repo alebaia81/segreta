@@ -925,6 +925,37 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   };
 
+  const handleDeleteOrdine = async (ordineId) => {
+    if (!window.confirm(`Sei sicura di voler eliminare definitivamente l'ordine #${ordineId}? L'azione non potrà essere annullata.`)) {
+      return;
+    }
+
+    if (isAPIAvailable) {
+      try {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/ordini/${ordineId}`, {
+          method: 'DELETE',
+          headers: {
+            'x-admin-password': pass
+          }
+        });
+        const json = await response.json();
+        if (json.success) {
+          setOrdini(prev => prev.filter(o => o.id !== ordineId));
+        } else {
+          alert(`Errore eliminazione: ${json.error || 'Impossibile eliminare l\'ordine.'}`);
+        }
+      } catch (err) {
+        console.error('Errore durante l\'eliminazione dell\'ordine su DB.', err);
+        setOrdini(prev => prev.filter(o => o.id !== ordineId));
+      }
+    } else {
+      const nuoviOrdini = ordini.filter(o => o.id !== ordineId);
+      setOrdini(nuoviOrdini);
+      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
+    }
+  };
+
 
   const handlePrintRicevuta = (o) => {
     const win = window.open('', '_blank');
@@ -1321,6 +1352,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                       >
                         <Download size={14} /> Ricevuta
                       </button>
+
+                      <button 
+                        className="btn-delete-order"
+                        onClick={() => handleDeleteOrdine(ord.id)}
+                        title="Elimina definitivamente ordine"
+                      >
+                        <Trash size={14} /> Elimina
+                      </button>
                     </div>
                   </div>
                   
@@ -1451,6 +1490,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         title="Stampa ricevuta"
                       >
                         <Download size={14} /> Ricevuta
+                      </button>
+
+                      <button 
+                        className="btn-delete-order"
+                        onClick={() => handleDeleteOrdine(ord.id)}
+                        title="Elimina definitivamente ordine"
+                      >
+                        <Trash size={14} /> Elimina
                       </button>
                     </div>
                   </div>
@@ -2593,6 +2640,27 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       background-color: #1eb956;
       color: #ffffff;
       transform: translateY(-1px);
+    }
+
+    .btn-delete-order {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background-color: transparent;
+      color: #d32f2f;
+      border: 1px solid #ffcdd2;
+      padding: 0 10px;
+      min-height: 34px;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-delete-order:hover {
+      background-color: #ffebee;
+      border-color: #e57373;
     }
 
     .order-admin-body {
