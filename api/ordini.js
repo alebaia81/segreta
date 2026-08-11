@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     metodo_consegna,
     totale,
     dettaglio_articoli,
+    stato,
   } = req.body;
 
   if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {

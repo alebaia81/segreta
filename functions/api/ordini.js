@@ -14,6 +14,7 @@ export async function onRequestPost({ request, env }) {
       metodo_consegna,
       totale,
       dettaglio_articoli,
+      stato,
     } = body;
 
     if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {

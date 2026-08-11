@@ -387,7 +387,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       }
       const json = await response.json();
       if (json.success && Array.isArray(json.data)) {
-        setOrdini(json.data);
+        const saved = localStorage.getItem('segreta_ordini');
+        const localList = saved ? JSON.parse(saved) : [];
+        const existingIds = new Set(json.data.map(o => String(o.id)));
+        const missingLocal = localList.filter(l => !existingIds.has(String(l.id)));
+        setOrdini([...json.data, ...missingLocal]);
       }
     } catch (err) {
       console.warn('Connessione API per ordini fallita. Fallback su localStorage.', err);
