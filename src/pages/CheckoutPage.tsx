@@ -90,7 +90,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       indirizzo_spedizione: indirizzoCompleto,
       metodo_pagamento: 'PayPal',
       metodo_consegna: formData.metodo_consegna,
-      stato: 'Pagamento Ricevuto',
+      stato: 'Pagamento Ricevuto - In Lavorazione',
       totale: parseFloat(totalAmount.toFixed(2)),
       dettaglio_articoli: JSON.stringify(
         cartItems.map((item: any) => ({

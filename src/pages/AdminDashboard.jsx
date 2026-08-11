@@ -49,12 +49,10 @@ const getWhatsAppUrl = (ord) => {
       messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nStiamo effettuando la verifica del tuo pagamento di €${totale} inviato tramite ${metodoPag}. Ti confermeremo l'accredito a brevissimo!`;
       break;
 
+    case 'Pagamento Ricevuto - In Lavorazione':
     case 'Pagamento Ricevuto':
-      messaggio = `Ciao ${nomeCliente}! 🌸\nAbbiamo ricevuto e verificato con successo il pagamento di €${totale} via ${metodoPag} per l'ordine #${orderId}.\nStiamo ora preparando i tuoi articoli per la consegna! ✨`;
-      break;
-
     case 'In Lavorazione':
-      messaggio = `Ciao ${nomeCliente}! 🌸\nIl tuo ordine #${orderId} è attualmente in fase di preparazione nei nostri locali da Segreta Style. Ti aggiorneremo non appena sarà pronto!`;
+      messaggio = `Ciao ${nomeCliente}! 🌸\nAbbiamo ricevuto e verificato con successo il tuo pagamento di €${totale} via ${metodoPag} per l'ordine #${orderId}.\nIl tuo ordine è ora in lavorazione e stiamo preparando i tuoi articoli! ✨`;
       break;
 
     case 'Spedito':
@@ -396,14 +394,17 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   }, [password]);
 
-  // Effetto per caricare i dati non appena si è loggati
+  // Effetto per caricare i dati non appena si è loggati + Polling automatico ogni 10 secondi
   useEffect(() => {
     if (isLoggedIn) {
-      const timer = setTimeout(() => {
-        fetchArticoli();
+      fetchArticoli();
+      fetchOrdini(mostraArchivio);
+
+      const interval = setInterval(() => {
         fetchOrdini(mostraArchivio);
-      }, 0);
-      return () => clearTimeout(timer);
+      }, 10000);
+
+      return () => clearInterval(interval);
     }
   }, [isLoggedIn, fetchArticoli, fetchOrdini, mostraArchivio]);
 
@@ -1338,8 +1339,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         aria-label="Stato ordine"
                       >
                         <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
-                        <option value="Pagamento Ricevuto">💳 Pagamento Ricevuto</option>
-                        <option value="In Lavorazione">📦 In Lavorazione</option>
+                        <option value="Pagamento Ricevuto - In Lavorazione">💳 Pagamento Ricevuto - In Lavorazione 📦</option>
                         <option value="Spedito">🚚 Spedito</option>
                         <option value="Pronto al Ritiro">🛍️ Ritiro Pronto</option>
                         <option value="Completato">✅ Completato</option>
@@ -1477,8 +1477,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         aria-label="Stato ordine"
                       >
                         <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
-                        <option value="Pagamento Ricevuto">💳 Pagamento Ricevuto</option>
-                        <option value="In Lavorazione">📦 In Lavorazione</option>
+                        <option value="Pagamento Ricevuto - In Lavorazione">💳 Pagamento Ricevuto - In Lavorazione 📦</option>
                         <option value="Spedito">🚚 Spedito</option>
                         <option value="Pronto al Ritiro">🛍️ Ritiro Pronto</option>
                         <option value="Completato">✅ Completato</option>
