@@ -90,7 +90,6 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     setSubmitting(true);
     setErrorMessage('');
 
-    // Dati da form o fallback da PayPal details
     const paypalShipping = details?.purchase_units?.[0]?.shipping;
     const paypalAddress = paypalShipping?.address;
     const paypalPayer = details?.payer;
@@ -142,44 +141,70 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       paypal_order_id: details.id,
     };
 
-    try {
-      const response = await fetch('/api/ordini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordineDaInviare),
-      });
+    const attemptOrder = async (retries: number): Promise<any> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch('/api/ordini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ordineDaInviare),
+          });
+          if (response.ok) return await response.json();
+          console.error(`Attempt ${i + 1} failed with status: ${response.status}`);
+        } catch (err) {
+          console.error(`Attempt ${i + 1} caught error:`, err);
+        }
+      }
+      throw new Error('Impossibile salvare l\'ordine dopo vari tentativi.');
+    };
 
-      const json = await response.json();
-      if (json.success) {
-        // Memorizza i dettagli per la pagina di ringraziamento
+    try {
+      const json = await attemptOrder(3);
+      if (json.success && json.data?.id) {
+        console.log('[PayPal] ✅ Ordine salvato su Supabase id=', json.data.id);
         localStorage.setItem(
           'segreta_last_order',
           JSON.stringify({
             ...ordineDaInviare,
-            id: json.data?.id || Math.floor(Math.random() * 10000) + 1,
-            created_at: new Date().toISOString(),
+            id: json.data.id,
+            created_at: json.data.created_at || new Date().toISOString(),
           })
         );
         clearCart();
         setCurrentPath('/thank-you');
       } else {
-        throw new Error(json.error || 'Errore durante la creazione dell\'ordine');
+        // Il server ha risposto ma con success:false
+        const errMsg = json?.error || 'Errore sconosciuto dal server';
+        console.error('[PayPal] ❌ Server error:', errMsg);
+        // Salva comunque in locale come emergenza (pagamento già avvenuto)
+        const ordineFallback = {
+          ...ordineDaInviare,
+          id: `PP_${details.id}`,
+          created_at: new Date().toISOString(),
+          _local_fallback: true,
+        };
+        localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
+        const ordiniSalvati = localStorage.getItem('segreta_ordini');
+        const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
+        ordiniList.unshift(ordineFallback);
+        localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
+        clearCart();
+        setCurrentPath('/thank-you');
       }
     } catch (err: any) {
-      console.warn('Connessione API fallita, salvataggio locale di fallback.', err);
-      // Fallback locale in caso di assenza server/connessione
+      // Rete completamente irraggiungibile dopo 3 tentativi
+      console.error('[PayPal] ❌ API irraggiungibile dopo 3 tentativi:', err.message);
       const ordineFallback = {
         ...ordineDaInviare,
-        id: Math.floor(Math.random() * 10000) + 1,
-        stato: 'In attesa',
+        id: `PP_${details.id}`,
         created_at: new Date().toISOString(),
+        _local_fallback: true,
       };
+      localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
       const ordiniSalvati = localStorage.getItem('segreta_ordini');
       const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
       ordiniList.unshift(ordineFallback);
       localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-      localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
-
       clearCart();
       setCurrentPath('/thank-you');
     } finally {
