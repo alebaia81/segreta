@@ -509,10 +509,6 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
               <div className="satispay-qr-container">
                 <img src="/satispay-qr.png" alt="Satispay QR Code Segreta" className="satispay-qr-img" />
                 <div className="satispay-shop-name">Segreta Style</div>
-                <div className="satispay-order-number-badge">
-                  <span className="order-badge-label">Causale da inserire:</span>
-                  <strong className="order-badge-code">Ordine #{createdOrderDetails?.id}</strong>
-                </div>
               </div>
 
               <div className="satispay-instructions">
@@ -529,13 +525,6 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                 </div>
                 <div className="instruction-step">
                   <span className="step-num">3</span>
-                  <span>
-                    Inserisci nelle note/causale:
-                    <strong className="code-highlight"> Ordine #{createdOrderDetails?.id}</strong>
-                  </span>
-                </div>
-                <div className="instruction-step">
-                  <span className="step-num">4</span>
                   <span>Conferma l'invio del pagamento nell'app.</span>
                 </div>
               </div>
