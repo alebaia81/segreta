@@ -18,6 +18,18 @@ const TARGET_CATEGORIES = {
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
+const safeParseJSON = (data, fallback = []) => {
+  if (!data) return fallback;
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'object') return data;
+  try {
+    const parsed = JSON.parse(data);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo, onNavigateToHome }) {
   const [activeTab, setActiveTab] = useState('ordini');
   const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('segreta_admin_logged') === 'true');
@@ -865,9 +877,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
   const handlePrintRicevuta = (o) => {
     const win = window.open('', '_blank');
-    let items = [];
-    try { items = JSON.parse(o.dettaglio_articoli); } catch (err) { /* ignore */ }
-    const righe = items.map(i => `<tr><td>${i.titolo} (Taglia: ${i.tagliaSelezionata || 'U'})</td><td>x${i.quantita}</td><td>€${parseFloat(i.prezzo * i.quantita).toFixed(2)}</td></tr>`).join('');
+    const items = safeParseJSON(o.dettaglio_articoli || o.articoli);
+    const righe = items.map(i => `<tr><td>${i.titolo} (Taglia: ${i.taglia || i.tagliaSelezionata || 'U'})</td><td>x${i.quantita || 1}</td><td>€${parseFloat((i.prezzo || 0) * (i.quantita || 1)).toFixed(2)}</td></tr>`).join('');
     win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Ricevuta #${o.id}</title>
       <style>body{font-family:sans-serif;padding:20px;color:#333;width:300px;margin:0 auto}table{width:100%;border-collapse:collapse}td{padding:4px 0}</style>
       </head><body>
@@ -897,8 +908,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     const win = window.open('', '_blank');
     const titolo = mostraArchivio ? 'Archivio Ordini' : 'Ordini Attivi';
     const righe = ordini.map(o => {
-      let items = [];
-      try { items = JSON.parse(o.dettaglio_articoli); } catch (err) { /* ignore */ }
+      const items = safeParseJSON(o.dettaglio_articoli || o.articoli);
       return `
         <tr style="border-bottom:1px solid #eee">
           <td style="padding:8px">#${o.id}</td>
@@ -1288,12 +1298,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                       <h5>Articoli Acquistati</h5>
                       <div style={{ fontSize: '0.88rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {JSON.parse(ord.articoli).map((item, idx) => (
+                          {safeParseJSON(ord.dettaglio_articoli || ord.articoli).map((item, idx) => (
                             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
                               <span>
-                                {item.titolo} (x{item.quantita}) - Taglia: {item.tagliaSelezionata || 'U'}
+                                {item.titolo} (x{item.quantita || 1}) - Taglia: {item.taglia || item.tagliaSelezionata || 'U'}
                               </span>
-                              <span style={{ fontWeight: 600 }}>€{parseFloat(item.prezzo * item.quantita).toFixed(2)}</span>
+                              <span style={{ fontWeight: 600 }}>€{parseFloat((item.prezzo || 0) * (item.quantita || 1)).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -1392,10 +1402,10 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                     <div className="order-info-section">
                       <h5>Prodotti acquistati</h5>
                       <div style={{ fontSize: '0.88rem' }}>
-                        {JSON.parse(ord.articoli).map((item, idx) => (
+                        {safeParseJSON(ord.dettaglio_articoli || ord.articoli).map((item, idx) => (
                           <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '4px' }}>
-                            <span>{item.titolo} (x{item.quantita})</span>
-                            <span style={{ fontWeight: 600 }}>€{parseFloat(item.prezzo * item.quantita).toFixed(2)}</span>
+                            <span>{item.titolo} (x{item.quantita || 1}) - Taglia: {item.taglia || item.tagliaSelezionata || 'U'}</span>
+                            <span style={{ fontWeight: 600 }}>€{parseFloat((item.prezzo || 0) * (item.quantita || 1)).toFixed(2)}</span>
                           </div>
                         ))}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontWeight: 'bold' }}>
