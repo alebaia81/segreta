@@ -8,7 +8,7 @@ interface PayPalButtonProps {
 
 export default function PayPalButton({ amount, onSuccess, onError }: PayPalButtonProps) {
   const initialOptions = {
-    clientId: 'test', // ID di test Sandbox fornito dall'SDK PayPal
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID as string,
     currency: 'EUR',
     intent: 'capture',
   };
