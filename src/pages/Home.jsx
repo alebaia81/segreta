@@ -284,7 +284,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
             <div className="accent-line-left"></div>
             
             <p className="about-paragraph highlight-paragraph">
-              Benvenuti nel mondo di <strong>Segreta Style</strong>, la boutique nata nel cuore di <strong>Monticelli d'Ongina</strong> dalla passione di <strong>Greta Righi</strong>. Da oltre quindici anni, il nostro obiettivo non è semplicemente vendere vestiti, ma aiutare ogni persona a far emergere la propria unicità attraverso selezioni di stile ricercate e mai banali.
+              Benvenuti nel mondo di <strong>Segreta Style</strong>, la boutique nata nel cuore di <strong>Monticelli d'Ongina</strong> dalla mia passione. Da oltre quindici anni, il mio obiettivo non è semplicemente vendere vestiti, ma aiutare ogni persona a far emergere la propria unicità attraverso selezioni di stile ricercate e mai banali.
             </p>
 
             {/* Foto Greta visibile solo su Mobile */}
@@ -303,12 +303,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
             <h3>Collezioni Frizzanti e Senza Età</h3>
             <p className="about-paragraph">
-              La nostra filosofia si basa su un concetto di moda fluida e inclusiva. Amiamo mixare <strong>brand frizzanti</strong>, freschi e di tendenza, perfetti per un pubblico giovane che ama osare, con proposte più strutturate, eleganti e sofisticate dedicate a chi non ha più vent'anni ma non vuole assolutamente rinunciare a esprimere la propria forte personalità. Che tu stia cercando un abito da sera per un evento speciale a Piacenza o un look casual per il weekend a Cremona, da noi trovi capi selezionati a mano che valorizzano chi sei.
+              La mia filosofia si basa su un concetto di moda fluida e inclusiva. Amo mixare <strong>brand frizzanti</strong>, freschi e di tendenza, perfetti per un pubblico giovane che ama osare, con proposte più strutturate, eleganti e sofisticate dedicate a chi non ha più vent'anni ma non vuole assolutamente rinunciare a esprimere la propria forte personalità. Che tu stia cercando un abito da sera per un evento speciale a Piacenza o un look casual per il weekend a Cremona, da me trovi capi selezionati a mano che valorizzano chi sei.
             </p>
 
             <h3>Un'Esperienza Boutique, Anche Online</h3>
             <p className="about-paragraph">
-              Nati come punto di riferimento fisico per lo shopping nella <strong>provincia di Piacenza</strong> e limitrofi della <strong>provincia di Cremona</strong>, oggi portiamo l'atmosfera della nostra boutique direttamente sui tuoi schermi. Grazie alla nostra forte community su <strong>Instagram</strong>, mostriamo ogni settimana i nuovi arrivi in tempo reale. E la nostra assistenza non cambia: puoi ordinare sul sito e finalizzare l'acquisto direttamente su <strong>WhatsApp</strong>, parlando con noi per ricevere consigli personalizzati su taglie, vestibilità e abbinamenti, proprio come se fossi in negozio da Greta.
+              Nata come punto di riferimento fisico per lo shopping nella <strong>provincia di Piacenza</strong> e limitrofi della <strong>provincia di Cremona</strong>, oggi porto l'atmosfera della mia boutique direttamente sui tuoi schermi. Grazie alla mia forte community su <strong>Instagram</strong>, mostro ogni settimana i nuovi arrivi in tempo reale. E la mia assistenza non cambia: puoi ordinare sul sito e finalizzare l'acquisto direttamente su <strong>WhatsApp</strong>, parlando con me per ricevere consigli personalizzati su taglie, vestibilità e abbinamenti, proprio come se fossi in negozio con me.
             </p>
           </div>
         </div>
