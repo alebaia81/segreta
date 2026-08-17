@@ -10,8 +10,8 @@ export default function Navbar({ onOpenCart, activeSection, setActiveSection, cu
   const navItems = [
     { id: 'home', label: 'Home', path: '/' },
     { id: 'shop', label: 'Shop', path: '/shop' },
-    { id: 'chi-sono', label: 'La Nostra Storia', path: '/', section: true },
-    { id: 'contatti', label: 'Vieni a trovarci', path: '/', section: true }
+    { id: 'chi-sono', label: 'La Mia Storia', path: '/', section: true },
+    { id: 'contatti', label: 'Vieni a trovarmi', path: '/', section: true }
   ];
 
 

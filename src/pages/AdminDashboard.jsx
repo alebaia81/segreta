@@ -61,11 +61,11 @@ const getWhatsAppUrl = (ord) => {
       break;
 
     case 'Pronto al Ritiro':
-      messaggio = `Ciao ${nomeCliente}! 🛍️\nIl tuo ordine #${orderId} è PRONTO per il ritiro in negozio presso Segreta Style a Monticelli d'Ongina! Ti aspettiamo negli orari di apertura.`;
+      messaggio = `Ciao ${nomeCliente}! 🛍️\nIl tuo ordine #${orderId} è PRONTO per il ritiro in negozio presso Segreta Style a Monticelli d'Ongina! Ti aspetto negli orari di apertura.`;
       break;
 
     case 'Completato':
-      messaggio = `Ciao ${nomeCliente}! ✨\nIl tuo ordine #${orderId} è stato completato con successo. Grazie di cuore per aver scelto Segreta Style! Per qualsiasi cosa siamo a disposizione.`;
+      messaggio = `Ciao ${nomeCliente}! ✨\nIl tuo ordine #${orderId} è stato completato con successo. Grazie di cuore per aver scelto Segreta Style! Per qualsiasi cosa sono a tua disposizione.`;
       break;
 
     case 'Annullato':

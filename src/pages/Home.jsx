@@ -255,7 +255,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
             rel="noopener noreferrer"
             className="google-reviews-link"
           >
-            Leggi tutte le recensioni reali sulla nostra scheda Google Maps ➔
+            Leggi tutte le recensioni reali sulla mia scheda Google Maps ➔
           </a>
         </div>
       </section>
@@ -318,9 +318,9 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
       <section id="contatti" className="contact-info-section container">
         <div className="contact-card">
           <div className="contact-info-column">
-            <h3>Vieni a Trovarci</h3>
+            <h3>Vieni a Trovarmi</h3>
             <div className="accent-line-left"></div>
-            <p>Siamo nel centro storico di Monticelli d'Ongina, sotto i caratteristici portici. Facilmente raggiungibili sia da Piacenza che da Cremona.</p>
+            <p>Mi trovi nel centro storico di Monticelli d'Ongina, sotto i caratteristici portici. La boutique è facilmente raggiungibile sia da Piacenza che da Cremona.</p>
             
             <ul className="contact-details-list">
               <li>

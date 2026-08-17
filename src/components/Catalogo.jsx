@@ -30,7 +30,7 @@ export default function Catalogo({ articoli }) {
   return (
     <section id="catalogo" className="catalogo-section container fade-in">
       <div className="catalogo-header">
-        <h2>Esplora i Nostri Capi</h2>
+        <h2>Esplora i Miei Capi</h2>
         <div className="accent-line"></div>
         <p className="catalogo-subtitle">
           Una selezione curata di capi freschi, colorati ed eleganti per esprimere al meglio la tua personalità.

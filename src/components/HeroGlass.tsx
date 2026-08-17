@@ -121,7 +121,7 @@ export default function HeroGlass({
               className="hg-btn-secondary"
               aria-label="Scopri la storia di Segreta Style"
             >
-              Scopri la Nostra Storia
+              Scopri la Mia Storia
             </a>
           </motion.div>
 
@@ -195,12 +195,12 @@ export default function HeroGlass({
 const TRUST_ITEMS = [
   {
     id: 'shipping',
-    text: 'La spedizione te la regaliamo noi dai 50€ in su',
+    text: 'La spedizione te la regalo io dai 50€ in su',
     icon: Truck,
   },
   {
     id: 'pickup',
-    text: 'Scegli il comodo ritiro nel nostro punto vendita',
+    text: 'Scegli il comodo ritiro nel mio punto vendita',
     icon: Store,
   },
   {

@@ -57,7 +57,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       if (el) el.setAttribute('content', content);
     };
     updateOG('og:title', "Shop Online | Collezioni Abbigliamento Donna Piacenza e Cremona — Segreta Style");
-    updateOG('og:description', "Scopri le nostre collezioni di abbigliamento donna. Ordina e personalizza via WhatsApp con consegna tra Piacenza e Cremona.");
+    updateOG('og:description', "Scopri le mie collezioni di abbigliamento donna. Ordina e personalizza via WhatsApp con me.");
     updateOG('og:url', 'https://www.segretastylemonticelli.it/shop');
 
     return () => {
@@ -156,7 +156,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
       {/* Shop Header */}
       <header className="shop-hero">
         <div className="container shop-hero-content">
-          <h1>IL NOSTRO SHOP</h1>
+          <h1>IL MIO SHOP</h1>
           <div className="accent-line" style={{ margin: '1rem auto 1.25rem' }}></div>
           <p className="shop-hero-subtitle">
             Tutti i capi disponibili, aggiornati in tempo reale. Trova la categoria adatta ed esplora le novità.

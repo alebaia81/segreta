@@ -92,7 +92,7 @@ export default function HeroGlass({ onNavigateToShop }) {
             className="btn-secondary hero-cta-secondary"
             id="hero-cta-story"
           >
-            Scopri la Nostra Storia
+            Scopri la Mia Storia
           </a>
         </div>
 
@@ -100,11 +100,11 @@ export default function HeroGlass({ onNavigateToShop }) {
         <div className="hero-trust-row" aria-label="Garanzie del negozio">
           <span className="hero-trust-badge">
             <Truck size={16} aria-hidden="true" />
-            La spedizione te la regaliamo noi dai 50€ in su
+            La spedizione te la regalo io dai 50€ in su
           </span>
           <span className="hero-trust-badge">
             <Store size={16} aria-hidden="true" />
-            Scegli il comodo ritiro nel nostro punto vendita
+            Scegli il comodo ritiro nel mio punto vendita
           </span>
           <span className="hero-trust-badge">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
