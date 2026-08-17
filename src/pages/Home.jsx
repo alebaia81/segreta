@@ -287,6 +287,20 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
               Benvenuti nel mondo di <strong>Segreta Style</strong>, la boutique nata nel cuore di <strong>Monticelli d'Ongina</strong> dalla passione di <strong>Greta Righi</strong>. Da oltre quindici anni, il nostro obiettivo non è semplicemente vendere vestiti, ma aiutare ogni persona a far emergere la propria unicità attraverso selezioni di stile ricercate e mai banali.
             </p>
 
+            {/* Foto Greta visibile solo su Mobile */}
+            <div className="about-image-mobile">
+              <div className="about-image-frame">
+                <img
+                  src="/greta.jpg"
+                  alt="Greta Righi - Titolare di Segreta Style"
+                  className="about-image"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80';
+                  }}
+                />
+              </div>
+            </div>
+
             <h3>Collezioni Frizzanti e Senza Età</h3>
             <p className="about-paragraph">
               La nostra filosofia si basa su un concetto di moda fluida e inclusiva. Amiamo mixare <strong>brand frizzanti</strong>, freschi e di tendenza, perfetti per un pubblico giovane che ama osare, con proposte più strutturate, eleganti e sofisticate dedicate a chi non ha più vent'anni ma non vuole assolutamente rinunciare a esprimere la propria forte personalità. Che tu stia cercando un abito da sera per un evento speciale a Piacenza o un look casual per il weekend a Cremona, da noi trovi capi selezionati a mano che valorizzano chi sei.
@@ -520,6 +534,10 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
         .about-image-column {
           position: relative;
+        }
+
+        .about-image-mobile {
+          display: none;
         }
 
         .about-image-frame {
@@ -1041,7 +1059,12 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           }
           
           .about-image-column {
-            order: 2;
+            display: none;
+          }
+
+          .about-image-mobile {
+            display: block;
+            margin: var(--spacing-lg) 0;
           }
           
           .about-text-column {
