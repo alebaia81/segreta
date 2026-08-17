@@ -166,7 +166,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
       {/* Testimonials Section */}
       <section className="testimonials-section container">
         <div className="section-header-centered">
-          <span className="badge">Dicono di Noi</span>
+          <span className="badge">Dicono di Me</span>
           <h2>Recensioni</h2>
           <div className="accent-line"></div>
           <p className="section-subtitle">
@@ -890,7 +890,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         }
 
         .ultimi-arrivi-section {
-          padding: 1.5rem var(--spacing-lg) var(--spacing-xxl);
+          padding: 1.5rem var(--spacing-lg) 2rem;
         }
 
         .ultimi-arrivi-section .badge,
@@ -1148,7 +1148,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
 
         /* Testimonials Section Styling */
         .testimonials-section {
-          padding: var(--spacing-xxl) 0;
+          padding: 2rem 0 var(--spacing-xxl);
           background-color: var(--bg-primary);
         }
 
