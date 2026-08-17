@@ -6,6 +6,7 @@ const TARGET_CATEGORIES = {
   Donna: [
     'ABITI',
     'GONNE',
+    'MAGLIERIA',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',
@@ -98,6 +99,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const DEFAULT_CATEGORIES_DONNA = [
     'ABITI',
     'GONNE',
+    'MAGLIERIA',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',

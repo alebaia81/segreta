@@ -74,6 +74,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
   const DEFAULT_PRESET_CATEGORIES = [
     'ABITI',
     'GONNE',
+    'MAGLIERIA',
     'CAMICE-BLUSE',
     'T-SHIRT-FELPE',
     'JEANS',
@@ -88,7 +89,8 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
     const c = cat.toUpperCase().trim();
     if (c === 'GONNE' || c === 'GONNA') return 'GONNE';
     if (c === 'ABITI' || c === 'ABITO' || c === 'ABITI-BLUES' || c === 'ABITI-BLUSE') return 'ABITI';
-    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'MAGLIERIA' || c === 'CAMICE-MAGLIE-FELPE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE' || c === 'CAMICIA' || c === 'BLUSA') return 'CAMICE-BLUSE';
+    if (c === 'MAGLIERIA' || c === 'MAGLIA' || c === 'MAGLIE' || c === 'MAGLIONE' || c === 'MAGLIONI' || c === 'MAGLIERIA-MAGLIE') return 'MAGLIERIA';
+    if (c === 'CAMICIE E BLUSE' || c === 'CAMICIE' || c === 'CAMICE-BLUES' || c === 'CAMICIE-BLUSE' || c === 'CAMICIA' || c === 'BLUSA') return 'CAMICE-BLUSE';
     if (c === 'T-SHIRT' || c === 'FELPE' || c === 'T-SHIRT E FELPE' || c === 'TSHIRT') return 'T-SHIRT-FELPE';
     if (c === 'GIACCHE' || c === 'GIACCHE E CAPPOTTI' || c === 'CAPPOTTI & GIACCHE' || c === 'GIACCA' || c === 'CAPPOTTO') return 'CAPPOTTI-GIACCHE';
     if (c === 'JEAN' || c === 'JEANS') return 'JEANS';
