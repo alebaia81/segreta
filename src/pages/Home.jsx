@@ -178,7 +178,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
             </div>
             <h3 className="benefit-title">CONSEGNA IN 24/48 ORE</h3>
             <p className="benefit-text">
-              Per ordini <strong>superiori a 50 €</strong> la <strong>spedizione è gratuita</strong>; per <strong>importi inferiori</strong> il costo è di <strong>5 €</strong>
+              Per ordini <strong>superiori a 50 €</strong> la <strong>spedizione è gratuita</strong>; per <strong>importi inferiori</strong> il costo è di <strong>5,90 €</strong>
             </p>
           </div>
 
