@@ -163,6 +163,59 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         </div>
       </section>
 
+      {/* Shop Benefits Section (Consegna, Cambi e Resi, Pagamenti) */}
+      <section className="shop-benefits-section container" aria-label="Garanzie e Servizi di Acquisto">
+        <div className="shop-benefits-grid">
+          {/* Card 1: Consegna */}
+          <div className="benefit-item">
+            <div className="benefit-icon-wrapper">
+              <img
+                src="/icons/consegna.jpg"
+                alt="Consegna Rapida"
+                className="benefit-icon-img"
+                loading="lazy"
+              />
+            </div>
+            <h3 className="benefit-title">CONSEGNA IN 24/48 ORE</h3>
+            <p className="benefit-text">
+              Per ordini <strong>superiori a 50 €</strong> la <strong>spedizione è gratuita</strong>; per <strong>importi inferiori</strong> il costo è di <strong>5 €</strong>
+            </p>
+          </div>
+
+          {/* Card 2: Cambi e Resi */}
+          <div className="benefit-item">
+            <div className="benefit-icon-wrapper">
+              <img
+                src="/icons/resi.jpg"
+                alt="Cambi e Resi Facili"
+                className="benefit-icon-img"
+                loading="lazy"
+              />
+            </div>
+            <h3 className="benefit-title">CAMBI E RESI</h3>
+            <p className="benefit-text">
+              Non ti piace o la taglia non è quella giusta? Nessun problema: hai <strong>14 giorni</strong> per <strong>cambiare l'articolo</strong>.
+            </p>
+          </div>
+
+          {/* Card 3: Pagamenti Sicuri */}
+          <div className="benefit-item">
+            <div className="benefit-icon-wrapper">
+              <img
+                src="/icons/pagamenti.jpg"
+                alt="Pagamenti Sicuri"
+                className="benefit-icon-img"
+                loading="lazy"
+              />
+            </div>
+            <h3 className="benefit-title">PAGAMENTI SICURI</h3>
+            <p className="benefit-text">
+              PayPal, Satispay, Postepay, bonifico o contanti alla consegna (+5 €).
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="testimonials-section container">
         <div className="section-header-centered">
@@ -1263,6 +1316,91 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           }
           .footer-separator {
             display: none;
+          }
+        }
+
+        /* Shop Benefits Section (Consegna, Cambi e Resi, Pagamenti) */
+        .shop-benefits-section {
+          padding: 3.5rem var(--spacing-lg) 2rem;
+          margin-top: 1rem;
+        }
+
+        .shop-benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--spacing-xl);
+          text-align: center;
+          align-items: stretch;
+        }
+
+        .benefit-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2.2rem 1.5rem;
+          background: #FFFFFF;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-sm);
+          transition: var(--transition-smooth);
+        }
+
+        .benefit-item:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-md);
+          border-color: var(--accent-gold);
+        }
+
+        .benefit-icon-wrapper {
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 1.2rem;
+        }
+
+        .benefit-icon-img {
+          max-height: 70px;
+          max-width: 95px;
+          object-fit: contain;
+          mix-blend-mode: multiply;
+        }
+
+        .benefit-title {
+          font-family: var(--font-sans);
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: var(--text-primary);
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin-bottom: 0.75rem;
+        }
+
+        .benefit-text {
+          font-size: 0.95rem;
+          line-height: 1.6;
+          color: var(--text-secondary);
+          max-width: 300px;
+          margin: 0 auto;
+        }
+
+        .benefit-text strong {
+          color: var(--text-primary);
+          font-weight: 700;
+        }
+
+        @media (max-width: 860px) {
+          .shop-benefits-section {
+            padding: 2.5rem var(--spacing-md) 1rem;
+          }
+          .shop-benefits-grid {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+            max-width: 440px;
+            margin: 0 auto;
+          }
+          .benefit-item {
+            padding: 2rem 1.25rem;
           }
         }
 
