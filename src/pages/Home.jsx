@@ -314,6 +314,30 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         </div>
       </section>
 
+      {/* Customer Service Section */}
+      <section className="customer-service-section container" aria-label="Assistenza Clienti">
+        <div className="customer-service-card">
+          <h3 className="customer-service-title">Customer service</h3>
+          <div className="customer-service-divider"></div>
+          <p className="customer-service-text">
+            Il nostro Customer Service è<br />
+            disponibile negli orari di apertura del negozio.
+          </p>
+          <p className="customer-service-subtext">
+            Tempo di risposta medio: 30 minuti
+          </p>
+          <a
+            href="https://wa.me/393482946532?text=Ciao%20Greta,%20avrei%20bisogno%20di%20informazioni"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="customer-service-btn"
+            aria-label="Contattaci su WhatsApp al 348 2946532"
+          >
+            CONTATTACI
+          </a>
+        </div>
+      </section>
+
       {/* Contact & Map Section (Local SEO info) */}
       <section id="contatti" className="contact-info-section container">
         <div className="contact-card">
@@ -593,6 +617,120 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           font-style: italic;
           border-left: 3px solid var(--accent-gold);
           padding-left: var(--spacing-md);
+        }
+
+        /* Customer Service Section */
+        .customer-service-section {
+          margin-bottom: var(--spacing-xxl);
+          display: flex;
+          justify-content: center;
+        }
+
+        .customer-service-card {
+          background-color: #FBF1F3;
+          border: 1px solid #F5DDE3;
+          border-radius: var(--radius-lg);
+          padding: 3rem 2rem;
+          width: 100%;
+          max-width: 620px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          box-shadow: 0 6px 24px rgba(226, 149, 171, 0.1);
+          transition: var(--transition-smooth);
+        }
+
+        .customer-service-card:hover {
+          box-shadow: 0 10px 32px rgba(226, 149, 171, 0.16);
+        }
+
+        .customer-service-title {
+          font-family: var(--font-sans);
+          font-size: 1.85rem;
+          font-weight: 700;
+          color: #2C2520;
+          margin-bottom: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .customer-service-divider {
+          width: 48px;
+          height: 2.5px;
+          background-color: #2C2520;
+          margin: 12px auto 16px;
+          border-radius: 2px;
+        }
+
+        .customer-service-text {
+          font-size: 1.15rem;
+          line-height: 1.45;
+          color: #2C2520;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+        }
+
+        .customer-service-subtext {
+          font-size: 1.1rem;
+          font-style: italic;
+          color: #2C2520;
+          margin-bottom: 1.75rem;
+          font-weight: 400;
+        }
+
+        .customer-service-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #FFAEC0;
+          color: #1E1B18;
+          font-size: 0.88rem;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          text-decoration: none;
+          padding: 0.95rem 2.8rem;
+          border-radius: 14px;
+          box-shadow: 0 4px 14px rgba(255, 174, 192, 0.45);
+          transition: var(--transition-smooth);
+          min-height: 44px;
+          cursor: pointer;
+        }
+
+        .customer-service-btn:hover {
+          background-color: #F89CB2;
+          color: #000000;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(255, 174, 192, 0.65);
+        }
+
+        .customer-service-btn:active {
+          transform: translateY(0);
+        }
+
+        .customer-service-btn:focus-visible {
+          outline: 2px solid #2C2520;
+          outline-offset: 3px;
+        }
+
+        @media (max-width: 768px) {
+          .customer-service-card {
+            padding: 2.2rem 1.25rem;
+          }
+          .customer-service-title {
+            font-size: 1.6rem;
+          }
+          .customer-service-text {
+            font-size: 1.02rem;
+          }
+          .customer-service-subtext {
+            font-size: 0.98rem;
+          }
+          .customer-service-btn {
+            width: 100%;
+            max-width: 280px;
+            padding: 0.9rem 1.5rem;
+          }
         }
 
         /* Contact & Map Section */
