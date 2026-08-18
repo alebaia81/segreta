@@ -263,8 +263,23 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
       {/* Chi Sono Section - Storia di Greta Righi */}
       <section id="chi-sono" className="about-section" aria-labelledby="about-title">
         <h1 id="about-title" style={{ display: 'none' }}>Segreta Style | Boutique Abbigliamento Donna Monticelli d'Ongina</h1>
-        <div className="container about-grid">
-          <div className="about-image-column">
+        <div className="container about-container">
+          {/* Testo prima della foto */}
+          <div className="about-header-centered">
+            <span className="badge">Chi Sono</span>
+            <h2>Dal 2010, Segreta Style</h2>
+            <div className="accent-line"></div>
+            
+            <p className="about-paragraph about-lead">
+              Segreta nasce a Monticelli d’Ongina dalla mia passione per la moda e dal desiderio di offrire qualcosa di diverso.
+            </p>
+            <p className="about-paragraph">
+              Da oltre 15 anni scelgo personalmente capi e accessori per donne che amano sentirsi bene esprimendo la propria personalità e… perché no, divertendosi con la moda.
+            </p>
+          </div>
+
+          {/* Foto di Greta */}
+          <div className="about-photo-wrapper">
             <div className="about-image-frame">
               <img
                 src="/greta.jpg"
@@ -275,66 +290,48 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
                 }}
               />
             </div>
-            <div className="about-image-accent"></div>
           </div>
-          
-          <div className="about-text-column">
-            <span className="badge">Chi Sono</span>
-            <h2>Dal 2010, la moda con personalità tra Piacenza e Cremona</h2>
-            <div className="accent-line-left"></div>
-            
-            <p className="about-paragraph highlight-paragraph">
-              Benvenuti nel mondo di <strong>Segreta Style</strong>, la boutique nata nel cuore di <strong>Monticelli d'Ongina</strong> dalla mia passione. Da oltre quindici anni, il mio obiettivo non è semplicemente vendere vestiti, ma aiutare ogni persona a far emergere la propria unicità attraverso selezioni di stile ricercate e mai banali.
+
+          {/* Testo dopo la foto */}
+          <div className="about-content-after">
+            <h3>Moda senza età, stile senza regole</h3>
+            <p className="about-paragraph">
+              Capi scelti con cura per donne che amano sentirsi bene, a qualsiasi età.
+            </p>
+            <p className="about-paragraph">
+              Colori, tendenze, eleganza e un pizzico di follia: da Segreta trovi sempre qualcosa che parla di te.
             </p>
 
-            {/* Foto Greta visibile solo su Mobile */}
-            <div className="about-image-mobile">
-              <div className="about-image-frame">
-                <img
-                  src="/greta.jpg"
-                  alt="Greta Righi - Titolare di Segreta Style"
-                  className="about-image"
-                  onError={(e) => {
-                    e.target.src = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80';
-                  }}
-                />
-              </div>
-            </div>
-
-            <h3>Collezioni Frizzanti e Senza Età</h3>
+            <h3>Segreta, anche online</h3>
             <p className="about-paragraph">
-              La mia filosofia si basa su un concetto di moda fluida e inclusiva. Amo mixare <strong>brand frizzanti</strong>, freschi e di tendenza, perfetti per un pubblico giovane che ama osare, con proposte più strutturate, eleganti e sofisticate dedicate a chi non ha più vent'anni ma non vuole assolutamente rinunciare a esprimere la propria forte personalità. Che tu stia cercando un abito da sera per un evento speciale a Piacenza o un look casual per il weekend a Cremona, da me trovi capi selezionati a mano che valorizzano chi sei.
+              Le novità le trovi ogni settimana sui miei social.
             </p>
-
-            <h3>Un'Esperienza Boutique, Anche Online</h3>
             <p className="about-paragraph">
-              Nata come punto di riferimento fisico per lo shopping nella <strong>provincia di Piacenza</strong> e limitrofi della <strong>provincia di Cremona</strong>, oggi porto l'atmosfera della mia boutique direttamente sui tuoi schermi. Grazie alla mia forte community su <strong>Instagram</strong>, mostro ogni settimana i nuovi arrivi in tempo reale. E la mia assistenza non cambia: puoi ordinare sul sito e finalizzare l'acquisto direttamente su <strong>WhatsApp</strong>, parlando con me per ricevere consigli personalizzati su taglie, vestibilità e abbinamenti, proprio come se fossi in negozio con me.
+              Hai visto qualcosa che ti piace? Scrivimi su WhatsApp: ti aiuterò con taglia, vestibilità e abbinamenti, proprio come se fossi in negozio.
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Customer Service Section */}
-      <section className="customer-service-section container" aria-label="Assistenza Clienti">
-        <div className="customer-service-card">
-          <h3 className="customer-service-title">Customer service</h3>
-          <div className="customer-service-divider"></div>
-          <p className="customer-service-text">
-            Il nostro Customer Service è<br />
-            disponibile negli orari di apertura del negozio.
-          </p>
-          <p className="customer-service-subtext">
-            Tempo di risposta medio: 30 minuti
-          </p>
-          <a
-            href="https://wa.me/393482946532?text=Ciao%20Greta,%20avrei%20bisogno%20di%20informazioni"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="customer-service-btn"
-            aria-label="Contattaci su WhatsApp al 348 2946532"
-          >
-            CONTATTACI
-          </a>
+          {/* Customer Service Card */}
+          <div className="customer-service-card" aria-label="Assistenza Clienti">
+            <h3 className="customer-service-title">Customer service</h3>
+            <div className="customer-service-divider"></div>
+            <p className="customer-service-text">
+              Il nostro Customer Service è<br />
+              disponibile negli orari di apertura del negozio.
+            </p>
+            <p className="customer-service-subtext">
+              Tempo di risposta medio: 30 minuti
+            </p>
+            <a
+              href="https://wa.me/393482946532?text=Ciao%20Greta,%20avrei%20bisogno%20di%20informazioni"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="customer-service-btn"
+              aria-label="Contattaci su WhatsApp al 348 2946532"
+            >
+              CONTATTACI
+            </a>
+          </div>
         </div>
       </section>
 
@@ -549,29 +546,48 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           border-bottom: 1px solid var(--border-color);
         }
 
-        .about-grid {
-          display: grid;
-          grid-template-columns: 1fr 1.2fr;
-          gap: var(--spacing-xl);
+        .about-container {
+          max-width: 720px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+
+        .about-header-centered {
+          width: 100%;
+          margin-bottom: var(--spacing-xl);
+          display: flex;
+          flex-direction: column;
           align-items: center;
         }
 
-        .about-image-column {
-          position: relative;
+        .about-header-centered h2 {
+          font-size: 2.2rem;
+          margin-top: var(--spacing-xs);
         }
 
-        .about-image-mobile {
-          display: none;
+        .about-lead {
+          font-size: 1.15rem;
+          font-weight: 500;
+          color: var(--text-primary);
+          line-height: 1.6;
+        }
+
+        .about-photo-wrapper {
+          width: 100%;
+          max-width: 380px;
+          margin: 0 auto var(--spacing-xl);
         }
 
         .about-image-frame {
           border-radius: var(--radius-lg);
           overflow: hidden;
           box-shadow: var(--shadow-lg);
-          border: 8px solid var(--bg-secondary);
+          border: 6px solid var(--bg-secondary);
           aspect-ratio: 4/5;
           position: relative;
-          z-index: 2;
         }
 
         .about-image {
@@ -580,57 +596,40 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
           object-fit: cover;
         }
 
-        .about-image-accent {
-          position: absolute;
+        .about-content-after {
           width: 100%;
-          height: 100%;
-          top: 20px;
-          left: -20px;
-          border: 2px solid var(--accent-gold);
-          border-radius: var(--radius-lg);
-          z-index: 1;
+          margin-bottom: var(--spacing-xl);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
-        .about-text-column h2 {
-          font-size: 2.2rem;
-          margin-top: var(--spacing-xs);
-        }
-
-        .about-text-column h3 {
-          font-size: 1.35rem;
+        .about-content-after h3 {
+          font-size: 1.45rem;
           margin-top: var(--spacing-lg);
           margin-bottom: var(--spacing-xs);
           color: var(--text-primary);
           font-weight: 600;
         }
 
-        .about-paragraph {
-          font-size: 0.98rem;
-          color: var(--text-secondary);
-          margin-bottom: var(--spacing-md);
+        .about-content-after h3:first-child {
+          margin-top: 0;
         }
 
-        .highlight-paragraph {
-          font-size: 1.15rem;
-          color: var(--text-primary);
-          font-family: var(--font-serif);
-          font-style: italic;
-          border-left: 3px solid var(--accent-gold);
-          padding-left: var(--spacing-md);
+        .about-paragraph {
+          font-size: 1.02rem;
+          color: var(--text-secondary);
+          line-height: 1.65;
+          margin-bottom: var(--spacing-sm);
+          max-width: 620px;
         }
 
         /* Customer Service Section */
-        .customer-service-section {
-          margin-bottom: var(--spacing-xxl);
-          display: flex;
-          justify-content: center;
-        }
-
         .customer-service-card {
           background-color: #FBF1F3;
           border: 1px solid #F5DDE3;
           border-radius: var(--radius-lg);
-          padding: 3rem 2rem;
+          padding: 2.8rem 2rem;
           width: 100%;
           max-width: 620px;
           text-align: center;
@@ -1192,25 +1191,8 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
         }
 
         @media (max-width: 768px) {
-          .about-grid, .contact-card {
+          .contact-card {
             grid-template-columns: 1fr;
-          }
-          
-          .about-image-column {
-            display: none;
-          }
-
-          .about-image-mobile {
-            display: block;
-            margin: var(--spacing-lg) 0;
-          }
-          
-          .about-text-column {
-            order: 1;
-          }
-
-          .about-image-accent {
-            display: none;
           }
 
           .features-bar {

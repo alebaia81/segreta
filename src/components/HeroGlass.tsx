@@ -92,15 +92,21 @@ export default function HeroGlass({
 
           {/* Headline */}
           <motion.h1 className="hg-headline" variants={fadeUp}>
-            {headline.split('Monticelli')[0]}
-            <span className="hg-locality">Monticelli d'Ongina</span>.
+            Il tuo stile, la tua <span className="hg-locality">Segreta</span>!
           </motion.h1>
 
           {/* Sottotitolo */}
-          <motion.p className="hg-subtitle" variants={fadeUp}>
-            Capi selezionati da Greta per esprimere la tua unicità.
-            Scopri i nuovi arrivi e acquista online con assistenza WhatsApp.
-          </motion.p>
+          <motion.div className="hg-subtitle-box" variants={fadeUp}>
+            <p className="hg-subtitle-main">
+              Moda donna, accessori e tante novità scelte da Greta.
+            </p>
+            <p className="hg-subtitle-sub">
+              Dal 2010 a Monticelli d’Ongina (PC).
+            </p>
+            <p className="hg-subtitle-action">
+              Scopri le novità sul sito, sui social o scrivimi su WhatsApp.
+            </p>
+          </motion.div>
 
           {/* CTA */}
           <motion.div className="hg-actions" variants={fadeUp}>
@@ -290,12 +296,35 @@ const CSS = `
   }
 
   /* ── Subtitle ──────────────────────────────────────────────────────── */
-  .hg-subtitle {
-    font-size: 1rem;
-    color: rgba(245, 240, 232, 0.72);
-    max-width: 440px;
-    margin: 0 0 var(--spacing-lg) 0;
-    line-height: 1.65;
+  .hg-subtitle-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-width: 460px;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .hg-subtitle-main {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #f5f0e8;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .hg-subtitle-sub {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #E295AB;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .hg-subtitle-action {
+    font-size: 0.92rem;
+    color: rgba(245, 240, 232, 0.78);
+    line-height: 1.5;
+    margin: 0;
   }
 
   /* ── CTA ───────────────────────────────────────────────────────────── */

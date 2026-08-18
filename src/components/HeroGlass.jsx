@@ -69,14 +69,14 @@ export default function HeroGlass({ onNavigateToShop }) {
         <span className="badge hero-badge">Boutique &amp; Shopping Online</span>
 
         <h1 className="hero-glass-title">
-          Moda unica, frizzante e ricca di personalità nel cuore di{' '}
-          <span className="hero-glass-locality">Monticelli d'Ongina</span>.
+          Il tuo stile, la tua <span className="hero-glass-locality">Segreta</span>!
         </h1>
 
-        <p className="hero-glass-subtitle">
-          Capi selezionati da Greta per esprimere la tua unicità.
-          Scopri i nuovi arrivi e acquista online.
-        </p>
+        <div className="hero-glass-subtitle" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <span>Moda donna, accessori e tante novità scelte da Greta.</span>
+          <span style={{ color: '#E295AB' }}>Dal 2010 a Monticelli d’Ongina (PC).</span>
+          <span style={{ opacity: 0.85 }}>Scopri le novità sul sito, sui social o scrivimi su WhatsApp.</span>
+        </div>
 
         <div className="hero-glass-actions">
           {/* Link <a> per navigazione tastiera completa (WCAG 2.1.1) */}
