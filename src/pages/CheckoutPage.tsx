@@ -1,7 +1,7 @@
 import { useState } from 'react';
 // @ts-ignore
 import { useCart } from '../context/CartContext';
-import { ArrowLeft, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Landmark } from 'lucide-react';
 import PayPalButton from '../components/PayPalButton';
 
 interface CheckoutPageProps {
@@ -26,7 +26,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [metodoPagamento, setMetodoPagamento] = useState<'paypal' | 'satispay'>('paypal');
+  const [metodoPagamento, setMetodoPagamento] = useState<'paypal' | 'satispay' | 'bonifico'>('paypal');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -297,6 +297,71 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     }
   };
 
+  const handleBonificoPayment = async () => {
+    if (!validateForm()) {
+      alert('Per favore, compila tutti i campi obbligatori prima di procedere.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+
+    const indirizzoCompleto =
+      formData.metodo_consegna === 'Ritiro in negozio'
+        ? 'Ritiro in negozio (Monticelli d\'Ongina)'
+        : `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+
+    const ordineDaInviare = {
+      nome_cliente: `${formData.nome} ${formData.cognome}`,
+      telefono: formData.telefono,
+      email: formData.email,
+      indirizzo_spedizione: indirizzoCompleto,
+      metodo_pagamento: 'Bonifico Bancario',
+      metodo_consegna: formData.metodo_consegna,
+      stato: 'In attesa di bonifico',
+      totale: parseFloat(totalAmount.toFixed(2)),
+      dettaglio_articoli: JSON.stringify(
+        cartItems.map((item: any) => ({
+          id: item.id,
+          titolo: item.titolo,
+          prezzo: item.prezzo,
+          taglia: item.size,
+          quantita: item.quantity,
+        }))
+      ),
+    };
+
+    let finalOrder = {
+      ...ordineDaInviare,
+      id: Math.floor(Math.random() * 10000) + 1,
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch('/api/ordini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ordineDaInviare),
+      });
+
+      const json = await response.json();
+      if (json.success && json.data) {
+        finalOrder = { ...ordineDaInviare, ...json.data };
+      }
+    } catch (err: any) {
+      console.warn('Connessione API fallita, salvataggio locale di fallback.', err);
+      const ordiniSalvati = localStorage.getItem('segreta_ordini');
+      const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
+      ordiniList.unshift(finalOrder);
+      localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
+    } finally {
+      localStorage.setItem('segreta_last_order', JSON.stringify(finalOrder));
+      clearCart();
+      setSubmitting(false);
+      setCurrentPath('/thank-you');
+    }
+  };
+
   if (cartItems.length === 0 && !showSatispayModal) {
     return (
       <div className="checkout-empty-container container">
@@ -516,6 +581,20 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                   <span className="payment-desc">Paga istantaneamente tramite app Satispay</span>
                 </div>
               </label>
+
+              <label className={`payment-selector-card ${metodoPagamento === 'bonifico' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="metodo_pagamento_select"
+                  checked={metodoPagamento === 'bonifico'}
+                  onChange={() => setMetodoPagamento('bonifico')}
+                  className="payment-radio-input"
+                />
+                <div className="payment-selector-details">
+                  <span className="payment-name">Bonifico Bancario</span>
+                  <span className="payment-desc">Coordinate fornite alla conferma</span>
+                </div>
+              </label>
             </div>
 
             <div className="payment-action-area">
@@ -535,6 +614,16 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                     onError={handlePayPalError}
                     onValidate={handlePayPalValidate}
                   />
+                </>
+              ) : metodoPagamento === 'bonifico' ? (
+                <>
+                  <p className="bonifico-notice-text">
+                    Riceverai le coordinate bancarie e l'importo esatto subito dopo la conferma per effettuare il bonifico.
+                  </p>
+                  <button className="bonifico-btn" onClick={handleBonificoPayment}>
+                    <Landmark size={18} />
+                    <span>Conferma Ordine con Bonifico</span>
+                  </button>
                 </>
               ) : (
                 <>
@@ -984,11 +1073,38 @@ const CSS = `
     padding-top: var(--spacing-md);
   }
 
-  .paypal-notice-text, .satispay-notice-text {
+  .paypal-notice-text, .satispay-notice-text, .bonifico-notice-text {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0 0 12px 0;
     text-align: left;
+    line-height: 1.4;
+  }
+
+  .bonifico-btn {
+    width: 100%;
+    min-height: 48px;
+    background-color: var(--accent-gold, #2C2520);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 2px 6px rgba(44, 37, 32, 0.12);
+  }
+
+  .bonifico-btn:hover {
+    background-color: var(--accent-gold-hover, #423832);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 37, 32, 0.2);
   }
 
   .satispay-btn {

@@ -46,6 +46,10 @@ const getWhatsAppUrl = (ord) => {
   let messaggio = '';
 
   switch (ord.stato) {
+    case 'In attesa di bonifico':
+      messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nEcco i dati per effettuare il bonifico bancario di €${totale}:\n\n• Beneficiario: Segreta di Righi Greta\n• IBAN: IT02 L 12345 67890 000000123456\n• Banca: Banca di Piacenza\n• Importo: €${totale}\n• Causale: Ordine #${orderId} - ${ord.nome_cliente || nomeCliente}\n\nAppena effettui il bonifico o invii la contabile, prepareremo con cura il tuo pacchetto! ✨`;
+      break;
+
     case 'Verifica Pagamento':
       messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nStiamo effettuando la verifica del tuo pagamento di €${totale} inviato tramite ${metodoPag}. Ti confermeremo l'accredito a brevissimo!`;
       break;
@@ -78,6 +82,17 @@ const getWhatsAppUrl = (ord) => {
   }
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messaggio)}`;
+};
+
+const renderPaymentMethodBadge = (metodoPagamento) => {
+  const m = (metodoPagamento || '').toLowerCase();
+  if (m.includes('bonifico')) {
+    return <span className="payment-method-badge bonifico">🏦 Bonifico Bancario</span>;
+  }
+  if (m.includes('paypal')) {
+    return <span className="payment-method-badge paypal">🟡 PayPal / Carta</span>;
+  }
+  return <span className="payment-method-badge satispay">🔴 Satispay</span>;
 };
 
 export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo, onNavigateToHome }) {
@@ -1344,9 +1359,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   <div className="order-admin-header">
                     <div className="order-admin-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <h4>Ordine #{ord.id}</h4>
-                      <span className={`payment-method-badge ${(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? 'paypal' : 'satispay'}`}>
-                        {(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? '🟡 PayPal / Carta' : '🔴 Satispay'}
-                      </span>
+                      {renderPaymentMethodBadge(ord.metodo_pagamento)}
                       <div className="order-admin-meta">
                         <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
@@ -1358,6 +1371,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
                         aria-label="Stato ordine"
                       >
+                        <option value="In attesa di bonifico">🏦 In attesa di bonifico</option>
                         <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
                         <option value="Pagamento Ricevuto - In Lavorazione">💳 Pagamento Ricevuto - In Lavorazione 📦</option>
                         <option value="Spedito">🚚 Spedito</option>
@@ -1489,9 +1503,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   <div className="order-admin-header">
                     <div className="order-admin-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <h4>Ordine #{ord.id}</h4>
-                      <span className={`payment-method-badge ${(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? 'paypal' : 'satispay'}`}>
-                        {(ord.metodo_pagamento || 'Satispay').toLowerCase().includes('paypal') ? '🟡 PayPal / Carta' : '🔴 Satispay'}
-                      </span>
+                      {renderPaymentMethodBadge(ord.metodo_pagamento)}
                       <div className="order-admin-meta">
                         <span>{new Date(ord.created_at).toLocaleString('it-IT')}</span>
                       </div>
@@ -1503,6 +1515,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         onChange={(e) => handleUpdateStatoOrdine(ord.id, e.target.value)}
                         aria-label="Stato ordine"
                       >
+                        <option value="In attesa di bonifico">🏦 In attesa di bonifico</option>
                         <option value="Verifica Pagamento">🔍 Verifica Pagamento</option>
                         <option value="Pagamento Ricevuto - In Lavorazione">💳 Pagamento Ricevuto - In Lavorazione 📦</option>
                         <option value="Spedito">🚚 Spedito</option>
@@ -2640,6 +2653,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       background-color: #ffe6e8;
       color: #e50014;
       border: 1px solid #ffccd0;
+    }
+
+    .payment-method-badge.bonifico {
+      background-color: #f7ede8;
+      color: #8c5d3b;
+      border: 1px solid #eccbc9;
     }
 
     .payment-method-badge.paypal {
