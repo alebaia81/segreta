@@ -7,7 +7,7 @@ import Footer from '../components/Footer.jsx';
 import { useCart } from '../context/CartContext';
 
 
-export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) {
+export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin, onOpenProduct }) {
   const { openCookieSettings } = useCookie();
 
   // --- Meta tag SEO specifici per Home (Brand + Local) ---
@@ -146,7 +146,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin }) 
                 key={articolo.id}
                 articolo={articolo}
                 onAddToCart={addToCart}
-                onCardClick={onNavigateToShop}
+                onCardClick={(artId) => onOpenProduct ? onOpenProduct(artId || articolo.id) : onNavigateToShop()}
               />
             ))}
           </div>

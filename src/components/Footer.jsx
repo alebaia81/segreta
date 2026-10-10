@@ -17,6 +17,7 @@ export default function Footer({ onLogoClick, onNavigateToAdmin }) {
               src="/logo-footer-2.png"
               alt="Segreta Style Logo"
               className="footer-logo-img"
+              style={{ maxHeight: '65px', maxWidth: '200px', width: 'auto', height: 'auto', objectFit: 'contain' }}
             />
           </button>
           

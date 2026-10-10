@@ -49,7 +49,7 @@ export interface ProductCardProps {
   /** Callback invocata al click di "Aggiungi al Carrello" */
   onAddToCart?: (articolo: Articolo, size: string, color?: string | null, customImage?: string | null) => void;
   /** Callback opzionale al click della card (es. navigazione dettaglio) */
-  onCardClick?: () => void;
+  onCardClick?: (id?: number) => void;
 }
 
 // ─── Costante fallback immagine ───────────────────────────────────────────────
@@ -175,7 +175,7 @@ export default function ProductCard({
     if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onCardClick ? onCardClick() : handleAddToCart(e);
+      onCardClick ? onCardClick(articolo.id) : handleAddToCart(e);
     }
   };
 
@@ -188,7 +188,7 @@ export default function ProductCard({
       tabIndex={0}
       aria-label={`${articolo.titolo}, ${scontoPercent > 0 ? `Scontato a ${prezzoScontatoFormatted} (invece di ${prezzoFormatted})` : prezzoFormatted}`}
       onKeyDown={handleCardKeyDown}
-      onClick={onCardClick}
+      onClick={() => onCardClick && onCardClick(articolo.id)}
       whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(44,37,32,0.12)' }}
       /* Riduzione movimento: Framer legge prefers-reduced-motion e sopprime
          automaticamente whileHover transform se reduced-motion è attivo,
@@ -205,11 +205,15 @@ export default function ProductCard({
                   src={imgUrl}
                   alt={`${articolo.titolo} - Foto ${idx + 1}`}
                   className="pc-image"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: onCardClick ? 'pointer' : 'zoom-in' }}
                   loading={idx === 0 ? "eager" : "lazy"}
                   onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomImageIndex(idx);
+                    if (onCardClick) {
+                      onCardClick(articolo.id);
+                    } else {
+                      e.stopPropagation();
+                      setZoomImageIndex(idx);
+                    }
                   }}
                   onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMG; }}
                 />

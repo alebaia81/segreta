@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CartProvider } from './context/CartContext';
+import { CartProvider, useCart } from './context/CartContext';
 import { CookieProvider } from './context/CookieContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
+import ProductDetail from './pages/ProductDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import Carrello from './components/Carrello';
 import CheckoutPage from './pages/CheckoutPage';
@@ -70,14 +71,27 @@ const ARTICOLI_SEED = [
 ];
 
 function MainApp() {
-  // Leggiamo il percorso dal browser per supportare i link diretti (come /admin)
-  const [currentPath, setCurrentPath] = useState(window.location.pathname === '/' ? '/' : window.location.pathname);
+  const { addToCart } = useCart();
+
+  // Leggiamo il percorso dal browser per supportare i link diretti (come /admin o /prodotto/:id)
+  const [currentPath, setCurrentPath] = useState(window.location.pathname === '' ? '/' : window.location.pathname);
   const [activeSection, setActiveSection] = useState('home');
 
   // Aggiorniamo l'URL del browser quando cambiamo pagina internamente
   useEffect(() => {
-    window.history.pushState({}, '', currentPath);
+    if (window.location.pathname !== currentPath) {
+      window.history.pushState({}, '', currentPath);
+    }
   }, [currentPath]);
+
+  // Supporto nativo per i tasti Indietro/Avanti del browser
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [cartOpen, setCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,6 +169,12 @@ function MainApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Naviga verso un singolo prodotto
+  const handleOpenProduct = (id) => {
+    setCurrentPath(`/prodotto/${id}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Naviga verso la home
   const handleNavigateToHome = () => {
     setCurrentPath('/');
@@ -192,6 +212,9 @@ function MainApp() {
   const isAdminPath = currentPath === '/admin';
   const hideHeaderNav = currentPath === '/admin' || currentPath === '/checkout' || currentPath === '/thank-you';
 
+  const isProductDetail = currentPath.startsWith('/prodotto/');
+  const productDetailId = isProductDetail ? currentPath.replace('/prodotto/', '').split('/')[0] : null;
+
   return (
     <>
       {!hideHeaderNav && (
@@ -217,6 +240,7 @@ function MainApp() {
             articoli={articoli.filter(filterBySearch)}
             onNavigateToShop={handleNavigateToShop}
             onNavigateToAdmin={() => setCurrentPath('/admin')}
+            onOpenProduct={handleOpenProduct}
           />
         )}
 
@@ -224,6 +248,22 @@ function MainApp() {
           <Shop
             articoli={articoli.filter(filterBySearch)}
             onNavigateToHome={handleNavigateToHome}
+            onNavigateToAdmin={() => setCurrentPath('/admin')}
+            onOpenProduct={handleOpenProduct}
+          />
+        )}
+
+        {isProductDetail && (
+          <ProductDetail
+            articoloId={productDetailId}
+            articoli={articoli}
+            onAddToCart={(art, size, color, img) => {
+              addToCart(art, size, color, img);
+              setCartOpen(true);
+            }}
+            onNavigateToShop={handleNavigateToShop}
+            onNavigateToHome={handleNavigateToHome}
+            onOpenProduct={handleOpenProduct}
             onNavigateToAdmin={() => setCurrentPath('/admin')}
           />
         )}

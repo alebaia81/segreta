@@ -155,7 +155,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (onCardClick) {
-        onCardClick();
+        onCardClick(articolo.id);
       } else {
         handleAddToCart(e);
       }
@@ -170,7 +170,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       tabIndex={0}
       aria-label={`${articolo.titolo}, ${scontoPercent > 0 ? `Scontato a ${prezzoScontatoFormatted} (invece di ${prezzoFormatted})` : prezzoFormatted}`}
       onKeyDown={handleCardKeyDown}
-      onClick={onCardClick}
+      onClick={() => onCardClick && onCardClick(articolo.id)}
     >
       {/* ── Immagine ──────────────────────────────────────────────────────── */}
       <div className="pc-image-wrapper">
@@ -183,11 +183,15 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
                   src={imgUrl}
                   alt={`${articolo.titolo} - Foto ${idx + 1}`}
                   className="pc-image"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: onCardClick ? 'pointer' : 'zoom-in' }}
                   loading={idx === 0 ? "eager" : "lazy"}
                   onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomImageIndex(idx);
+                    if (onCardClick) {
+                      onCardClick(articolo.id);
+                    } else {
+                      e.stopPropagation();
+                      setZoomImageIndex(idx);
+                    }
                   }}
                   onError={e => { e.target.src = FALLBACK_SRC; }}
                 />

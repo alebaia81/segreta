@@ -289,8 +289,9 @@ button {
 .store-footer {
   background-color: var(--text-primary);
   color: var(--bg-primary);
-  padding: 2rem 0;
+  padding: 2.5rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
 }
 
 .footer-content {
@@ -306,6 +307,29 @@ button {
   align-items: center;
   gap: var(--spacing-lg);
   flex-wrap: wrap;
+}
+
+.footer-logo-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s ease;
+}
+
+.footer-logo-btn:hover {
+  opacity: 0.85;
+}
+
+.footer-logo-img {
+  max-height: 65px;
+  max-width: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .footer-company-block {
@@ -342,6 +366,59 @@ button {
   text-align: right;
 }
 
+.footer-social-links {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.social-footer-icon-btn {
+  color: var(--border-color);
+  opacity: 0.8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  transition: var(--transition-fast);
+}
+
+.social-footer-icon-btn:hover {
+  opacity: 1;
+  color: var(--accent-gold);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.footer-links-row {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 0.82rem;
+  color: var(--border-color);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-links-row a,
+.footer-cookie-btn {
+  color: var(--border-color);
+  opacity: 0.8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  padding: 0;
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+.footer-links-row a:hover,
+.footer-cookie-btn:hover {
+  opacity: 1;
+  color: var(--accent-gold);
+  text-decoration: underline;
+}
+
 .footer-copyright-row {
   display: flex;
   align-items: center;
@@ -354,6 +431,23 @@ button {
 .footer-copyright-row a {
   color: inherit;
   text-decoration: underline;
+}
+
+.footer-lock-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.footer-lock-btn:hover {
+  opacity: 0.9;
+  color: var(--accent-gold);
 }
 
 @media (max-width: 768px) {

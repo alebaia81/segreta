@@ -16,7 +16,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
  * Catalogo completo con filtri per categoria.
  * SEO: meta tag differenziati da Home (catalogo + shopping).
  */
-export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) {
+export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin, onOpenProduct }) {
   const { addToCart } = useCart();
   const { openCookieSettings } = useCookie();
 
@@ -197,6 +197,7 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin }) 
                 key={articolo.id}
                 articolo={articolo}
                 onAddToCart={(art, size, color, customImg) => addToCart(art, size, color, customImg)}
+                onCardClick={(artId) => onOpenProduct && onOpenProduct(artId || articolo.id)}
               />
             ))}
           </div>

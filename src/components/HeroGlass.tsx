@@ -24,8 +24,6 @@ export interface HeroGlassProps {
   onNavigateToShop: () => void;
   /** Percorso opzionale per la foto del negozio */
   backgroundImage?: string;
-  /** Testo headline opzionale (default: headline Segreta Style) */
-  headline?: string;
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -33,7 +31,6 @@ export interface HeroGlassProps {
 export default function HeroGlass({
   onNavigateToShop,
   backgroundImage = '/PHOTO-2026-07-07-17-53-56.jpg',
-  headline = "Moda unica, frizzante e ricca di personalità nel cuore di Monticelli d'Ongina.",
 }: HeroGlassProps) {
   const heroRef = useRef<HTMLElement>(null);
   const { fadeUp, fadeIn, staggerContainer } =
