@@ -190,14 +190,8 @@ function MainApp() {
   };
 
   const handleBackToShopping = () => {
-    setCurrentPath('/');
-    setActiveSection('catalogo');
-    setTimeout(() => {
-      const element = document.getElementById('catalogo');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+    setCurrentPath('/shop');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const filterBySearch = useCallback((art) => {

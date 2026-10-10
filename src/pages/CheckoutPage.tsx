@@ -550,6 +550,19 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                   </button>
                 </>
               )}
+
+              {/* Pulsante ripensamento / Torna allo Shop */}
+              <div className="checkout-reconsider-box">
+                <button
+                  type="button"
+                  className="checkout-reconsider-btn"
+                  onClick={onBackToShopping}
+                  aria-label="Hai un ripensamento? Torna allo Shop"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Hai un ripensamento? Torna allo Shop</span>
+                </button>
+              </div>
             </div>
           </div>
         </aside>
@@ -659,18 +672,52 @@ const CSS = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
+    background: var(--bg-secondary, #FFFFFF);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius-sm);
     transition: var(--transition-smooth);
+    box-shadow: 0 1px 3px rgba(44, 37, 32, 0.05);
   }
 
   .back-to-shop-btn:hover {
-    color: var(--text-primary);
+    border-color: #E295AB;
+    color: #cb6b86;
+    background: rgba(226, 149, 171, 0.08);
+  }
+
+  .checkout-reconsider-box {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+  }
+
+  .checkout-reconsider-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+  }
+
+  .checkout-reconsider-btn:hover {
+    border-color: #E295AB;
+    background: rgba(226, 149, 171, 0.1);
+    color: #cb6b86;
   }
 
   .checkout-title {

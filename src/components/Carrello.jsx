@@ -1,5 +1,5 @@
 import { useCart } from '../context/CartContext';
-import { X, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop }) {
   const { cartItems, updateQuantity, removeFromCart, cartTotal } = useCart();
@@ -134,6 +134,19 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
             >
               Procedi al Checkout
               <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+            </button>
+
+            <button
+              type="button"
+              className="continue-shopping-cart-btn"
+              onClick={() => {
+                onClose();
+                if (onNavigateToShop) onNavigateToShop();
+              }}
+              aria-label="Continua lo shopping e torna allo shop"
+            >
+              <ArrowLeft size={16} />
+              <span>Continua lo shopping</span>
             </button>
           </div>
         )}
@@ -371,6 +384,30 @@ export default function Carrello({ isOpen, onClose, onCheckout, onNavigateToShop
           font-weight: 700;
           color: var(--success);
           margin-bottom: 0;
+        }
+
+        .continue-shopping-cart-btn {
+          width: 100%;
+          margin-top: 10px;
+          background: transparent;
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem 1rem;
+          font-size: 0.88rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .continue-shopping-cart-btn:hover {
+          background: rgba(226, 149, 171, 0.12);
+          border-color: #E295AB;
+          color: #cb6b86;
         }
       `}</style>
     </div>
