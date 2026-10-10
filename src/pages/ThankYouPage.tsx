@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, ShoppingBag, Landmark, Copy, Check } from 'lucide-react';
+import { CheckCircle, ShoppingBag, Landmark, Copy, Check, Printer } from 'lucide-react';
 import { BANK_DETAILS } from '../lib/bankDetails';
 
 interface ThankYouPageProps {
@@ -35,6 +35,224 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
     }
   };
 
+  const handleDownloadReceipt = () => {
+    if (!orderDetails) return;
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Per favore, abilita i popup nel browser per visualizzare e scaricare la ricevuta.');
+      return;
+    }
+
+    const itemsList = articoli.map((item: any) => `
+      <tr>
+        <td style="padding: 10px 6px; border-bottom: 1px solid #eee;">
+          <strong>${item.titolo}</strong>
+          ${item.taglia ? `<br><span style="font-size: 12px; color: #777;">Taglia: ${item.taglia}</span>` : ''}
+        </td>
+        <td style="padding: 10px 6px; text-align: center; border-bottom: 1px solid #eee;">x${item.quantita}</td>
+        <td style="padding: 10px 6px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">€${(item.prezzo * item.quantita).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const isBonifico = orderDetails.metodo_pagamento === 'Bonifico Bancario';
+    const isRitiro = orderDetails.metodo_consegna === 'Ritiro in negozio';
+    const dataFormatted = orderDetails.created_at
+      ? new Date(orderDetails.created_at).toLocaleString('it-IT')
+      : new Date().toLocaleString('it-IT');
+
+    win.document.write(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Ricevuta Ordine #${orderDetails.id} — Segreta Style</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            color: #2C2520;
+            background: #fff;
+            margin: 0;
+            padding: 30px 20px;
+          }
+          .receipt-wrapper {
+            max-width: 580px;
+            margin: 0 auto;
+            border: 1px solid #E6E1DC;
+            border-radius: 12px;
+            padding: 28px;
+          }
+          .receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #FAF0F4;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+          }
+          .receipt-logo {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #2C2520;
+            margin: 0 0 4px 0;
+          }
+          .receipt-tagline {
+            font-size: 12px;
+            color: #8C827A;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+          .receipt-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #FAF8F5;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 20px;
+          }
+          .receipt-notice {
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.45;
+          }
+          .pickup-box {
+            background: #FFF7F9;
+            border: 1px solid #F5D5DF;
+            color: #9C3353;
+          }
+          .bonifico-box {
+            background: #FAF8F5;
+            border: 1px solid #E6E1DC;
+            color: #2C2520;
+          }
+          .bonifico-box h4 {
+            margin: 0 0 6px 0;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 16px;
+          }
+          th {
+            text-align: left;
+            padding: 8px 6px;
+            border-bottom: 2px solid #E6E1DC;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #7A726B;
+            letter-spacing: 0.05em;
+          }
+          .total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid #2C2520;
+            padding-top: 12px;
+            font-size: 16px;
+            font-weight: 700;
+          }
+          .total-amount {
+            font-size: 20px;
+            color: #CB6B86;
+          }
+          .receipt-footer {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            margin-top: 28px;
+            padding-top: 14px;
+            border-top: 1px solid #F0EBE6;
+            line-height: 1.5;
+          }
+          @media print {
+            body { padding: 0; }
+            .receipt-wrapper { border: none; padding: 10px; max-width: 100%; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-wrapper">
+          <div class="receipt-header">
+            <h1 class="receipt-logo">Segreta Style</h1>
+            <div class="receipt-tagline">Abbigliamento Donna & Accessori • Monticelli d'Ongina (PC)</div>
+          </div>
+
+          <div class="receipt-meta">
+            <div>
+              <strong>Ordine #${orderDetails.id}</strong><br>
+              Data: ${dataFormatted}<br>
+              Pagamento: <strong>${orderDetails.metodo_pagamento || 'Online'}</strong>
+            </div>
+            <div style="text-align: right;">
+              <strong>${orderDetails.nome_cliente}</strong><br>
+              Tel: ${orderDetails.telefono}<br>
+              ${orderDetails.email ? `Email: ${orderDetails.email}<br>` : ''}
+              Consegna: <strong>${orderDetails.metodo_consegna}</strong>
+            </div>
+          </div>
+
+          ${isRitiro ? `
+            <div class="receipt-notice pickup-box">
+              <strong>🛍️ RITIRO IN NEGOZIO:</strong> Mostra questa ricevuta o comunica il numero d'ordine <strong>#${orderDetails.id}</strong> al momento del ritiro presso il negozio Segreta Style a Monticelli d'Ongina.
+            </div>
+          ` : `
+            <div class="receipt-notice" style="background:#f9f9f9; border:1px solid #eee;">
+              <strong>Indirizzo di spedizione:</strong> ${orderDetails.indirizzo_spedizione}
+            </div>
+          `}
+
+          ${isBonifico ? `
+            <div class="receipt-notice bonifico-box">
+              <h4>Coordinate per il Bonifico Bancario</h4>
+              <div><strong>Beneficiario:</strong> ${BANK_DETAILS.beneficiario}</div>
+              <div><strong>IBAN:</strong> ${BANK_DETAILS.iban}</div>
+              <div><strong>Banca:</strong> ${BANK_DETAILS.banca}</div>
+              <div><strong>Importo da saldare:</strong> €${orderDetails.totale.toFixed(2)}</div>
+              <div><strong>Causale:</strong> Ordine #${orderDetails.id} - ${orderDetails.nome_cliente}</div>
+            </div>
+          ` : ''}
+
+          <table>
+            <thead>
+              <tr>
+                <th>Articolo</th>
+                <th style="text-align: center;">Qtà</th>
+                <th style="text-align: right;">Prezzo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+
+          <div class="total-section">
+            <span>Totale Complessivo</span>
+            <span class="total-amount">€${orderDetails.totale.toFixed(2)}</span>
+          </div>
+
+          <div class="receipt-footer">
+            Grazie per aver scelto Segreta Style! Per qualsiasi necessità contattaci su WhatsApp.<br>
+            www.segretastyle.it
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    win.document.close();
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 250);
+  };
+
   if (!orderDetails) {
     return (
       <div className="thankyou-empty-container container">
@@ -56,6 +274,7 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
     : [];
 
   const causaleTesto = `Ordine #${orderDetails.id} - ${orderDetails.nome_cliente}`;
+  const isRitiro = orderDetails.metodo_consegna === 'Ritiro in negozio';
 
   return (
     <section className="thankyou-section container fade-in">
@@ -71,6 +290,17 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
             : ' Il pagamento con PayPal è andato a buon fine.'}
           {' '}Riceverai a breve un messaggio da Greta per la conferma finale dei tempi di spedizione.
         </p>
+
+        {/* Avviso Ritiro in Negozio */}
+        {isRitiro && (
+          <div className="pickup-banner">
+            <ShoppingBag size={22} className="pickup-banner-icon" />
+            <div className="pickup-banner-content">
+              <strong>Ritiro in Negozio (Monticelli d'Ongina)</strong>
+              <p>Puoi scaricare la ricevuta con il pulsante qui sotto da mostrare direttamente dal cellulare quando passi a ritirare il tuo ordine.</p>
+            </div>
+          </div>
+        )}
 
         {/* Box Coordinate Bonifico Bancario */}
         {orderDetails.metodo_pagamento === 'Bonifico Bancario' && (
@@ -185,9 +415,22 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
           </table>
         </div>
 
-        <button className="btn-primary back-btn" onClick={onBackToShopping}>
-          Torna allo Shopping
-        </button>
+        {/* Azioni Ricevuta e Continuazione Shopping */}
+        <div className="thankyou-actions-bar">
+          <button
+            type="button"
+            className="receipt-download-btn"
+            onClick={handleDownloadReceipt}
+            aria-label="Scarica o stampa ricevuta d'ordine"
+          >
+            <Printer size={18} />
+            <span>Scarica / Stampa Ricevuta (PDF)</span>
+          </button>
+
+          <button className="back-to-shop-action-btn" onClick={onBackToShopping}>
+            Torna allo Shopping
+          </button>
+        </div>
       </div>
 
       <style>{CSS}</style>
@@ -248,6 +491,39 @@ const CSS = `
     max-width: 620px;
     line-height: 1.6;
     margin: 0 0 var(--spacing-xl) 0;
+  }
+
+  /* Pickup Banner */
+  .pickup-banner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #FFF7F9;
+    border: 1px solid #F5D5DF;
+    border-radius: 12px;
+    padding: 1rem 1.3rem;
+    margin-bottom: var(--spacing-lg);
+    text-align: left;
+  }
+
+  .pickup-banner-icon {
+    color: #CB6B86;
+    flex-shrink: 0;
+  }
+
+  .pickup-banner-content strong {
+    display: block;
+    color: #2C2520;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+
+  .pickup-banner-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #7A726B;
+    line-height: 1.4;
   }
 
   /* Bank Transfer Box */
@@ -454,8 +730,57 @@ const CSS = `
     padding-top: var(--spacing-md);
   }
 
-  .back-btn {
-    padding: 0.9rem 2.2rem;
-    font-weight: 700;
+  /* Action Buttons */
+  .thankyou-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .receipt-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #2C2520;
+    color: #FFFFFF;
+    border: none;
+    padding: 0.85rem 1.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 2px 8px rgba(44, 37, 32, 0.15);
+  }
+
+  .receipt-download-btn:hover {
+    background-color: #423832;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(44, 37, 32, 0.22);
+  }
+
+  .back-to-shop-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.85rem 1.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .back-to-shop-action-btn:hover {
+    border-color: #E295AB;
+    background: rgba(226, 149, 171, 0.08);
+    color: #cb6b86;
   }
 `;
