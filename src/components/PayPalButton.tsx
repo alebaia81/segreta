@@ -25,7 +25,7 @@ export default function PayPalButton({ amount, onSuccess, onError, onValidate }:
             label: 'pay',
             height: 48,
           }}
-          createOrder={(data, actions) => {
+          createOrder={(_data, actions) => {
             // Valida il form PRIMA di creare l'ordine su PayPal
             if (onValidate && !onValidate()) {
               return Promise.reject(new Error('Form non valido'));
@@ -43,7 +43,7 @@ export default function PayPalButton({ amount, onSuccess, onError, onValidate }:
               ],
             });
           }}
-          onApprove={async (data, actions) => {
+          onApprove={async (_data, actions) => {
             if (actions.order) {
               try {
                 const details = await actions.order.capture();

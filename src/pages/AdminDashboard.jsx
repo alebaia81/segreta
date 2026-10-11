@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle } from 'lucide-react';
 import { supabase as supabaseClient } from '../lib/supabaseClient.js';
+import { BANK_DETAILS } from '../lib/bankDetails';
 
 const TARGET_CATEGORIES = {
   Donna: [
@@ -47,7 +48,7 @@ const getWhatsAppUrl = (ord) => {
 
   switch (ord.stato) {
     case 'In attesa di bonifico':
-      messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nEcco i dati per effettuare il bonifico bancario di €${totale}:\n\n• Beneficiario: Segreta di Righi Greta\n• IBAN: IT02 L 12345 67890 000000123456\n• Banca: Banca di Piacenza\n• Importo: €${totale}\n• Causale: Ordine #${orderId} - ${ord.nome_cliente || nomeCliente}\n\nAppena effettui il bonifico o invii la contabile, prepareremo con cura il tuo pacchetto! ✨`;
+      messaggio = `Ciao ${nomeCliente}, grazie per il tuo ordine #${orderId} su Segreta Style! 🌸\nEcco i dati per effettuare il bonifico bancario di €${totale}:\n\n• Beneficiario: ${BANK_DETAILS.beneficiario}\n• IBAN: ${BANK_DETAILS.iban}\n• Banca: ${BANK_DETAILS.banca}\n• Importo: €${totale}\n• Causale: Ordine #${orderId} - ${ord.nome_cliente || nomeCliente}\n\nAppena effettui il bonifico o invii la contabile, prepareremo con cura il tuo pacchetto! ✨`;
       break;
 
     case 'Verifica Pagamento':
