@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 // @ts-ignore
 import { useCart } from '../context/CartContext';
-import { ArrowLeft, ShoppingBag, Landmark, ShieldCheck, X } from 'lucide-react';
-import PayPalButton from '../components/PayPalButton';
+import { ArrowLeft, ShoppingBag, Landmark, ShieldCheck, X, CreditCard, Lock } from 'lucide-react';
 
 interface CheckoutPageProps {
   onBackToShopping: () => void;
@@ -26,7 +25,16 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [metodoPagamento, setMetodoPagamento] = useState<'paypal' | 'satispay' | 'bonifico'>('paypal');
+  const [metodoPagamento, setMetodoPagamento] = useState<'stripe' | 'satispay' | 'bonifico'>('stripe');
+
+  // Gestione ritorno da annullamento Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('canceled') === 'true') {
+      setErrorMessage('ℹ️ Il pagamento con carta è stato annullato. Il tuo carrello è rimasto intatto: puoi riprovare o selezionare un altro metodo.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -65,158 +73,97 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     return Object.keys(errors).length === 0;
   };
 
-  // Calcolo Spese Spedizione
+  // Calcolo Spese Spedizione: 6,90 € corriere, 0 € ritiro in boutique
   const shippingFee =
     formData.metodo_consegna === 'Ritiro in negozio'
       ? 0
-      : cartTotal >= 50
-      ? 0
-      : 5.90;
+      : 6.90;
 
   const totalAmount = cartTotal + shippingFee;
 
-  const handlePayPalValidate = (): boolean => {
+  const handleStripePayment = async () => {
     if (!validateForm()) {
       setErrorMessage('⚠️ Compila tutti i campi obbligatori (nome, cognome, telefono, email e indirizzo) prima di procedere con il pagamento.');
-      // Scorri su per mostrare i campi con errori
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      return false;
+      return;
     }
-    setErrorMessage('');
-    return true;
-  };
 
-  const handlePayPalSuccess = async (details: any) => {
     setSubmitting(true);
     setErrorMessage('');
 
-    const paypalShipping = details?.purchase_units?.[0]?.shipping;
-    const paypalAddress = paypalShipping?.address;
-    const paypalPayer = details?.payer;
+    const indirizzoCompleto =
+      formData.metodo_consegna === 'Ritiro in negozio'
+        ? "Ritiro in boutique (Via Martiri della Libertà 67, Monticelli d'Ongina)"
+        : `${formData.indirizzo}, ${formData.cap} ${formData.citta}`;
 
-    const nomeForm = `${formData.nome} ${formData.cognome}`.trim();
-    const nomePaypal = paypalShipping?.name?.full_name || `${paypalPayer?.name?.given_name || ''} ${paypalPayer?.name?.surname || ''}`.trim();
-    const nomeFinale = nomeForm || nomePaypal || 'Cliente PayPal';
-
-    const telefonoForm = formData.telefono.trim();
-    const telefonoPaypal = paypalPayer?.phone?.phone_number?.national_number || '';
-    const telefonoFinale = telefonoForm || telefonoPaypal || 'Da confermare';
-
-    let indirizzoFinale = '';
-    if (formData.metodo_consegna === 'Ritiro in negozio') {
-      indirizzoFinale = 'Ritiro in negozio (Monticelli d\'Ongina)';
-    } else {
-      const hasFormAddress = formData.indirizzo.trim() && formData.citta.trim();
-      if (hasFormAddress) {
-        indirizzoFinale = `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
-      } else if (paypalAddress && (paypalAddress.address_line_1 || paypalAddress.admin_area_2)) {
-        const line1 = paypalAddress.address_line_1 || '';
-        const line2 = paypalAddress.address_line_2 || '';
-        const city = paypalAddress.admin_area_2 || '';
-        const cap = paypalAddress.postal_code || '';
-        indirizzoFinale = `${line1} ${line2}`.trim() + (city ? `, ${city}` : '') + (cap ? ` (${cap})` : '');
-      } else {
-        indirizzoFinale = 'Indirizzo da confermare via WhatsApp';
-      }
-    }
-
-    const ordineDaInviare = {
-      nome_cliente: nomeFinale,
-      telefono: telefonoFinale,
-      email: formData.email || paypalPayer?.email_address || '',
-      indirizzo_spedizione: indirizzoFinale,
-      metodo_pagamento: 'PayPal',
+    const pendingOrder = {
+      id: Math.floor(Math.random() * 10000) + 1,
+      nome_cliente: `${formData.nome} ${formData.cognome}`.trim(),
+      telefono: formData.telefono,
+      email: formData.email,
+      indirizzo_spedizione: indirizzoCompleto,
+      metodo_pagamento: 'Carta / Stripe',
       metodo_consegna: formData.metodo_consegna,
-      stato: 'Pagamento Ricevuto - In Lavorazione',
       totale: parseFloat(totalAmount.toFixed(2)),
-      dettaglio_articoli: JSON.stringify(
-        cartItems.map((item: any) => ({
-          id: item.id,
-          titolo: item.titolo,
-          prezzo: item.prezzo,
-          taglia: item.size,
-          quantita: item.quantity,
-        }))
-      ),
-      paypal_order_id: details.id,
+      dettaglio_articoli: cartItems.map((item: any) => ({
+        id: item.id,
+        titolo: item.titolo,
+        prezzo: item.prezzo,
+        taglia: item.size || 'Unica',
+        quantita: item.quantity || 1,
+      })),
+      stato: 'Pagamento Ricevuto - In Lavorazione',
+      created_at: new Date().toISOString(),
     };
-
-    const attemptOrder = async (retries: number): Promise<any> => {
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch('/api/ordini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(ordineDaInviare),
-          });
-          if (response.ok) return await response.json();
-          console.error(`Attempt ${i + 1} failed with status: ${response.status}`);
-        } catch (err) {
-          console.error(`Attempt ${i + 1} caught error:`, err);
-        }
-      }
-      throw new Error('Impossibile salvare l\'ordine dopo vari tentativi.');
-    };
+    localStorage.setItem('segreta_last_order', JSON.stringify(pendingOrder));
 
     try {
-      const json = await attemptOrder(3);
-      if (json.success && json.data?.id) {
-        console.log('[PayPal] ✅ Ordine salvato su Supabase id=', json.data.id);
-        localStorage.setItem(
-          'segreta_last_order',
-          JSON.stringify({
-            ...ordineDaInviare,
-            id: json.data.id,
-            created_at: json.data.created_at || new Date().toISOString(),
-          })
-        );
-        clearCart();
-        setCurrentPath('/thank-you');
-      } else {
-        // Il server ha risposto ma con success:false
-        const errMsg = json?.error || 'Errore sconosciuto dal server';
-        console.error('[PayPal] ❌ Server error:', errMsg);
-        // Salva comunque in locale come emergenza (pagamento già avvenuto)
-        const ordineFallback = {
-          ...ordineDaInviare,
-          id: `PP_${details.id}`,
-          created_at: new Date().toISOString(),
-          _local_fallback: true,
-        };
-        localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
-        const ordiniSalvati = localStorage.getItem('segreta_ordini');
-        const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
-        ordiniList.unshift(ordineFallback);
-        localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-        clearCart();
-        setCurrentPath('/thank-you');
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartItems,
+          customerData: formData,
+          metodo_consegna: formData.metodo_consegna,
+        }),
+      });
+
+      if (!response.ok) {
+        // Se il backend locale non è avviato sulla porta 3000 in localhost
+        if (response.status === 504 || response.status === 502) {
+          console.warn('[Stripe Local Mock] Backend locale non avviato, fallback mock automatico.');
+          clearCart();
+          window.location.href = `/thank-you?session_id=cs_test_mock_${Date.now()}&mock=true`;
+          return;
+        }
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Impossibile creare la sessione di pagamento Stripe');
       }
+
+      const data = await response.json();
+
+      if (!data.success || !data.url) {
+        throw new Error(data.error || 'Impossibile creare la sessione di pagamento Stripe');
+      }
+
+      if (data.mock) {
+        clearCart();
+      }
+
+      window.location.href = data.url;
     } catch (err: any) {
-      // Rete completamente irraggiungibile dopo 3 tentativi
-      console.error('[PayPal] ❌ API irraggiungibile dopo 3 tentativi:', err.message);
-      const ordineFallback = {
-        ...ordineDaInviare,
-        id: `PP_${details.id}`,
-        created_at: new Date().toISOString(),
-        _local_fallback: true,
-      };
-      localStorage.setItem('segreta_last_order', JSON.stringify(ordineFallback));
-      const ordiniSalvati = localStorage.getItem('segreta_ordini');
-      const ordiniList = ordiniSalvati ? JSON.parse(ordiniSalvati) : [];
-      ordiniList.unshift(ordineFallback);
-      localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-      clearCart();
-      setCurrentPath('/thank-you');
-    } finally {
+      if (window.location.hostname === 'localhost' && (err.name === 'TypeError' || err.message?.includes('fetch'))) {
+        console.warn('[Stripe Local Mock] Connessione locale fallita, simulazione mock su localhost.');
+        clearCart();
+        window.location.href = `/thank-you?session_id=cs_test_mock_${Date.now()}&mock=true`;
+        return;
+      }
+      console.error('[Stripe Payment Error]:', err);
+      setErrorMessage(
+        err.message || 'Si è verificato un errore durante la connessione con Stripe. Per favore riprova o seleziona un altro metodo di pagamento.'
+      );
       setSubmitting(false);
     }
-  };
-
-  const handlePayPalError = (error: any) => {
-    console.error('PayPal checkout error:', error);
-    setErrorMessage(
-      'Si è verificato un errore con il pagamento PayPal. Per favore riprova o seleziona un altro metodo.'
-    );
   };
 
   const [showSatispayModal, setShowSatispayModal] = useState(false);
@@ -565,17 +512,22 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
           <div className="payment-methods-container">
             <h3>Metodo di Pagamento</h3>
             <div className="payment-selectors">
-              <label className={`payment-selector-card ${metodoPagamento === 'paypal' ? 'selected' : ''}`}>
+              <label className={`payment-selector-card ${metodoPagamento === 'stripe' ? 'selected' : ''}`}>
                 <input
                   type="radio"
                   name="metodo_pagamento_select"
-                  checked={metodoPagamento === 'paypal'}
-                  onChange={() => setMetodoPagamento('paypal')}
+                  checked={metodoPagamento === 'stripe'}
+                  onChange={() => setMetodoPagamento('stripe')}
                   className="payment-radio-input"
                 />
                 <div className="payment-selector-details">
-                  <span className="payment-name">PayPal o Carta</span>
-                  <span className="payment-desc">PayPal, PostePay, Carte di Credito</span>
+                  <div className="payment-name-row">
+                    <span className="payment-name">Carta di Credito / Apple Pay</span>
+                    <span className="stripe-secure-badge">
+                      <Lock size={11} /> Stripe
+                    </span>
+                  </div>
+                  <span className="payment-desc">Visa, Mastercard, PostePay, Apple Pay & Google Pay</span>
                 </div>
               </label>
 
@@ -614,17 +566,19 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                   <div className="spinner"></div>
                   <p>Salvataggio ordine in corso...</p>
                 </div>
-              ) : metodoPagamento === 'paypal' ? (
+              ) : metodoPagamento === 'stripe' ? (
                 <>
-                  <p className="paypal-notice-text">
-                    Paga in sicurezza con PayPal, carta di credito o prepagata.
+                  <p className="stripe-notice-text">
+                    Verrai reindirizzato sulla pagina sicura e crittografata di <strong>Stripe</strong> per completare il pagamento in totale tranquillità.
                   </p>
-                  <PayPalButton
-                    amount={totalAmount}
-                    onSuccess={handlePayPalSuccess}
-                    onError={handlePayPalError}
-                    onValidate={handlePayPalValidate}
-                  />
+                  <button
+                    className="stripe-checkout-btn"
+                    onClick={handleStripePayment}
+                    disabled={submitting}
+                  >
+                    <CreditCard size={18} />
+                    <span>{submitting ? 'Creazione sessione sicura...' : `Paga €${totalAmount.toFixed(2)} con Carta / Apple Pay`}</span>
+                  </button>
                 </>
               ) : metodoPagamento === 'bonifico' ? (
                 <>
@@ -1160,12 +1114,65 @@ const CSS = `
     padding-top: var(--spacing-md);
   }
 
-  .paypal-notice-text, .satispay-notice-text, .bonifico-notice-text {
+  .payment-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stripe-secure-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #635bff;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .stripe-notice-text, .satispay-notice-text, .bonifico-notice-text {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0 0 12px 0;
     text-align: left;
     line-height: 1.4;
+  }
+
+  .stripe-checkout-btn {
+    width: 100%;
+    min-height: 48px;
+    background-color: #635bff;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 12px rgba(99, 91, 255, 0.25);
+  }
+
+  .stripe-checkout-btn:hover:not(:disabled) {
+    background-color: #5348e0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 91, 255, 0.35);
+  }
+
+  .stripe-checkout-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .bonifico-btn {

@@ -87,6 +87,9 @@ const getWhatsAppUrl = (ord) => {
 
 const renderPaymentMethodBadge = (metodoPagamento) => {
   const m = (metodoPagamento || '').toLowerCase();
+  if (m.includes('stripe') || m.includes('carta')) {
+    return <span className="payment-method-badge stripe">💳 Carta / Stripe</span>;
+  }
   if (m.includes('bonifico')) {
     return <span className="payment-method-badge bonifico">🏦 Bonifico Bancario</span>;
   }
@@ -2660,6 +2663,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       background-color: #f7ede8;
       color: #8c5d3b;
       border: 1px solid #eccbc9;
+    }
+
+    .payment-method-badge.stripe {
+      background-color: #f0f0ff;
+      color: #635bff;
+      border: 1px solid #d4d0ff;
     }
 
     .payment-method-badge.paypal {

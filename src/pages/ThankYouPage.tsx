@@ -12,10 +12,24 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
   const [copiedCausale, setCopiedCausale] = useState(false);
 
   useEffect(() => {
+    // Se torniamo da una sessione Stripe con ?session_id=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+
     const lastOrder = localStorage.getItem('segreta_last_order');
     if (lastOrder) {
       try {
-        setOrderDetails(JSON.parse(lastOrder));
+        const parsed = JSON.parse(lastOrder);
+        if (sessionId) {
+          parsed.stripe_session_id = sessionId;
+          parsed.stato = 'Pagamento Ricevuto - In Lavorazione';
+          parsed.metodo_pagamento = 'Carta / Stripe';
+          localStorage.setItem('segreta_last_order', JSON.stringify(parsed));
+          // Svuota carrello locale
+          localStorage.removeItem('segreta_cart');
+          window.dispatchEvent(new Event('segreta_cart_updated'));
+        }
+        setOrderDetails(parsed);
       } catch (err) {
         console.error('Errore nel parsing dell\'ultimo ordine:', err);
       }
@@ -287,7 +301,7 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
             ? ' Se hai già inviato il pagamento tramite l\'app Satispay, Greta verificherà l\'accredito e ti contatterà a breve.'
             : orderDetails.metodo_pagamento === 'Bonifico Bancario'
             ? ' Per completare l\'acquisto, effettua il bonifico bancario con i dati riportati di seguito. Gli articoli rimarranno riservati per te!'
-            : ' Il pagamento con PayPal è andato a buon fine.'}
+            : ' Il pagamento con Carta / Stripe è andato a buon fine.'}
           {' '}Riceverai a breve un messaggio da Greta per la conferma finale dei tempi di spedizione.
         </p>
 

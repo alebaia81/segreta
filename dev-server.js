@@ -63,6 +63,10 @@ const server = http.createServer(async (req, res) => {
     handlerPath = './api/admin/upload.js';
   } else if (pathname === '/api/admin/settings/password') {
     handlerPath = './api/admin/settings/password.js';
+  } else if (pathname === '/api/create-checkout-session' || pathname === '/api/create-checkout-session/') {
+    handlerPath = './api/create-checkout-session.js';
+  } else if (pathname === '/api/stripe-webhook' || pathname === '/api/stripe-webhook/') {
+    handlerPath = './api/stripe-webhook.js';
   }
 
   if (!handlerPath) {

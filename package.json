@@ -14,7 +14,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@paypal/react-paypal-js": "^10.1.2",
     "@supabase/supabase-js": "^2.110.0",
     "browser-image-compression": "^2.0.2",
     "dotenv": "^17.4.2",
@@ -23,6 +22,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0",
+    "stripe": "^23.0.0",
     "yet-another-react-lightbox": "^3.32.0"
   },
   "devDependencies": {
