@@ -20,14 +20,64 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
     if (lastOrder) {
       try {
         const parsed = JSON.parse(lastOrder);
-        if (sessionId) {
-          parsed.stripe_session_id = sessionId;
+        const isStripe = Boolean(sessionId || parsed.metodo_pagamento === 'Carta / Stripe');
+        if (isStripe) {
+          if (sessionId) {
+            parsed.stripe_session_id = sessionId;
+          }
           parsed.stato = 'Pagamento Ricevuto - In Lavorazione';
           parsed.metodo_pagamento = 'Carta / Stripe';
           localStorage.setItem('segreta_last_order', JSON.stringify(parsed));
+          
           // Svuota carrello locale
           localStorage.removeItem('segreta_cart');
           window.dispatchEvent(new Event('segreta_cart_updated'));
+
+          // Salva l'ordine nel database (POST /api/ordini) e nella lista locale per l'Admin Dashboard
+          const saveKey = `segreta_order_saved_${sessionId || parsed.id || 'stripe'}`;
+          if (!sessionStorage.getItem(saveKey)) {
+            sessionStorage.setItem(saveKey, 'true');
+
+            // 1. Salva subito in localStorage per visualizzazione immediata in dashboard
+            try {
+              const savedList = localStorage.getItem('segreta_ordini');
+              const ordiniList = savedList ? JSON.parse(savedList) : [];
+              if (!ordiniList.some((o: any) => o.stripe_session_id === sessionId || o.id === parsed.id)) {
+                ordiniList.unshift(parsed);
+                localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
+              }
+            } catch (storageErr) {
+              console.warn('Errore salvataggio locale ordine:', storageErr);
+            }
+
+            // 2. Invia l'ordine al backend (/api/ordini -> Supabase)
+            fetch('/api/ordini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nome_cliente: parsed.nome_cliente,
+                telefono: parsed.telefono,
+                email: parsed.email || undefined,
+                indirizzo_spedizione: parsed.indirizzo_spedizione,
+                metodo_pagamento: 'Carta / Stripe',
+                metodo_consegna: parsed.metodo_consegna,
+                totale: parsed.totale,
+                dettaglio_articoli: parsed.dettaglio_articoli,
+                stato: 'Pagamento Ricevuto - In Lavorazione',
+              }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.success && data.data?.id) {
+                  parsed.id = data.data.id;
+                  localStorage.setItem('segreta_last_order', JSON.stringify(parsed));
+                  setOrderDetails({ ...parsed });
+                }
+              })
+              .catch((apiErr) => {
+                console.error('Errore invio ordine Stripe al backend:', apiErr);
+              });
+          }
         }
         setOrderDetails(parsed);
       } catch (err) {
