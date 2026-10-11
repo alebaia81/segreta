@@ -13,7 +13,7 @@ export async function onRequestPost({ request, env }) {
     if (stripeKey && webhookSecret && signature) {
       try {
         const stripe = new Stripe(stripeKey);
-        event = stripe.webhooks.constructEvent(bodyText, signature, webhookSecret);
+        event = await stripe.webhooks.constructEventAsync(bodyText, signature, webhookSecret);
       } catch (err) {
         console.error('[Cloudflare Webhook Sig Error]:', err.message);
         return new Response(`Webhook Error: ${err.message}`, { status: 400 });
