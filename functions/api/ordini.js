@@ -16,6 +16,7 @@ export async function onRequestPost({ request, env }) {
       totale,
       dettaglio_articoli,
       stato,
+      stripe_session_id,
     } = body;
 
     if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {
@@ -29,20 +30,30 @@ export async function onRequestPost({ request, env }) {
       ? JSON.parse(dettaglio_articoli)
       : dettaglio_articoli;
 
-    const insertData = {
-      nome_cliente,
-      telefono,
-      indirizzo_spedizione,
-      metodo_pagamento: metodo_pagamento || 'Satispay',
-      metodo_consegna: metodo_consegna || 'Spedizione',
-      totale: parseFloat(totale),
-      dettaglio_articoli: dettaglio,
-      stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
-    };
-    // Aggiunge email solo se presente (la colonna potrebbe non esistere nel DB)
-    if (email) insertData.email = email;
+    // Se fornito stripe_session_id, includilo nel primo articolo per tracciabilità univoca
+    const sessionId = stripe_session_id || (Array.isArray(dettaglio) && dettaglio[0]?.stripe_session_id);
+    if (sessionId && Array.isArray(dettaglio) && dettaglio.length > 0 && !dettaglio[0].stripe_session_id) {
+      dettaglio[0].stripe_session_id = sessionId;
+    }
 
-    // Deduplicazione: se esiste già un ordine per lo stesso cliente e totale, evita duplicati
+    // 1. Controllo di deduplicazione autoritativo tramite Stripe session_id univoco
+    if (sessionId) {
+      const { data: existingBySession } = await supabase
+        .from('ordini')
+        .select('*')
+        .contains('dettaglio_articoli', JSON.stringify([{ stripe_session_id: sessionId }]))
+        .limit(1)
+        .maybeSingle();
+
+      if (existingBySession) {
+        console.log('[Ordini API] Ordine già registrato via stripe_session_id:', sessionId);
+        return new Response(JSON.stringify({ success: true, data: existingBySession }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // 2. Fallback deduplicazione su anagrafica + importo
     if (metodo_pagamento === 'Carta / Stripe') {
       const { data: existing } = await supabase
         .from('ordini')
@@ -60,6 +71,18 @@ export async function onRequestPost({ request, env }) {
         });
       }
     }
+
+    const insertData = {
+      nome_cliente,
+      telefono,
+      indirizzo_spedizione,
+      metodo_pagamento: metodo_pagamento || 'Satispay',
+      metodo_consegna: metodo_consegna || 'Spedizione',
+      totale: parseFloat(totale),
+      dettaglio_articoli: dettaglio,
+      stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
+    };
+    if (email) insertData.email = email;
 
     const { data, error } = await supabase
       .from('ordini')

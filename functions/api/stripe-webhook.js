@@ -43,17 +43,41 @@ export async function onRequestPost({ request, env }) {
         }
       }
 
+      const stripe_session_id = session.id;
+      if (stripe_session_id && Array.isArray(dettaglio) && dettaglio.length > 0 && !dettaglio[0].stripe_session_id) {
+        dettaglio[0].stripe_session_id = stripe_session_id;
+      }
+
       const supabase = createSupabaseClient(env);
       if (supabase) {
-        // Controllo deduplicazione: verifica se l'ordine è già stato inserito dalla ThankYouPage
-        const { data: existing } = await supabase
-          .from('ordini')
-          .select('id, stato')
-          .eq('telefono', telefono)
-          .eq('totale', totale)
-          .order('id', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        // Controllo deduplicazione 1: cerca tramite stripe_session_id univoco
+        let existing = null;
+        if (stripe_session_id) {
+          const { data: existingBySession } = await supabase
+            .from('ordini')
+            .select('id, stato')
+            .contains('dettaglio_articoli', JSON.stringify([{ stripe_session_id }]))
+            .limit(1)
+            .maybeSingle();
+          if (existingBySession) {
+            existing = existingBySession;
+          }
+        }
+
+        // Controllo deduplicazione 2: fallback per telefono + totale
+        if (!existing) {
+          const { data: existingByPhone } = await supabase
+            .from('ordini')
+            .select('id, stato')
+            .eq('telefono', telefono)
+            .eq('totale', totale)
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (existingByPhone) {
+            existing = existingByPhone;
+          }
+        }
 
         if (existing) {
           console.log('[Cloudflare Stripe Webhook] Ordine già registrato (ID:', existing.id, '), aggiorno stato');

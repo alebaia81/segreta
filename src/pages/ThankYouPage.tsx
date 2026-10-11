@@ -38,7 +38,13 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
           if (!sessionStorage.getItem(saveKey)) {
             sessionStorage.setItem(saveKey, 'true');
 
-            // Invia l'ordine al backend (/api/ordini -> Supabase)
+            // Invia l'ordine al backend (/api/ordini -> Supabase) con stripe_session_id univoco
+            const articoliConSessionId = Array.isArray(parsed.dettaglio_articoli)
+              ? parsed.dettaglio_articoli.map((item: any, idx: number) => 
+                  idx === 0 && sessionId ? { ...item, stripe_session_id: sessionId } : item
+                )
+              : parsed.dettaglio_articoli;
+
             fetch('/api/ordini', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -50,8 +56,9 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
                 metodo_pagamento: 'Carta / Stripe',
                 metodo_consegna: parsed.metodo_consegna,
                 totale: parsed.totale,
-                dettaglio_articoli: parsed.dettaglio_articoli,
+                dettaglio_articoli: articoliConSessionId,
                 stato: 'Pagamento Ricevuto - In Lavorazione',
+                stripe_session_id: sessionId || undefined,
               }),
             })
               .then((res) => res.json())

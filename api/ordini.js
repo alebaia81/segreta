@@ -15,6 +15,7 @@ export default async function handler(req, res) {
     totale,
     dettaglio_articoli,
     stato,
+    stripe_session_id,
   } = req.body;
 
   if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {
@@ -25,6 +26,26 @@ export default async function handler(req, res) {
     ? JSON.parse(dettaglio_articoli)
     : dettaglio_articoli;
 
+  const sessionId = stripe_session_id || (Array.isArray(dettaglio) && dettaglio[0]?.stripe_session_id);
+  if (sessionId && Array.isArray(dettaglio) && dettaglio.length > 0 && !dettaglio[0].stripe_session_id) {
+    dettaglio[0].stripe_session_id = sessionId;
+  }
+
+  // 1. Controllo di deduplicazione autoritativo tramite Stripe session_id univoco
+  if (sessionId) {
+    const { data: existingBySession } = await supabase
+      .from('ordini')
+      .select('*')
+      .contains('dettaglio_articoli', JSON.stringify([{ stripe_session_id: sessionId }]))
+      .limit(1)
+      .maybeSingle();
+
+    if (existingBySession) {
+      return res.status(200).json({ success: true, data: existingBySession });
+    }
+  }
+
+  // 2. Fallback deduplicazione su anagrafica + importo
   if (metodo_pagamento === 'Carta / Stripe') {
     const { data: existing } = await supabase
       .from('ordini')
