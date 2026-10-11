@@ -198,7 +198,7 @@ export default function HeroGlass({
 const TRUST_ITEMS = [
   {
     id: 'shipping',
-    text: 'La spedizione te la regalo io dai 50€ in su',
+    text: 'Spedizione GRATUITA per ordine sopra i 50€',
     icon: Truck,
   },
   {

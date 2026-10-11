@@ -100,7 +100,7 @@ export default function HeroGlass({ onNavigateToShop }) {
         <div className="hero-trust-row" aria-label="Garanzie del negozio">
           <span className="hero-trust-badge">
             <Truck size={16} aria-hidden="true" />
-            La spedizione te la regalo io dai 50€ in su
+            Spedizione GRATUITA per ordine sopra i 50€
           </span>
           <span className="hero-trust-badge">
             <Store size={16} aria-hidden="true" />
