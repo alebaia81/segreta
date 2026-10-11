@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // @ts-ignore
 import { useCart } from '../context/CartContext';
-import { ArrowLeft, ShoppingBag, Landmark } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Landmark, ShieldCheck, X } from 'lucide-react';
 import PayPalButton from '../components/PayPalButton';
 
 interface CheckoutPageProps {
@@ -221,6 +221,17 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
 
   const [showSatispayModal, setShowSatispayModal] = useState(false);
   const [createdOrderDetails, setCreatedOrderDetails] = useState<any>(null);
+
+  // Chiudi la modale Satispay premendo ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSatispayModal) {
+        setShowSatispayModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSatispayModal]);
 
   const SATISPAY_SHOP_LINK = 'https://www.satispay.com/app/pay/shops/af986dff-094d-4a0f-ba4b-cea5fbeef43b';
 
@@ -640,6 +651,18 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                 </>
               )}
 
+              {/* Avviso Legale, Tutela Dati & Diritto di Recesso GDPR */}
+              <div className="checkout-privacy-box">
+                <ShieldCheck size={18} className="checkout-privacy-icon" />
+                <p className="checkout-privacy-text">
+                  I tuoi dati personali sono protetti e trattati esclusivamente per elaborare e spedire il tuo ordine in conformità al GDPR (Reg. UE 2016/679). Per i dettagli consulta la nostra{' '}
+                  <a href="https://www.iubenda.com/privacy-policy/68426130" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                  </a>
+                  . Confermando l'ordine accetti le condizioni di vendita. Diritto di recesso garantito entro 14 giorni.
+                </p>
+              </div>
+
               {/* Pulsante ripensamento / Torna allo Shop */}
               <div className="checkout-reconsider-box">
                 <button
@@ -659,8 +682,29 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
 
       {/* MODAL SATISPAY DESKTOP */}
       {showSatispayModal && (
-        <div className="satispay-modal-overlay fade-in">
+        <div
+          className="satispay-modal-overlay fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSatispayModal(false);
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="satispay-modal-title"
+        >
           <div className="satispay-modal-card">
+            {/* Pulsante Chiudi X */}
+            <button
+              type="button"
+              className="satispay-modal-close-btn"
+              onClick={() => setShowSatispayModal(false)}
+              aria-label="Chiudi e torna al checkout"
+              title="Chiudi modale"
+            >
+              <X size={20} />
+            </button>
+
             <div className="satispay-modal-header">
               <div className="satispay-badge">
                 <svg className="satispay-logo-icon" viewBox="0 0 100 100" width="24" height="24" fill="none">
@@ -669,7 +713,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                 </svg>
                 <span>Satispay Business</span>
               </div>
-              <h2>Completa il pagamento con Satispay</h2>
+              <h2 id="satispay-modal-title">Completa il pagamento con Satispay</h2>
               <p className="satispay-subtext">Inquadra il QR Code con l'app Satispay del tuo telefono</p>
             </div>
 
@@ -700,6 +744,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
 
             <div className="satispay-modal-actions">
               <button
+                type="button"
                 className="satispay-confirm-btn"
                 onClick={() => {
                   clearCart();
@@ -716,6 +761,13 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
               >
                 Oppure apri il link Satispay nel browser ↗
               </a>
+              <button
+                type="button"
+                className="satispay-cancel-btn"
+                onClick={() => setShowSatispayModal(false)}
+              >
+                Annulla e cambia metodo di pagamento
+              </button>
             </div>
           </div>
         </div>
@@ -784,6 +836,41 @@ const CSS = `
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
     text-align: center;
+  }
+
+  .checkout-privacy-box {
+    margin-top: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: #FAF8F5;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .checkout-privacy-icon {
+    color: var(--accent-gold);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .checkout-privacy-text {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+  }
+
+  .checkout-privacy-text a {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  .checkout-privacy-text a:hover {
+    color: var(--accent-gold);
   }
 
   .checkout-reconsider-btn {
@@ -1176,14 +1263,40 @@ const CSS = `
   }
 
   .satispay-modal-card {
+    position: relative;
     background: var(--bg-primary);
     border: 2px solid #e50014;
     border-radius: var(--radius-lg);
     max-width: 480px;
     width: 100%;
-    padding: 2rem;
+    padding: 2.2rem 2rem 2rem;
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     text-align: center;
+  }
+
+  .satispay-modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: #F3EFEA;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+
+  .satispay-modal-close-btn:hover {
+    background: #e50014;
+    color: #ffffff;
+    border-color: #e50014;
+    transform: rotate(90deg);
   }
 
   .satispay-modal-header {
@@ -1358,6 +1471,25 @@ const CSS = `
 
   .satispay-link-secondary:hover {
     color: #e50014;
+  }
+
+  .satispay-cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+  }
+
+  .satispay-cancel-btn:hover {
+    background: rgba(0,0,0,0.04);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
   }
 `;
 

@@ -24,7 +24,7 @@ export default function Footer({ onLogoClick, onNavigateToAdmin }) {
           <div className="footer-company-block">
             <span className="footer-company-title">Segreta Style di Greta Righi</span>
             <span>Via Martiri della Libertà 67 — 29010 Monticelli d'Ongina (PC)</span>
-            <span>Tel: <a href="tel:0523820276">0523 820276</a> &nbsp;•&nbsp; Email: <a href="mailto:info@segretastyle.it">info@segretastyle.it</a></span>
+            <span>Tel: <a href="tel:0523820276">0523 820276</a> &nbsp;•&nbsp; Email: <a href="mailto:gretari1979@gmail.com">gretari1979@gmail.com</a></span>
             <span>C.F. RGHGRT79R66D150Y &nbsp;•&nbsp; P.IVA 01563960333</span>
           </div>
         </div>

@@ -418,7 +418,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin, on
               <li>
                 <Mail className="contact-icon" size={20} />
                 <span>
-                  Email: <a href="mailto:info@segretastyle.it" style={{ color: 'var(--text-secondary)' }}>info@segretastyle.it</a>
+                  Email: <a href="mailto:gretari1979@gmail.com" style={{ color: 'var(--text-secondary)' }}>gretari1979@gmail.com</a>
                 </span>
               </li>
               <li>
