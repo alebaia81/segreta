@@ -25,6 +25,21 @@ export default async function handler(req, res) {
     ? JSON.parse(dettaglio_articoli)
     : dettaglio_articoli;
 
+  if (metodo_pagamento === 'Carta / Stripe') {
+    const { data: existing } = await supabase
+      .from('ordini')
+      .select('*')
+      .eq('telefono', telefono)
+      .eq('totale', parseFloat(totale))
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return res.status(200).json({ success: true, data: existing });
+    }
+  }
+
   const { data, error } = await supabase
     .from('ordini')
     .insert([{

@@ -42,6 +42,25 @@ export async function onRequestPost({ request, env }) {
     // Aggiunge email solo se presente (la colonna potrebbe non esistere nel DB)
     if (email) insertData.email = email;
 
+    // Deduplicazione: se esiste già un ordine per lo stesso cliente e totale, evita duplicati
+    if (metodo_pagamento === 'Carta / Stripe') {
+      const { data: existing } = await supabase
+        .from('ordini')
+        .select('*')
+        .eq('telefono', telefono)
+        .eq('totale', parseFloat(totale))
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        console.log('[Ordini API] Ordine Stripe già presente (ID:', existing.id, '), restituisco esistente');
+        return new Response(JSON.stringify({ success: true, data: existing }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const { data, error } = await supabase
       .from('ordini')
       .insert([insertData])
