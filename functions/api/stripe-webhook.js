@@ -45,23 +45,41 @@ export async function onRequestPost({ request, env }) {
 
       const supabase = createSupabaseClient(env);
       if (supabase) {
-        const insertData = {
-          nome_cliente,
-          telefono,
-          indirizzo_spedizione,
-          metodo_pagamento: 'Carta / Stripe',
-          metodo_consegna,
-          totale,
-          dettaglio_articoli: dettaglio,
-          stato: 'Pagamento Ricevuto - In Lavorazione',
-        };
-        if (email) insertData.email = email;
+        // Controllo deduplicazione: verifica se l'ordine è già stato inserito dalla ThankYouPage
+        const { data: existing } = await supabase
+          .from('ordini')
+          .select('id, stato')
+          .eq('telefono', telefono)
+          .eq('totale', totale)
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        const { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
-        if (error) {
-          console.error('[Cloudflare Stripe Webhook DB Error]:', error);
+        if (existing) {
+          console.log('[Cloudflare Stripe Webhook] Ordine già registrato (ID:', existing.id, '), aggiorno stato');
+          await supabase
+            .from('ordini')
+            .update({ stato: 'Pagamento Ricevuto - In Lavorazione' })
+            .eq('id', existing.id);
         } else {
-          console.log('[Cloudflare Stripe Webhook] Saved order ID:', data?.id);
+          const insertData = {
+            nome_cliente,
+            telefono,
+            indirizzo_spedizione,
+            metodo_pagamento: 'Carta / Stripe',
+            metodo_consegna,
+            totale,
+            dettaglio_articoli: dettaglio,
+            stato: 'Pagamento Ricevuto - In Lavorazione',
+          };
+          if (email) insertData.email = email;
+
+          const { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
+          if (error) {
+            console.error('[Cloudflare Stripe Webhook DB Error]:', error);
+          } else {
+            console.log('[Cloudflare Stripe Webhook] Saved order ID:', data?.id);
+          }
         }
       }
     }

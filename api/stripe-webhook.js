@@ -46,24 +46,42 @@ export default async function handler(req, res) {
 
     if (supabase) {
       try {
-        const insertData = {
-          nome_cliente,
-          telefono,
-          indirizzo_spedizione,
-          metodo_pagamento: 'Carta / Stripe',
-          metodo_consegna,
-          totale,
-          dettaglio_articoli: dettaglio,
-          stato: 'Pagamento Ricevuto - In Lavorazione',
-        };
-        if (email) insertData.email = email;
+        // Controllo deduplicazione
+        const { data: existing } = await supabase
+          .from('ordini')
+          .select('id, stato')
+          .eq('telefono', telefono)
+          .eq('totale', totale)
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        const { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
-
-        if (error) {
-          console.error('[Stripe Webhook] Errore inserimento ordine in Supabase:', error);
+        if (existing) {
+          console.log('[Stripe Webhook] Ordine già registrato (ID:', existing.id, '), aggiorno stato');
+          await supabase
+            .from('ordini')
+            .update({ stato: 'Pagamento Ricevuto - In Lavorazione' })
+            .eq('id', existing.id);
         } else {
-          console.log('[Stripe Webhook] Ordine creato con successo ID:', data?.id);
+          const insertData = {
+            nome_cliente,
+            telefono,
+            indirizzo_spedizione,
+            metodo_pagamento: 'Carta / Stripe',
+            metodo_consegna,
+            totale,
+            dettaglio_articoli: dettaglio,
+            stato: 'Pagamento Ricevuto - In Lavorazione',
+          };
+          if (email) insertData.email = email;
+
+          const { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
+
+          if (error) {
+            console.error('[Stripe Webhook] Errore inserimento ordine in Supabase:', error);
+          } else {
+            console.log('[Stripe Webhook] Ordine creato con successo ID:', data?.id);
+          }
         }
       } catch (err) {
         console.error('[Stripe Webhook Exception]:', err);

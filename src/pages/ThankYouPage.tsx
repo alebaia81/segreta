@@ -33,24 +33,12 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
           localStorage.removeItem('segreta_cart');
           window.dispatchEvent(new Event('segreta_cart_updated'));
 
-          // Salva l'ordine nel database (POST /api/ordini) e nella lista locale per l'Admin Dashboard
+          // Salva l'ordine nel database (POST /api/ordini) se non ancora salvato
           const saveKey = `segreta_order_saved_${sessionId || parsed.id || 'stripe'}`;
           if (!sessionStorage.getItem(saveKey)) {
             sessionStorage.setItem(saveKey, 'true');
 
-            // 1. Salva subito in localStorage per visualizzazione immediata in dashboard
-            try {
-              const savedList = localStorage.getItem('segreta_ordini');
-              const ordiniList = savedList ? JSON.parse(savedList) : [];
-              if (!ordiniList.some((o: any) => o.stripe_session_id === sessionId || o.id === parsed.id)) {
-                ordiniList.unshift(parsed);
-                localStorage.setItem('segreta_ordini', JSON.stringify(ordiniList));
-              }
-            } catch (storageErr) {
-              console.warn('Errore salvataggio locale ordine:', storageErr);
-            }
-
-            // 2. Invia l'ordine al backend (/api/ordini -> Supabase)
+            // Invia l'ordine al backend (/api/ordini -> Supabase)
             fetch('/api/ordini', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
