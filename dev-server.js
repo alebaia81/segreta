@@ -108,6 +108,10 @@ const server = http.createServer(async (req, res) => {
       res.statusCode = code;
       return this;
     },
+    setHeader(name, value) {
+      res.setHeader(name, value);
+      return this;
+    },
     json(data) {
       res.statusCode = this.statusCode;
       res.setHeader('Content-Type', 'application/json');

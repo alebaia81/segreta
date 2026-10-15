@@ -3,21 +3,6 @@ import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Loc
 import { supabase as supabaseClient } from '../lib/supabaseClient.js';
 import { BANK_DETAILS } from '../lib/bankDetails';
 
-const TARGET_CATEGORIES = {
-  Donna: [
-    'ABITI',
-    'GONNE',
-    'MAGLIERIA',
-    'CAMICE-BLUSE',
-    'T-SHIRT-FELPE',
-    'JEANS',
-    'PANTALONI',
-    'CAPPOTTI-GIACCHE',
-    'SCARPE',
-    'BORSE'
-  ]
-};
-
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
 const safeParseJSON = (data, fallback = []) => {
@@ -44,7 +29,7 @@ const getWhatsAppUrl = (ord) => {
   const totale = parseFloat(ord.totale || 0).toFixed(2);
   const orderId = ord.id;
 
-  let messaggio = '';
+  let messaggio;
 
   switch (ord.stato) {
     case 'In attesa di bonifico':
@@ -857,7 +842,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         const jsonStr = decodeURIComponent(escape(atob(matchB64[1])));
         variantiFromDesc = JSON.parse(jsonStr);
         desc = desc.replace(matchB64[0], '').trim();
-      } catch {}
+      } catch { /* varianti non decodificabili: si ignorano */ }
     }
     if (!variantiFromDesc) {
       const matchPlain = desc.match(/\[VARIANTI:([\s\S]+?)\](?=\s*$|\s+[A-Za-z0-9])/);
@@ -865,7 +850,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         try {
           variantiFromDesc = JSON.parse(matchPlain[1]);
           desc = desc.replace(matchPlain[0], '').trim();
-        } catch {}
+        } catch { /* varianti non leggibili: si ignorano */ }
       }
     }
 
@@ -952,7 +937,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       } else {
         alert('Errore: ' + json.error);
       }
-    } catch (err) {
+    } catch {
       alert('Errore di connessione durante l\'aggiornamento.');
     } finally {
       setLoading(false);
@@ -984,7 +969,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         } else {
           alert('Errore database: ' + json.error);
         }
-      } catch (err) {
+      } catch {
         alert('Impossibile completare l\'eliminazione.');
       } finally {
         setLoading(false);
@@ -1700,7 +1685,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                             try {
                               const vars = Array.isArray(art.varianti) ? art.varianti : JSON.parse(art.varianti);
                               if (vars.length > 0 && vars[0].immagini && vars[0].immagini.length > 0) return vars[0].immagini[0];
-                            } catch {}
+                            } catch { /* varianti non leggibili: si usa l'immagine di default */ }
                           }
                           return 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80';
                         })()} 
