@@ -43,6 +43,7 @@ export async function onRequestPost({ request, env }) {
         }
       }
 
+      const note = metadata.note ? String(metadata.note).trim() : '';
       const stripe_session_id = session.id;
       if (stripe_session_id && Array.isArray(dettaglio) && dettaglio.length > 0 && !dettaglio[0].stripe_session_id) {
         dettaglio[0].stripe_session_id = stripe_session_id;
@@ -97,8 +98,21 @@ export async function onRequestPost({ request, env }) {
             stato: 'Pagamento Ricevuto - In Lavorazione',
           };
           if (email) insertData.email = email;
+          if (note) insertData.note = note;
 
-          const { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
+          let { data, error } = await supabase.from('ordini').insert([insertData]).select().single();
+          if (error && note && (error.code === 'PGRST204' || (error.message && error.message.includes('note')))) {
+            console.warn('[Cloudflare Stripe Webhook] Colonna note non presente su Supabase, fallback su indirizzo_spedizione');
+            const fallbackData = {
+              ...insertData,
+              indirizzo_spedizione: `${indirizzo_spedizione}\n[Note: ${note}]`.trim()
+            };
+            delete fallbackData.note;
+            const retry = await supabase.from('ordini').insert([fallbackData]).select().single();
+            data = retry.data;
+            error = retry.error;
+          }
+
           if (error) {
             console.error('[Cloudflare Stripe Webhook DB Error]:', error);
           } else {

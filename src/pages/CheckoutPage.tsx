@@ -20,6 +20,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     citta: '',
     cap: '',
     metodo_consegna: 'Spedizione a domicilio',
+    note: '',
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -36,7 +37,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     }
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -105,6 +106,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       metodo_pagamento: 'Carta / Stripe',
       metodo_consegna: formData.metodo_consegna,
       totale: parseFloat(totalAmount.toFixed(2)),
+      note: formData.note.trim(),
       dettaglio_articoli: cartItems.map((item: any) => ({
         id: item.id,
         titolo: item.titolo,
@@ -199,11 +201,13 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     const ordineDaInviare = {
       nome_cliente: `${formData.nome} ${formData.cognome}`,
       telefono: formData.telefono,
+      email: formData.email,
       indirizzo_spedizione: indirizzoCompleto,
       metodo_pagamento: 'Satispay',
       metodo_consegna: formData.metodo_consegna,
       stato: 'Verifica Pagamento',
       totale: parseFloat(totalAmount.toFixed(2)),
+      note: formData.note.trim(),
       dettaglio_articoli: JSON.stringify(
         cartItems.map((item: any) => ({
           id: item.id,
@@ -278,6 +282,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
       metodo_consegna: formData.metodo_consegna,
       stato: 'In attesa di bonifico',
       totale: parseFloat(totalAmount.toFixed(2)),
+      note: formData.note.trim(),
       dettaglio_articoli: JSON.stringify(
         cartItems.map((item: any) => ({
           id: item.id,
@@ -467,6 +472,29 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
                 </div>
               </div>
             )}
+
+            {/* Note Ordine / Regalo */}
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label className="form-label" htmlFor="checkout_note" style={{ margin: 0, fontWeight: 600 }}>
+                  Note o richieste speciali sull'ordine <span style={{ fontWeight: 'normal', color: '#888', fontSize: '0.85rem' }}>(Opzionale)</span>
+                </label>
+                <span style={{ fontSize: '0.78rem', color: formData.note.length >= 480 ? '#e0567a' : '#888' }}>
+                  {formData.note.length}/500
+                </span>
+              </div>
+              <textarea
+                id="checkout_note"
+                name="note"
+                rows={3}
+                maxLength={500}
+                className="form-control"
+                value={formData.note}
+                onChange={handleInputChange}
+                placeholder="Es. Per regali: Nome e cognome destinatario, recapito e dedica di auguri. Oppure indicazioni per la consegna al corriere o orari di ritiro."
+                style={{ resize: 'vertical', minHeight: '80px', lineHeight: '1.45', fontSize: '0.92rem' }}
+              />
+            </div>
           </form>
         </div>
 

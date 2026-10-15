@@ -16,6 +16,8 @@ export default async function handler(req, res) {
     dettaglio_articoli,
     stato,
     stripe_session_id,
+    note,
+    email,
   } = req.body;
 
   if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {
@@ -61,20 +63,36 @@ export default async function handler(req, res) {
     }
   }
 
-  const { data, error } = await supabase
+  const insertData = {
+    nome_cliente,
+    telefono,
+    indirizzo_spedizione,
+    metodo_pagamento: metodo_pagamento || 'Satispay',
+    metodo_consegna: metodo_consegna || 'Spedizione',
+    totale: parseFloat(totale),
+    dettaglio_articoli: dettaglio,
+    stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
+  };
+  if (email) insertData.email = email;
+  if (note) insertData.note = String(note).trim();
+
+  let { data, error } = await supabase
     .from('ordini')
-    .insert([{
-      nome_cliente,
-      telefono,
-      indirizzo_spedizione,
-      metodo_pagamento: metodo_pagamento || 'Satispay',
-      metodo_consegna: metodo_consegna || 'Spedizione',
-      totale: parseFloat(totale),
-      dettaglio_articoli: dettaglio,
-      stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
-    }])
+    .insert([insertData])
     .select()
     .single();
+
+  if (error && note && (error.code === 'PGRST204' || (error.message && error.message.includes('note')))) {
+    console.warn('[Ordini API local] Colonna note assente su Supabase, fallback su indirizzo_spedizione');
+    const fallbackData = {
+      ...insertData,
+      indirizzo_spedizione: `${indirizzo_spedizione}\n[Note: ${note}]`.trim()
+    };
+    delete fallbackData.note;
+    const retry = await supabase.from('ordini').insert([fallbackData]).select().single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) return res.status(500).json({ success: false, error: error.message });
   return res.status(201).json({ success: true, data });

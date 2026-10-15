@@ -67,7 +67,31 @@ const getWhatsAppUrl = (ord) => {
       break;
   }
 
+  const notaCliente = ord.note || (ord.indirizzo_spedizione && ord.indirizzo_spedizione.includes('[Note:') ? ord.indirizzo_spedizione.split('[Note:')[1].replace(']', '').trim() : '');
+  if (notaCliente) {
+    messaggio += `\n\n📝 Nota/Richiesta del cliente:\n"${notaCliente}"`;
+  }
+
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messaggio)}`;
+};
+
+const getOrderNote = (ord) => {
+  if (!ord) return '';
+  if (ord.note && String(ord.note).trim()) return String(ord.note).trim();
+  const addr = ord.indirizzo_spedizione || ord.indirizzo || '';
+  if (addr.includes('[Note:')) {
+    const match = addr.match(/\[Note:\s*([\s\S]+?)\]/);
+    if (match) return match[1].trim();
+  }
+  return '';
+};
+
+const getCleanAddress = (ord) => {
+  if (!ord) return '';
+  const raw = ord.indirizzo_spedizione || ord.indirizzo || '';
+  const clean = raw.replace(/\[Note:\s*[\s\S]+?\]/g, '').trim();
+  if (clean) return clean;
+  return ord.metodo_consegna === 'Ritiro in negozio' ? 'Ritiro in boutique (Monticelli d\'Ongina)' : '⚠️ Da confermare';
 };
 
 const renderPaymentMethodBadge = (metodoPagamento) => {
@@ -1479,7 +1503,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-value" style={{fontWeight: 600}}>{ord.metodo_consegna}</span>
                         
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo_spedizione || ord.indirizzo || (ord.metodo_consegna === 'Ritiro in negozio' ? 'Ritiro in negozio' : '⚠️ Da confermare')}</span>
+                        <span className="info-value">{getCleanAddress(ord)}</span>
                         
                         {ord.email && (
                           <>
@@ -1488,12 +1512,26 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                           </>
                         )}
                         
-                        {ord.note && (
-                          <>
-                            <span className="info-label">Note:</span>
-                            <span className="info-value" style={{fontStyle: 'italic'}}>{ord.note}</span>
-                          </>
-                        )}
+                        {(() => {
+                          const note = getOrderNote(ord);
+                          if (!note) return null;
+                          return (
+                            <div style={{
+                              gridColumn: '1 / -1',
+                              marginTop: '8px',
+                              padding: '8px 12px',
+                              backgroundColor: 'rgba(226, 149, 171, 0.12)',
+                              borderLeft: '3px solid #E295AB',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              color: '#4a3b32',
+                              lineHeight: '1.4'
+                            }}>
+                              <strong style={{ color: '#914d61', display: 'block', marginBottom: '2px' }}>📝 Note / Richieste speciali del cliente:</strong>
+                              <span style={{ fontStyle: 'italic', wordBreak: 'break-word' }}>{note}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     
@@ -1620,7 +1658,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                         <span className="info-label">Metodo:</span>
                         <span className="info-value">{ord.metodo_consegna}</span>
                         <span className="info-label">Indirizzo:</span>
-                        <span className="info-value">{ord.indirizzo_spedizione || ord.indirizzo || (ord.metodo_consegna === 'Ritiro in negozio' ? 'Ritiro in negozio' : '⚠️ Da confermare')}</span>
+                        <span className="info-value">{getCleanAddress(ord)}</span>
                         
                         {ord.email && (
                           <>
@@ -1628,6 +1666,27 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                             <span className="info-value">{ord.email}</span>
                           </>
                         )}
+                        
+                        {(() => {
+                          const note = getOrderNote(ord);
+                          if (!note) return null;
+                          return (
+                            <div style={{
+                              gridColumn: '1 / -1',
+                              marginTop: '8px',
+                              padding: '8px 12px',
+                              backgroundColor: 'rgba(226, 149, 171, 0.12)',
+                              borderLeft: '3px solid #E295AB',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              color: '#4a3b32',
+                              lineHeight: '1.4'
+                            }}>
+                              <strong style={{ color: '#914d61', display: 'block', marginBottom: '2px' }}>📝 Note / Richieste speciali del cliente:</strong>
+                              <span style={{ fontStyle: 'italic', wordBreak: 'break-word' }}>{note}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     

@@ -88,6 +88,7 @@ export default async function handler(req, res) {
         email: customerData.email || '',
         indirizzo_spedizione: indirizzoCompleto,
         metodo_consegna: isRitiro ? 'Ritiro in negozio' : 'Spedizione a domicilio',
+        note: customerData.note ? String(customerData.note).slice(0, 500) : '',
         dettaglio_articoli: JSON.stringify(
           cartItems.map((item) => ({
             id: item.id,

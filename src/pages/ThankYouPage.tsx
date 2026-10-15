@@ -56,6 +56,7 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
                 metodo_pagamento: 'Carta / Stripe',
                 metodo_consegna: parsed.metodo_consegna,
                 totale: parsed.totale,
+                note: parsed.note || undefined,
                 dettaglio_articoli: articoliConSessionId,
                 stato: 'Pagamento Ricevuto - In Lavorazione',
                 stripe_session_id: sessionId || undefined,
@@ -268,6 +269,12 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
             </div>
           `}
 
+          ${orderDetails.note ? `
+            <div class="receipt-notice" style="background:#fdf6f8; border:1px solid #f2cfd9; color:#4a3b32;">
+              <strong>📝 Note e richieste speciali:</strong> ${orderDetails.note}
+            </div>
+          ` : ''}
+
           ${isBonifico ? `
             <div class="receipt-notice bonifico-box">
               <h4>Coordinate per il Bonifico Bancario</h4>
@@ -446,6 +453,11 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
                 ? ' (In attesa di accredito)'
                 : ' (Completato)'}
             </p>
+            {orderDetails.note && (
+              <p style={{ marginTop: '10px', padding: '10px 14px', background: 'rgba(226, 149, 171, 0.12)', borderRadius: '8px', borderLeft: '3px solid #E295AB' }}>
+                <strong style={{ color: '#914d61' }}>📝 Note e richieste speciali:</strong> {orderDetails.note}
+              </p>
+            )}
           </div>
 
           <table className="order-items-table">

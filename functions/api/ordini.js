@@ -17,6 +17,7 @@ export async function onRequestPost({ request, env }) {
       dettaglio_articoli,
       stato,
       stripe_session_id,
+      note,
     } = body;
 
     if (!nome_cliente || !telefono || !dettaglio_articoli || totale === undefined) {
@@ -83,12 +84,25 @@ export async function onRequestPost({ request, env }) {
       stato: stato || (metodo_pagamento === 'PayPal' ? 'Pagamento Ricevuto - In Lavorazione' : 'Verifica Pagamento'),
     };
     if (email) insertData.email = email;
+    if (note) insertData.note = String(note).trim();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('ordini')
       .insert([insertData])
       .select()
       .single();
+
+    if (error && note && (error.code === 'PGRST204' || (error.message && error.message.includes('note')))) {
+      console.warn('[Ordini API] Colonna note assente su Supabase, fallback su indirizzo_spedizione');
+      const fallbackData = {
+        ...insertData,
+        indirizzo_spedizione: `${indirizzo_spedizione}\n[Note: ${note}]`.trim()
+      };
+      delete fallbackData.note;
+      const retry = await supabase.from('ordini').insert([fallbackData]).select().single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       return new Response(JSON.stringify({ success: false, error: error.message }), {
