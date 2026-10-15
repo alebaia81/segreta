@@ -1756,6 +1756,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   step="0.01"
                   className="form-control"
                   value={nuovoArticolo.prezzo}
+                  onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setNuovoArticolo(prev => ({...prev, prezzo: e.target.value}))}
                   required
                   placeholder="Es. 29.90"
@@ -1771,6 +1772,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   max="99"
                   className="form-control"
                   value={nuovoArticolo.sconto}
+                  onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => setNuovoArticolo(prev => ({...prev, sconto: e.target.value}))}
                   placeholder="Es. 20"
                 />
