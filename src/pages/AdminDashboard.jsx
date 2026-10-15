@@ -483,16 +483,16 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       }
       const json = await response.json();
       if (json.success && Array.isArray(json.data)) {
-        const saved = localStorage.getItem('segreta_ordini');
-        const localList = saved ? JSON.parse(saved) : [];
-        const existingIds = new Set(json.data.map(o => String(o.id)));
-        const missingLocal = localList.filter(l => !existingIds.has(String(l.id)));
-        setOrdini([...json.data, ...missingLocal]);
+        // Pulizia automatica dei vecchi ordini salvati localmente per evitare ordini fantasma
+        try {
+          if (localStorage.getItem('segreta_ordini')) {
+            localStorage.removeItem('segreta_ordini');
+          }
+        } catch (_) {}
+        setOrdini(json.data);
       }
     } catch (err) {
-      console.warn('Connessione API per ordini fallita. Fallback su localStorage.', err);
-      const saved = localStorage.getItem('segreta_ordini');
-      setOrdini(saved ? JSON.parse(saved) : []);
+      console.warn('Connessione API per ordini fallita.', err);
     }
   }, [password]);
 
@@ -509,7 +509,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
 
       // Listener per aggiornamenti tra schede del browser in tempo reale
       const handleStorageChange = (e) => {
-        if (e.key === 'segreta_ordini' || e.key === 'segreta_last_order') {
+        if (e.key === 'segreta_last_order') {
           fetchOrdini(mostraArchivio);
         }
       };
@@ -1037,7 +1037,6 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
         o.id === ordineId ? { ...o, stato: nuovoStato } : o
       );
       setOrdini(nuoviOrdini);
-      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
     }
   };
 
@@ -1068,8 +1067,12 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     } else {
       const nuoviOrdini = ordini.filter(o => o.id !== ordineId);
       setOrdini(nuoviOrdini);
-      localStorage.setItem('segreta_ordini', JSON.stringify(nuoviOrdini));
     }
+    try {
+      if (localStorage.getItem('segreta_ordini')) {
+        localStorage.removeItem('segreta_ordini');
+      }
+    } catch (_) {}
   };
 
 
