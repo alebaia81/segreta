@@ -99,6 +99,71 @@ const renderPaymentMethodBadge = (metodoPagamento) => {
   return <span className="payment-method-badge satispay">🔴 Satispay</span>;
 };
 
+// Miniature foto riordinabili: trascinamento (drag & drop) + pulsante "Imposta come copertina".
+// La prima foto dell'elenco è quella mostrata in vetrina.
+const ReorderablePhotos = ({ urls, onChange, onRemove, small = false }) => {
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);
+  const w = small ? 70 : 100;
+  const h = small ? 84 : 120;
+
+  const move = (from, to) => {
+    if (from === null || to === null || from === to) return;
+    const next = [...urls];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange(next);
+  };
+
+  const iconBtn = {
+    position: 'absolute', background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
+    borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', padding: 0, width: small ? 20 : 24, height: small ? 20 : 24
+  };
+
+  return (
+    <div style={{ marginTop: small ? '10px' : '15px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: small ? '8px' : '10px' }}>
+        {urls.map((url, idx) => (
+          <div
+            key={url}
+            draggable
+            onDragStart={() => setDragIdx(idx)}
+            onDragOver={(e) => { e.preventDefault(); setOverIdx(idx); }}
+            onDrop={(e) => { e.preventDefault(); move(dragIdx, idx); setDragIdx(null); setOverIdx(null); }}
+            onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+            title="Trascina per riordinare"
+            style={{
+              position: 'relative', width: w, height: h, borderRadius: small ? '6px' : '8px', overflow: 'hidden',
+              border: idx === 0 ? '2px solid #E295AB' : '1px solid var(--border-color)',
+              cursor: 'grab', opacity: dragIdx === idx ? 0.4 : 1,
+              outline: overIdx === idx && dragIdx !== null && dragIdx !== idx ? '2px dashed #E295AB' : 'none'
+            }}
+          >
+            <img src={url} alt={`Foto ${idx + 1}`} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+            {idx === 0 && (
+              <span style={{ position: 'absolute', left: 0, bottom: 0, right: 0, background: '#E295AB', color: 'white', fontSize: small ? '0.55rem' : '0.65rem', fontWeight: 700, textAlign: 'center', padding: '2px 0', letterSpacing: '0.05em' }}>COPERTINA</span>
+            )}
+            <button type="button" onClick={() => onRemove(url)} aria-label="Rimuovi foto" style={{ ...iconBtn, top: 4, right: 4 }}>
+              <Trash size={small ? 11 : 14} />
+            </button>
+            {idx !== 0 && (
+              <button type="button" onClick={() => move(idx, 0)} aria-label="Imposta come copertina" title="Imposta come copertina" style={{ ...iconBtn, top: 4, left: 4, fontSize: small ? '0.7rem' : '0.85rem' }}>
+                ★
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {urls.length > 1 && (
+        <p style={{ fontSize: '0.75rem', opacity: 0.7, margin: '6px 0 0' }}>
+          Trascina le foto per riordinarle oppure premi ★ per usarne una come copertina. La prima è quella mostrata in vetrina.
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default function AdminDashboard({ articoli, onAddArticolo, onToggleArticolo, onNavigateToHome }) {
   const [activeTab, setActiveTab] = useState('ordini');
   const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('segreta_admin_logged') === 'true');
@@ -306,6 +371,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
   const [newDashboardPassword, setNewDashboardPassword] = useState('');
   const [confirmDashboardPassword, setConfirmDashboardPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const ARCHIVE_STATUSES = ['Completato', 'Annullato', 'Archiviato'];
   const ordiniAttiviList = ordini.filter(o => !ARCHIVE_STATUSES.includes(o.stato));
@@ -2044,25 +2110,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                           />
                         </div>
 
-                        {/* Preview miniature foto variante */}
+                        {/* Preview miniature foto variante (riordinabili) */}
                         {varItem.immagini && varItem.immagini.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                            {varItem.immagini.map((url, imgIdx) => (
-                              <div key={imgIdx} style={{ position: 'relative', width: '70px', height: '84px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                                <img src={url} alt={`Foto ${imgIdx+1} - ${varItem.colore}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newImgs = varItem.immagini.filter((_, i) => i !== imgIdx);
-                                    handleUpdateVariante(vIdx, { immagini: newImgs });
-                                  }}
-                                  style={{ position: 'absolute', top: '3px', right: '3px', background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-                                >
-                                  <Trash size={11} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                          <ReorderablePhotos
+                            urls={varItem.immagini}
+                            small
+                            onChange={(newImgs) => handleUpdateVariante(vIdx, { immagini: newImgs })}
+                            onRemove={(url) => handleUpdateVariante(vIdx, { immagini: varItem.immagini.filter(u => u !== url) })}
+                          />
                         )}
                       </div>
 
@@ -2125,19 +2180,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
               </div>
               
               {nuovoArticolo.immagine_url && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '15px' }}>
-                  {[...new Set((Array.isArray(nuovoArticolo.immagine_url) ? nuovoArticolo.immagine_url : String(nuovoArticolo.immagine_url).split(',')).map(u => u.trim()).filter(Boolean))].map((url, idx) => (
-                    <div key={idx} style={{ position: 'relative', width: '100px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-                      <img src={url} alt={`Preview ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button 
-                        type="button" 
-                        onClick={() => rimuoviImmagine(url)}
-                        style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trash size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <ReorderablePhotos
+                  urls={[...new Set((Array.isArray(nuovoArticolo.immagine_url) ? nuovoArticolo.immagine_url : String(nuovoArticolo.immagine_url).split(',')).map(u => u.trim()).filter(Boolean))]}
+                  onChange={(newUrls) => setNuovoArticolo(prev => ({ ...prev, immagine_url: newUrls.join(',') }))}
+                  onRemove={rimuoviImmagine}
+                />
               )}
 
             </div>

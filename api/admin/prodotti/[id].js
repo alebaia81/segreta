@@ -1,5 +1,6 @@
 import supabase from '../../_lib/supabase.js';
 import { checkAdminAuth } from '../../_lib/auth.js';
+import { isVariantiColumnError, descrizioneConVarianti } from '../../_lib/varianti.js';
 
 // PUT    /api/admin/prodotti/[id]         — Modifica articolo (o toggle se req.body.action === 'toggle')
 // DELETE /api/admin/prodotti/[id]         — Elimina articolo
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
 
         const variantiData = varianti ? (typeof varianti === 'string' ? varianti : JSON.stringify(varianti)) : null;
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('articoli')
           .update({
             titolo,
@@ -78,6 +79,26 @@ export default async function handler(req, res) {
           .eq('id', productId)
           .select()
           .maybeSingle();
+
+        // Fallback: colonna 'varianti' assente su Supabase → varianti salvate in B64 nella descrizione
+        if (isVariantiColumnError(error)) {
+          const retryRes = await supabase
+            .from('articoli')
+            .update({
+              titolo,
+              descrizione: descrizioneConVarianti(descrizione, variantiData),
+              prezzo: parseFloat(prezzo),
+              immagine_url,
+              target: target === 'Uomo' ? 'Uomo' : 'Donna',
+              categoria,
+              taglie
+            })
+            .eq('id', productId)
+            .select()
+            .maybeSingle();
+          data = retryRes.data;
+          error = retryRes.error;
+        }
 
         if (error) {
           return res.status(500).json({ success: false, error: 'Errore modifica articolo: ' + error.message });
