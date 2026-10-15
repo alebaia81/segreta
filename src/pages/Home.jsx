@@ -210,7 +210,7 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin, on
             </div>
             <h3 className="benefit-title">PAGAMENTI SICURI</h3>
             <p className="benefit-text">
-              <strong>Carte di credito</strong>, <strong>Apple Pay</strong>, <strong>Google Pay</strong>, Satispay, Postepay o bonifico bancario.
+              <strong>Carte di credito</strong>, <strong>Apple Pay</strong>, <strong>Google Pay</strong>, Satispay o bonifico bancario.
             </p>
           </div>
         </div>
