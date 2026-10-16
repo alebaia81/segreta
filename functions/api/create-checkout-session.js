@@ -22,7 +22,13 @@ export async function onRequestPost({ request, env }) {
     const requestUrl = new URL(request.url);
     const origin = request.headers.get('origin') || `${requestUrl.protocol}//${requestUrl.host}`;
     const isRitiro = metodo_consegna === 'Ritiro in negozio';
-    const shippingFeeCents = isRitiro ? 0 : 690; // 6,90 € corriere, 0 € ritiro
+    const itemsTotalCents = (cartItems || []).reduce((acc, item) => {
+      const price = Math.round(parseFloat(item.prezzo) * 100) || 0;
+      const qty = parseInt(item.quantity, 10) || 1;
+      return acc + price * qty;
+    }, 0);
+    const isFreeShipping = itemsTotalCents >= 5000; // Spedizione gratuita a partire da 50,00 €
+    const shippingFeeCents = (isRitiro || isFreeShipping) ? 0 : 690; // 6,90 € corriere, 0 € se >= 50€ o ritiro
 
     const stripeKey = env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 

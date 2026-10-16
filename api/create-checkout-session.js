@@ -17,7 +17,13 @@ export default async function handler(req, res) {
 
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'http://localhost:5173';
   const isRitiro = metodo_consegna === 'Ritiro in negozio';
-  const shippingFeeCents = isRitiro ? 0 : 690; // 6,90 € corriere espresso, 0 € ritiro
+  const itemsTotalCents = (cartItems || []).reduce((acc, item) => {
+    const price = Math.round(parseFloat(item.prezzo) * 100) || 0;
+    const qty = parseInt(item.quantity, 10) || 1;
+    return acc + price * qty;
+  }, 0);
+  const isFreeShipping = itemsTotalCents >= 5000; // Spedizione gratuita a partire da 50,00 €
+  const shippingFeeCents = (isRitiro || isFreeShipping) ? 0 : 690; // 6,90 € corriere espresso, 0 € se >= 50€ o ritiro
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
 

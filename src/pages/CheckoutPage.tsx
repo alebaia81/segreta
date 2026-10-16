@@ -74,11 +74,13 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     return Object.keys(errors).length === 0;
   };
 
-  // Calcolo Spese Spedizione: 6,90 € corriere, 0 € ritiro in boutique
-  const shippingFee =
-    formData.metodo_consegna === 'Ritiro in negozio'
-      ? 0
-      : 6.90;
+  // Calcolo Spese Spedizione: 6,90 € corriere, 0 € se carrello >= 50 € oppure ritiro in boutique
+  const FREE_SHIPPING_THRESHOLD = 50.0;
+  const STANDARD_SHIPPING_FEE = 6.9;
+
+  const isFreeShipping = cartTotal >= FREE_SHIPPING_THRESHOLD;
+  const isRitiro = formData.metodo_consegna === 'Ritiro in negozio';
+  const shippingFee = (isRitiro || isFreeShipping) ? 0 : STANDARD_SHIPPING_FEE;
 
   const totalAmount = cartTotal + shippingFee;
 
@@ -523,14 +525,24 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
             </div>
             <div className="summary-total-row">
               <span>Costo Spedizione:</span>
-              <span>
-                {formData.metodo_consegna === 'Ritiro in negozio'
-                  ? 'Gratuito'
-                  : shippingFee === 0
+              <span className={shippingFee === 0 ? 'summary-free-shipping-val' : ''}>
+                {isRitiro
+                  ? 'Gratuito (Ritiro in boutique)'
+                  : isFreeShipping
                   ? 'Gratuita'
                   : `€${shippingFee.toFixed(2)}`}
               </span>
             </div>
+            {isFreeShipping && !isRitiro && (
+              <div className="summary-free-shipping-badge">
+                <span>✨ Spedizione Gratuita applicata!</span>
+              </div>
+            )}
+            {!isFreeShipping && !isRitiro && (
+              <div className="summary-shipping-progress-hint">
+                Aggiungi <strong>€{(FREE_SHIPPING_THRESHOLD - cartTotal).toFixed(2)}</strong> per ottenere la <strong>spedizione gratuita</strong>!
+              </div>
+            )}
             <div className="summary-total-final">
               <span>Totale Complessivo:</span>
               <span>€{totalAmount.toFixed(2)}</span>
@@ -1059,8 +1071,44 @@ const CSS = `
   .summary-total-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     color: var(--text-secondary);
     font-size: 0.95rem;
+  }
+
+  .summary-free-shipping-val {
+    color: var(--success, #2E7D32);
+    font-weight: 600;
+  }
+
+  .summary-free-shipping-badge {
+    background: rgba(46, 125, 50, 0.08);
+    border: 1px solid rgba(46, 125, 50, 0.25);
+    color: var(--success, #2E7D32);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 4px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .summary-shipping-progress-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(226, 149, 171, 0.08);
+    border-left: 3px solid var(--accent-gold, #D4AF37);
+    padding: 6px 10px;
+    border-radius: 0 4px 4px 0;
+    margin: 2px 0 4px;
+    line-height: 1.4;
+  }
+
+  .summary-shipping-progress-hint strong {
+    color: var(--text-primary);
   }
 
   .summary-total-final {
