@@ -13,12 +13,20 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem('segreta_cart');
-    return savedCart ? JSON.parse(savedCart) : [];
+    try {
+      const savedCart = localStorage.getItem('segreta_cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('segreta_cart', JSON.stringify(cartItems));
+    try {
+      localStorage.setItem('segreta_cart', JSON.stringify(cartItems));
+    } catch {
+      // Ignora errore quota storage o privacy mode
+    }
   }, [cartItems]);
 
   // Ascolta gli aggiornamenti esterni del carrello (es. svuotamento dopo checkout Stripe o altre schede)

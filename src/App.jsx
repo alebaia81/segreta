@@ -10,6 +10,7 @@ import Carrello from './components/Carrello';
 import CheckoutPage from './pages/CheckoutPage';
 import ThankYouPage from './pages/ThankYouPage';
 import CookieBanner from './components/CookieBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 import { trackPageView } from './lib/tracker';
 
 // Articoli predefiniti inseriti come seed se localStorage è vuoto
@@ -107,12 +108,20 @@ function MainApp() {
 
   // Carica articoli da localStorage o seed iniziale
   const [articoli, setArticoli] = useState(() => {
-    const saved = localStorage.getItem('segreta_articoli');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.map(item => ({ ...item, attivo: item.attivo !== false && item.attivo !== 0 }));
-    } else {
-      localStorage.setItem('segreta_articoli', JSON.stringify(ARTICOLI_SEED));
+    try {
+      const saved = localStorage.getItem('segreta_articoli');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map(item => ({ ...item, attivo: item.attivo !== false && item.attivo !== 0 }));
+      } else {
+        try {
+          localStorage.setItem('segreta_articoli', JSON.stringify(ARTICOLI_SEED));
+        } catch {
+          // Fallback se quota superata o modalità anonima
+        }
+        return ARTICOLI_SEED;
+      }
+    } catch {
       return ARTICOLI_SEED;
     }
   });
@@ -149,7 +158,11 @@ function MainApp() {
 
   // Salva articoli quando cambiano per mantenere aggiornata la cache offline
   useEffect(() => {
-    localStorage.setItem('segreta_articoli', JSON.stringify(articoli));
+    try {
+      localStorage.setItem('segreta_articoli', JSON.stringify(articoli));
+    } catch {
+      // Ignora errore quota storage o privacy mode
+    }
   }, [articoli]);
 
   // Gestione aggiunta/modifica articolo da admin
@@ -238,55 +251,57 @@ function MainApp() {
       )}
 
       <main>
-        {currentPath === '/' && (
-          <Home 
-            articoli={articoli.filter(filterBySearch)}
-            onNavigateToShop={handleNavigateToShop}
-            onNavigateToAdmin={() => setCurrentPath('/admin')}
-            onOpenProduct={handleOpenProduct}
-          />
-        )}
+        <ErrorBoundary>
+          {currentPath === '/' && (
+            <Home 
+              articoli={articoli.filter(filterBySearch)}
+              onNavigateToShop={handleNavigateToShop}
+              onNavigateToAdmin={() => setCurrentPath('/admin')}
+              onOpenProduct={handleOpenProduct}
+            />
+          )}
 
-        {currentPath === '/shop' && (
-          <Shop
-            articoli={articoli.filter(filterBySearch)}
-            onNavigateToHome={handleNavigateToHome}
-            onNavigateToAdmin={() => setCurrentPath('/admin')}
-            onOpenProduct={handleOpenProduct}
-          />
-        )}
+          {currentPath === '/shop' && (
+            <Shop
+              articoli={articoli.filter(filterBySearch)}
+              onNavigateToHome={handleNavigateToHome}
+              onNavigateToAdmin={() => setCurrentPath('/admin')}
+              onOpenProduct={handleOpenProduct}
+            />
+          )}
 
-        {isProductDetail && (
-          <ProductDetail
-            key={productDetailId}
-            articoloId={productDetailId}
-            articoli={articoli}
-            onAddToCart={(art, size, color, img) => {
-              addToCart(art, size, color, img);
-              setCartOpen(true);
-            }}
-            onNavigateToShop={handleNavigateToShop}
-            onNavigateToHome={handleNavigateToHome}
-            onOpenProduct={handleOpenProduct}
-            onNavigateToAdmin={() => setCurrentPath('/admin')}
-          />
-        )}
-        {currentPath === '/admin' && (
-          <AdminDashboard 
-            articoli={articoli}
-            onAddArticolo={handleAddArticolo}
-            onToggleArticolo={handleToggleArticolo}
-            onNavigateToHome={handleNavigateToHome}
-          />
-        )}
+          {isProductDetail && (
+            <ProductDetail
+              key={productDetailId}
+              articoloId={productDetailId}
+              articoli={articoli}
+              onAddToCart={(art, size, color, img) => {
+                addToCart(art, size, color, img);
+                setCartOpen(true);
+              }}
+              onNavigateToShop={handleNavigateToShop}
+              onNavigateToHome={handleNavigateToHome}
+              onOpenProduct={handleOpenProduct}
+              onNavigateToAdmin={() => setCurrentPath('/admin')}
+            />
+          )}
+          {currentPath === '/admin' && (
+            <AdminDashboard 
+              articoli={articoli}
+              onAddArticolo={handleAddArticolo}
+              onToggleArticolo={handleToggleArticolo}
+              onNavigateToHome={handleNavigateToHome}
+            />
+          )}
 
-        {currentPath === '/checkout' && (
-          <CheckoutPage onBackToShopping={handleBackToShopping} setCurrentPath={setCurrentPath} />
-        )}
+          {currentPath === '/checkout' && (
+            <CheckoutPage onBackToShopping={handleBackToShopping} setCurrentPath={setCurrentPath} />
+          )}
 
-        {currentPath === '/thank-you' && (
-          <ThankYouPage onBackToShopping={handleBackToShopping} />
-        )}
+          {currentPath === '/thank-you' && (
+            <ThankYouPage onBackToShopping={handleBackToShopping} />
+          )}
+        </ErrorBoundary>
       </main>
 
       {!hideHeaderNav && (

@@ -28,6 +28,8 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/counter.css";
 
+import './ProductCard.css';
+
 /* Hook leggero per prefers-reduced-motion */
 function useReducedMotion() {
   if (typeof window === 'undefined') return false;
@@ -50,7 +52,7 @@ function safeSplit(str, delimiter = ',') {
   return [String(str)];
 }
 
-export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
+export default function ProductCard({ articolo, onAddToCart, onCardClick, cardIndex = 0 }) {
   const reducedMotion = useReducedMotion();
   const [selectedSize, setSelectedSize] = useState(null);
   const [isAdded, setIsAdded] = useState(false);
@@ -191,7 +193,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
                   alt={`${articolo.titolo} - Foto ${idx + 1}`}
                   className="pc-image"
                   style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: onCardClick ? 'pointer' : 'zoom-in' }}
-                  loading={idx === 0 ? "eager" : "lazy"}
+                  loading={cardIndex < 4 && idx === 0 ? "eager" : "lazy"}
                   onClick={(e) => {
                     if (onCardClick) {
                       onCardClick(articolo.id);
@@ -447,341 +449,28 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
         </button>
       </div>
 
-      <style>{`
-        /* ── Card Container ──────────────────────────────────────────────── */
-        .pc-card {
-          background-color: var(--bg-secondary);
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                      box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                      border-color 0.2s ease;
-          cursor: pointer;
-          position: relative;
-        }
-
-        /* Reduced motion: solo opacity, niente transform (WCAG 2.3.3) */
-        .pc-reduced-motion {
-          transition: opacity 0.2s ease !important;
-        }
-        .pc-reduced-motion:hover,
-        .pc-reduced-motion:focus-visible {
-          transform: none !important;
-          opacity: 0.92;
-        }
-
-        .pc-card:hover {
-          transform: translateY(-6px);
-          box-shadow: var(--shadow-md);
-          border-color: var(--accent-gold);
-        }
-
-        /* WCAG 2.4.7 — focus-visible sulla card stessa */
-        .pc-card:focus-visible {
-          outline: 3px solid var(--text-primary);
-          outline-offset: 3px;
-          border-color: var(--accent-gold);
-          transform: translateY(-3px);
-          box-shadow: var(--shadow-md);
-        }
-
-        /* ── Immagine ──────────────────────────────────────────────────── */
-        .pc-image-wrapper {
-          position: relative;
-          width: 100%;
-          padding-top: 125%; /* Aspect ratio 4:5 — standard abbigliamento */
-          background-color: #ffffff;
-          overflow: hidden;
-        }
-
-        .pc-image-blur-bg {
-          display: none;
-        }
-
-        .pc-image {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          object-position: center;
-          z-index: 1;
-          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .pc-card:hover .pc-image,
-        .pc-card:focus-visible .pc-image {
-          transform: scale(1.04);
-        }
-
-        .pc-reduced-motion .pc-image {
-          transition: none !important;
-          transform: none !important;
-        }
-
-        /* Overlay trasparente sull'immagine — assicura contrasto badge (WCAG 1.4.3) */
-        .pc-image-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(0,0,0,0) 60%,
-            rgba(20, 14, 10, 0.25) 100%
-          );
-          z-index: 2;
-          pointer-events: none;
-        }
-
-        /* ── Badge categoria (WCAG 1.4.3 garantito) ─────────────────────── */
-        .pc-category-badge {
-          position: absolute;
-          top: var(--spacing-sm);
-          left: var(--spacing-sm);
-          /* bg molto opaco: contrasto ~12:1 su qualsiasi immagine */
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          color: var(--text-primary);
-          padding: 0.2rem 0.65rem;
-          font-family: var(--font-sans);
-          font-size: 0.68rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.07em;
-          border-radius: var(--radius-sm);
-          border: 1px solid rgba(230, 223, 215, 0.7);
-          z-index: 10;
-          pointer-events: none;
-        }
-
-  /* Slider arrows */
-  .pc-slider-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(44, 37, 32, 0.15);
-    color: var(--text-primary);
-    font-size: 20px;
-    font-weight: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(44, 37, 32, 0.08);
-    transition: var(--transition-fast);
-    padding-bottom: 3px;
-  }
-  .pc-slider-arrow:hover {
-    background: #fff;
-    transform: translateY(-50%) scale(1.08);
-    box-shadow: 0 6px 16px rgba(44, 37, 32, 0.12);
-  }
-  .pc-slider-arrow:focus-visible {
-    outline: 3px solid var(--text-primary);
-    outline-offset: 3px;
-  }
-  .pc-arrow-left {
-    left: 8px;
-  }
-  .pc-arrow-right {
-    right: 8px;
-  }
-
-        /* ── Dettagli ──────────────────────────────────────────────────── */
-        .pc-details {
-          padding: var(--spacing-md);
-          display: flex;
-          flex-direction: column;
-          flex-grow: 1;
-          gap: var(--spacing-xs);
-        }
-
-        .pc-title {
-          font-family: var(--font-serif);
-          font-size: 1.15rem;
-          font-weight: 500;
-          color: var(--text-primary);
-          margin: 0 0 2px;
-          line-height: 1.3;
-        }
-
-        .pc-description {
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          margin: 0 0 var(--spacing-xs);
-          line-height: 1.45;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .pc-price-row {
-          margin: var(--spacing-xs) 0 var(--spacing-sm);
-        }
-
-        .pc-price {
-          font-family: var(--font-serif);
-          font-size: 1.35rem;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        /* ── Taglie ────────────────────────────────────────────────────── */
-        .pc-sizes-container {
-          margin-bottom: var(--spacing-sm);
-          outline: none; /* il focus è gestito programmaticamente */
-        }
-
-        .pc-sizes-label {
-          display: block;
-          font-family: var(--font-sans);
-          font-size: 0.72rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--text-secondary);
-          margin-bottom: var(--spacing-xs);
-        }
-
-        .pc-sizes-label:has(+ .pc-sizes-row .selected) {
-          color: var(--text-primary);
-        }
-
-        .pc-sizes-row {
-          display: flex;
-          gap: 0.4rem;
-          flex-wrap: wrap;
-        }
-
-        .pc-size-btn {
-          min-width: 38px;
-          height: 38px;
-          padding: 0 0.5rem;
-          border-radius: var(--radius-sm);
-          border: 1.5px solid var(--border-color);
-          font-family: var(--font-sans);
-          font-size: 0.8rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          background: var(--bg-secondary);
-          cursor: pointer;
-          transition: var(--transition-fast);
-          /* WCAG 2.4.7 */
-        }
-
-        .pc-size-btn:hover {
-          border-color: var(--text-primary);
-          background: var(--bg-tertiary);
-        }
-
-        /* WCAG 2.4.7 — focus ring 3px / offset 3px */
-        .pc-size-btn:focus-visible {
-          outline: 3px solid var(--text-primary);
-          outline-offset: 3px;
-        }
-
-        .pc-size-btn.selected {
-          background: var(--text-primary);
-          color: var(--bg-secondary);
-          border-color: var(--text-primary);
-        }
-
-        /* Errore: pulsazione solo se non reduced-motion */
-        @keyframes errorPulse {
-          0%   { border-color: var(--error); }
-          50%  { border-color: rgba(201, 42, 42, 0.4); }
-          100% { border-color: var(--error); }
-        }
-
-        .pc-size-btn.error-pulse {
-          border-color: var(--error);
-          animation: errorPulse 0.8s ease 2;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .pc-size-btn.error-pulse {
-            animation: none;
-            border-color: var(--error);
-          }
-        }
-
-        /* ── Bottone Aggiungi ──────────────────────────────────────────── */
-        .pc-add-to-cart-btn {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin-top: auto;
-          background: #E295AB;
-          color: #fff;
-          font-family: var(--font-sans);
-          font-size: 0.85rem;
-          font-weight: 700;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          padding: 0.85rem 1rem;
-          border-radius: var(--radius-sm);
-          min-height: 48px; /* WCAG 2.2 touch target ≥ 24px, ottimizzato 48px */
-          border: 1.5px solid #E295AB;
-          cursor: pointer;
-          transition: var(--transition-smooth);
-        }
-
-        .pc-add-to-cart-btn:hover:not(:disabled) {
-          background: transparent;
-          color: #E295AB;
-        }
-
-        /* WCAG 2.4.7 — focus ring ad alto contrasto */
-        .pc-add-to-cart-btn:focus-visible {
-          outline: 3px solid var(--text-primary);
-          outline-offset: 3px;
-        }
-
-        .pc-add-to-cart-btn.success {
-          background: var(--success);
-          border-color: var(--success);
-          color: #fff;
-          cursor: default;
-        }
-
-        .pc-add-to-cart-btn:disabled:not(.success) {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
-
-      <Lightbox
-        open={zoomImageIndex !== null}
-        close={() => setZoomImageIndex(null)}
-        index={zoomImageIndex || 0}
-        slides={currentImagesList.map(url => {
-          const trimmed = String(url).trim();
-          const src = resolveImageSrc(trimmed);
-          return { src, alt: articolo.titolo };
-        })}
-        plugins={[Zoom, Counter]}
-        zoom={{
-          maxZoomPixelRatio: 4,
-          zoomInMultiplier: 2,
-          doubleTapDelay: 300,
-          doubleClickDelay: 300,
-        }}
-        styles={{
-          container: { backgroundColor: "rgba(0, 0, 0, 0.75)" }
-        }}
-      />
+      {zoomImageIndex !== null && (
+        <Lightbox
+          open={true}
+          close={() => setZoomImageIndex(null)}
+          index={zoomImageIndex || 0}
+          slides={currentImagesList.map(url => {
+            const trimmed = String(url).trim();
+            const src = resolveImageSrc(trimmed);
+            return { src, alt: articolo.titolo };
+          })}
+          plugins={[Zoom, Counter]}
+          zoom={{
+            maxZoomPixelRatio: 4,
+            zoomInMultiplier: 2,
+            doubleTapDelay: 300,
+            doubleClickDelay: 300,
+          }}
+          styles={{
+            container: { backgroundColor: "rgba(0, 0, 0, 0.75)" }
+          }}
+        />
+      )}
     </article>
   );
 }
