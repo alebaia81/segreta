@@ -796,14 +796,14 @@ export default function AdminStatistiche({ adminPassword }) {
           max-width: 44px;
           display: flex;
           align-items: flex-end;
-          background: rgba(197, 168, 128, 0.08);
+          background: rgba(226, 149, 171, 0.14);
           border-radius: 6px 6px 0 0;
           position: relative;
         }
 
         .bar-fill {
           width: 100%;
-          background: linear-gradient(180deg, var(--accent-gold) 0%, var(--accent-gold-hover) 100%);
+          background: linear-gradient(180deg, #F5CAD6 0%, #E295AB 100%);
           border-radius: 6px 6px 0 0;
           transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative;
@@ -812,7 +812,8 @@ export default function AdminStatistiche({ adminPassword }) {
         }
 
         .bar-fill.bar-today {
-          background: linear-gradient(180deg, #2C2520 0%, #4A3E36 100%);
+          background: linear-gradient(180deg, #E295AB 0%, #D47993 100%);
+          box-shadow: 0 3px 10px rgba(226, 149, 171, 0.45);
         }
 
         .bar-val-badge {
@@ -843,7 +844,7 @@ export default function AdminStatistiche({ adminPassword }) {
         }
 
         .today-col .bar-day-name {
-          color: var(--accent-gold-hover);
+          color: #D47993;
           font-weight: 800;
         }
 
@@ -980,14 +981,14 @@ export default function AdminStatistiche({ adminPassword }) {
         .capo-progress-bar {
           flex: 1;
           height: 6px;
-          background: rgba(197, 168, 128, 0.2);
+          background: rgba(226, 149, 171, 0.18);
           border-radius: var(--radius-full);
           overflow: hidden;
         }
 
         .capo-progress-fill {
           height: 100%;
-          background: var(--accent-gold);
+          background: linear-gradient(90deg, #F5CAD6 0%, #E295AB 100%);
           border-radius: var(--radius-full);
           transition: width 0.5s ease;
         }
