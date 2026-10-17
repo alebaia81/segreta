@@ -311,6 +311,10 @@ export default function AdminStatistiche({ adminPassword }) {
             ) : (
               topCapi.map((capo, index) => {
                 const percent = Math.round((capo.views / maxCapoViews) * 100);
+                const firstImg = capo.immagine_url
+                  ? (Array.isArray(capo.immagine_url) ? capo.immagine_url[0] : String(capo.immagine_url).split(',')[0].trim())
+                  : null;
+
                 return (
                   <div key={capo.id} className="capo-row">
                     <div className={`capo-rank rank-${index + 1}`}>
@@ -318,8 +322,14 @@ export default function AdminStatistiche({ adminPassword }) {
                     </div>
 
                     <div className="capo-thumb">
-                      {capo.immagine_url ? (
-                        <img src={capo.immagine_url} alt={capo.titolo} />
+                      {firstImg ? (
+                        <img
+                          src={firstImg}
+                          alt={capo.titolo}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
                       ) : (
                         <div className="capo-no-thumb">👗</div>
                       )}

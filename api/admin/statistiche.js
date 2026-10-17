@@ -178,11 +178,13 @@ export default async function handler(req, res) {
 
       topCapi = sortedArticoloIds.map(([id, views]) => {
         const art = articoliMap[Number(id)] || {};
+        const rawImg = art.immagine_url || '';
+        const primaryImg = Array.isArray(rawImg) ? rawImg[0] : String(rawImg).split(',')[0].trim();
         return {
           id: Number(id),
           titolo: art.titolo || `Capo #${id}`,
           prezzo: art.prezzo || 0,
-          immagine_url: art.immagine_url || '',
+          immagine_url: primaryImg,
           categoria: art.categoria || '',
           attivo: art.attivo ?? true,
           views
