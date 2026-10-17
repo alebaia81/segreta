@@ -1,5 +1,5 @@
-import { createSupabaseClient } from '../../../_lib/supabase.js';
-import { checkAdminAuth, unauthorizedResponse } from '../../../_lib/auth.js';
+import { createSupabaseClient } from '../../_lib/supabase.js';
+import { checkAdminAuth, unauthorizedResponse } from '../../_lib/auth.js';
 
 const SQL_CREATE_TABLE = `CREATE TABLE IF NOT EXISTS public.visite (
   id BIGSERIAL PRIMARY KEY,
