@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, ShoppingBag, Landmark, Copy, Check, Printer } from 'lucide-react';
 import { BANK_DETAILS } from '../lib/bankDetails';
+import { useCart } from '../context/CartContext';
 
 interface ThankYouPageProps {
   onBackToShopping: () => void;
 }
 
 export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
+  const { clearCart } = useCart();
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [copiedIban, setCopiedIban] = useState(false);
   const [copiedCausale, setCopiedCausale] = useState(false);
@@ -30,6 +32,7 @@ export default function ThankYouPage({ onBackToShopping }: ThankYouPageProps) {
           localStorage.setItem('segreta_last_order', JSON.stringify(parsed));
           
           // Svuota carrello locale
+          clearCart();
           localStorage.removeItem('segreta_cart');
           window.dispatchEvent(new Event('segreta_cart_updated'));
 

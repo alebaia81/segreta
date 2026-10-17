@@ -84,6 +84,13 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
 
   const totalAmount = cartTotal + shippingFee;
 
+  const getIndirizzoCompleto = () => {
+    if (formData.metodo_consegna === 'Ritiro in negozio') {
+      return "Ritiro in boutique (Via Martiri della Libertà 67, Monticelli d'Ongina)";
+    }
+    return `${(formData.indirizzo || '').trim()}, ${(formData.citta || '').trim()} (${(formData.cap || '').trim()})`;
+  };
+
   const handleStripePayment = async () => {
     if (!validateForm()) {
       setErrorMessage('⚠️ Compila tutti i campi obbligatori (nome, cognome, telefono, email e indirizzo) prima di procedere con il pagamento.');
@@ -94,10 +101,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     setSubmitting(true);
     setErrorMessage('');
 
-    const indirizzoCompleto =
-      formData.metodo_consegna === 'Ritiro in negozio'
-        ? "Ritiro in boutique (Via Martiri della Libertà 67, Monticelli d'Ongina)"
-        : `${formData.indirizzo}, ${formData.cap} ${formData.citta}`;
+    const indirizzoCompleto = getIndirizzoCompleto();
 
     const pendingOrder = {
       id: Math.floor(Math.random() * 10000) + 1,
@@ -195,10 +199,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     setSubmitting(true);
     setErrorMessage('');
 
-    const indirizzoCompleto =
-      formData.metodo_consegna === 'Ritiro in negozio'
-        ? 'Ritiro in negozio (Monticelli d\'Ongina)'
-        : `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+    const indirizzoCompleto = getIndirizzoCompleto();
 
     const ordineDaInviare = {
       nome_cliente: `${formData.nome} ${formData.cognome}`,
@@ -270,10 +271,7 @@ export default function CheckoutPage({ onBackToShopping, setCurrentPath }: Check
     setSubmitting(true);
     setErrorMessage('');
 
-    const indirizzoCompleto =
-      formData.metodo_consegna === 'Ritiro in negozio'
-        ? 'Ritiro in negozio (Monticelli d\'Ongina)'
-        : `${formData.indirizzo}, ${formData.citta} (${formData.cap})`;
+    const indirizzoCompleto = getIndirizzoCompleto();
 
     const ordineDaInviare = {
       nome_cliente: `${formData.nome} ${formData.cognome}`,

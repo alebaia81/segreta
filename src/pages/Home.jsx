@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { MapPin, Phone, Clock, ShieldCheck, Heart, Sparkles, Mail, ArrowRight, ShoppingBag, Star } from 'lucide-react';
-import { useCookie } from '../context/CookieContext';
 import HeroGlass from '../components/HeroGlass.tsx';
 import ProductCard from '../components/ProductCard.tsx';
 import Footer from '../components/Footer.jsx';
@@ -8,7 +7,6 @@ import { useCart } from '../context/CartContext';
 
 
 export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin, onOpenProduct }) {
-  const { openCookieSettings } = useCookie();
 
   // --- Meta tag SEO specifici per Home (Brand + Local) ---
   useEffect(() => {

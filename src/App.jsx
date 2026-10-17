@@ -258,6 +258,7 @@ function MainApp() {
 
         {isProductDetail && (
           <ProductDetail
+            key={productDetailId}
             articoloId={productDetailId}
             articoli={articoli}
             onAddToCart={(art, size, color, img) => {

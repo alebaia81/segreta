@@ -42,12 +42,21 @@ export default async function handler(req, res) {
 
     const lineItems = cartItems.map((item) => {
       const unitAmount = Math.round(parseFloat(item.prezzo) * 100);
+      let validImages = undefined;
+      if (item.immagine_url) {
+        const rawUrl = Array.isArray(item.immagine_url) ? item.immagine_url[0] : String(item.immagine_url).split(',')[0];
+        const cleanUrl = String(rawUrl || '').trim();
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+          validImages = [cleanUrl];
+        }
+      }
+
       return {
         price_data: {
           currency: 'eur',
           product_data: {
             name: `${item.titolo}${item.size ? ` (Taglia ${item.size})` : ''}`,
-            images: item.immagine_url ? [item.immagine_url] : undefined,
+            images: validImages,
           },
           unit_amount: unitAmount,
         },

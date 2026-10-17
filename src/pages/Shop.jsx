@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import { useCookie } from '../context/CookieContext';
 import ProductCard from '../components/ProductCard.jsx';
 import Footer from '../components/Footer.jsx';
-import { ShoppingBag, Check } from 'lucide-react';
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Counter from "yet-another-react-lightbox/plugins/counter";
@@ -18,26 +16,10 @@ import "yet-another-react-lightbox/plugins/counter.css";
  */
 export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin, onOpenProduct }) {
   const { addToCart } = useCart();
-  const { openCookieSettings } = useCookie();
 
   const [selectedCategory, setSelectedCategory] = useState('TUTTI');
-  const [selectedSizes, setSelectedSizes] = useState({});
-  const [addedAnimation, setAddedAnimation] = useState({});
   const [zoomArticolo, setZoomArticolo] = useState(null);
   const [zoomImageIndex, setZoomImageIndex] = useState(null);
-
-  const scrollShopSlider = (e, direction) => {
-    e.stopPropagation();
-    const wrapper = e.currentTarget.closest('.prodotto-image-wrapper');
-    const slider = wrapper ? wrapper.querySelector('.prodotto-slider') : null;
-    if (slider) {
-      const scrollAmount = slider.clientWidth;
-      slider.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   // --- Meta tag SEO specifici per /shop ---
   useEffect(() => {
@@ -132,23 +114,6 @@ export default function Shop({ articoli, onNavigateToHome, onNavigateToAdmin, on
         const rawSel = String(selectedCategory || '').trim().toUpperCase();
         return catA === catSel || rawA === rawSel;
       });
-
-  const handleSelectSize = (articoloId, size) => {
-    setSelectedSizes(prev => ({ ...prev, [articoloId]: size }));
-  };
-
-  const handleAddToCart = (articolo) => {
-    const size = selectedSizes[articolo.id];
-    const taglieDisponibili = articolo.taglie ? articolo.taglie.split(',').map(s => s.trim()) : [];
-    if (taglieDisponibili.length > 0 && !size) {
-      alert('Per favore, seleziona una taglia prima di aggiungere al carrello.');
-      return;
-    }
-    addToCart(articolo, size || 'Unica');
-    setAddedAnimation(prev => ({ ...prev, [articolo.id]: true }));
-    setTimeout(() => setAddedAnimation(prev => ({ ...prev, [articolo.id]: false })), 1500);
-  };
-
 
   return (
     <div className="shop-page fade-in">

@@ -68,7 +68,9 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       if (matchB64) {
         try {
           source = decodeURIComponent(escape(atob(matchB64[1])));
-        } catch {}
+        } catch {
+          // fallback ignorato
+        }
       }
       if (!source) {
         const matchPlain = descrizione.match(/\[VARIANTI:([\s\S]+?)\](?=\s*$|\s+[A-Za-z0-9])/);
@@ -81,7 +83,11 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
       try { parsed = JSON.parse(parsed); } catch { return []; }
     }
     if (typeof parsed === 'string') {
-      try { parsed = JSON.parse(parsed); } catch { }
+      try {
+        parsed = JSON.parse(parsed);
+      } catch {
+        // parsing secondario ignorato
+      }
     }
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(v => v && typeof v === 'object');

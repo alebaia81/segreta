@@ -489,7 +489,9 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           if (localStorage.getItem('segreta_ordini')) {
             localStorage.removeItem('segreta_ordini');
           }
-        } catch (_) {}
+        } catch {
+          // ignora pulizia storage
+        }
         setOrdini(json.data);
       }
     } catch (err) {
@@ -1073,7 +1075,9 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       if (localStorage.getItem('segreta_ordini')) {
         localStorage.removeItem('segreta_ordini');
       }
-    } catch (_) {}
+    } catch {
+      // ignora pulizia storage
+    }
   };
 
 

@@ -64,7 +64,10 @@ export default function ProductDetail({
   const articolo = articoli.find(a => String(a.id) === String(articoloId));
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(() => {
+    const list = safeSplit(articolo?.taglie || '');
+    return (list.length === 1 && list[0].toLowerCase() === 'unica') ? 'Unica' : null;
+  });
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -79,7 +82,11 @@ export default function ProductDetail({
     if (!source && desc && typeof desc === 'string') {
       const matchB64 = desc.match(/\[VARIANTI_B64:([A-Za-z0-9+/=]+)\]/);
       if (matchB64) {
-        try { source = decodeURIComponent(escape(atob(matchB64[1]))); } catch {}
+        try {
+          source = decodeURIComponent(escape(atob(matchB64[1])));
+        } catch {
+          // ignora errore b64
+        }
       }
       if (!source) {
         const matchPlain = desc.match(/\[VARIANTI:([\s\S]+?)\](?=\s*$|\s+[A-Za-z0-9])/);
@@ -92,7 +99,11 @@ export default function ProductDetail({
       try { parsed = JSON.parse(parsed); } catch { return []; }
     }
     if (typeof parsed === 'string') {
-      try { parsed = JSON.parse(parsed); } catch {}
+      try {
+        parsed = JSON.parse(parsed);
+      } catch {
+        // ignora fallback parsing
+      }
     }
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(v => v && typeof v === 'object');
@@ -114,27 +125,23 @@ export default function ProductDetail({
     : (articolo ? articolo.taglie : '');
   const taglieList = safeSplit(rawTaglie);
 
-  // Reset taglie e indice foto quando cambia l'articolo o la variante
-  useEffect(() => {
-    setSelectedVariantIndex(null);
+  const handleSelectVariant = (idx) => {
+    setSelectedVariantIndex(idx);
     setActiveImageIndex(0);
     setSizeError(false);
-    if (taglieList.length === 1 && taglieList[0].toLowerCase() === 'unica') {
+    const variant = idx !== null ? variantiList[idx] : null;
+    const raw = variant?.taglie || (articolo ? articolo.taglie : '');
+    const list = safeSplit(raw);
+    if (list.length === 1 && list[0].toLowerCase() === 'unica') {
       setSelectedSize('Unica');
     } else {
       setSelectedSize(null);
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [articoloId]);
+  };
 
   useEffect(() => {
-    setActiveImageIndex(0);
-    if (taglieList.length === 1 && taglieList[0].toLowerCase() === 'unica') {
-      setSelectedSize('Unica');
-    } else {
-      setSelectedSize(null);
-    }
-  }, [selectedVariantIndex]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [articoloId]);
 
   // Gestione sconto da descrizione [SCONTO:XX]
   const matchSconto = articolo?.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
@@ -183,13 +190,17 @@ export default function ProductDetail({
           url
         });
         return;
-      } catch {}
+      } catch {
+        // ignora se l'utente annulla la condivisione nativa
+      }
     }
     try {
       await navigator.clipboard.writeText(url);
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2500);
-    } catch {}
+    } catch {
+      // ignora se il clipboard non è disponibile
+    }
   };
 
   // Link WhatsApp con messaggio precompilato
@@ -385,7 +396,7 @@ export default function ProductDetail({
                     <button
                       type="button"
                       className={`pd-variant-btn ${selectedVariantIndex === null ? 'active' : ''}`}
-                      onClick={() => setSelectedVariantIndex(null)}
+                      onClick={() => handleSelectVariant(null)}
                       aria-label="Tutti i colori"
                     >
                       Tutti
@@ -395,7 +406,7 @@ export default function ProductDetail({
                         key={v.colore || idx}
                         type="button"
                         className={`pd-variant-btn ${selectedVariantIndex === idx ? 'active' : ''}`}
-                        onClick={() => setSelectedVariantIndex(idx)}
+                        onClick={() => handleSelectVariant(idx)}
                         aria-label={`Colore ${v.colore}`}
                       >
                         {v.hex && (

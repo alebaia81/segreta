@@ -21,6 +21,24 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('segreta_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
+  // Ascolta gli aggiornamenti esterni del carrello (es. svuotamento dopo checkout Stripe o altre schede)
+  useEffect(() => {
+    const handleCartSync = () => {
+      try {
+        const saved = localStorage.getItem('segreta_cart');
+        setCartItems(saved ? JSON.parse(saved) : []);
+      } catch {
+        setCartItems([]);
+      }
+    };
+    window.addEventListener('segreta_cart_updated', handleCartSync);
+    window.addEventListener('storage', handleCartSync);
+    return () => {
+      window.removeEventListener('segreta_cart_updated', handleCartSync);
+      window.removeEventListener('storage', handleCartSync);
+    };
+  }, []);
+
   const addToCart = (articolo, size, color = null, customImage = null) => {
     const matchSconto = articolo.descrizione ? articolo.descrizione.match(/\[SCONTO:(\d+)\]/) : null;
     const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
