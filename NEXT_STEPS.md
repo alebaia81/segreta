@@ -30,21 +30,27 @@ Quando saremo pronti per il puntamento DNS definitivo:
 
 ---
 
-## 💡 Idee Future / In Sospeso
+## 📌 Funzionalità Completate
 
-### Contatore Visite e Statistiche Traffico (Dashboard Admin)
-- **Obiettivo:** Mostrare a Greta le statistiche essenziali (visite di oggi, della settimana, totali e i 5 capi più visti).
-- **Approccio scelto:** Interno con Supabase (zero cookie, 100% GDPR-friendly, nessun servizio esterno).
-- **Script SQL pronto per Supabase:**
-  ```sql
-  CREATE TABLE IF NOT EXISTS visite (
-    id BIGSERIAL PRIMARY KEY,
-    pagina TEXT NOT NULL,
-    articolo_id BIGINT REFERENCES articoli(id) ON DELETE SET NULL,
-    sessione_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  );
-  CREATE INDEX IF NOT EXISTS idx_visite_created_at ON visite (created_at);
-  CREATE INDEX IF NOT EXISTS idx_visite_articolo_id ON visite (articolo_id);
-  ```
+- **Contatore Visite e Statistiche Traffico (Dashboard Admin)**:
+  - Tab dedicata **Statistiche** in `AdminDashboard.jsx` con componente `AdminStatistiche.jsx`.
+  - Tracciamento visite anonimo e GDPR compliant via `src/lib/tracker.js` (esclusione automatica admin e deduplicazione sessione).
+  - Endpoint API sincroni per Cloudflare Pages (`functions/api/visite.js`, `functions/api/admin/statistiche.js`) e dev server (`api/visite.js`, `api/admin/statistiche.js`).
+  - Script SQL per la creazione della tabella `visite` su Supabase:
+    ```sql
+    CREATE TABLE IF NOT EXISTS public.visite (
+      id BIGSERIAL PRIMARY KEY,
+      pagina TEXT NOT NULL,
+      articolo_id BIGINT REFERENCES public.articoli(id) ON DELETE SET NULL,
+      sessione_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_visite_created_at ON public.visite (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_visite_articolo_id ON public.visite (articolo_id);
+    CREATE INDEX IF NOT EXISTS idx_visite_sessione_pagina ON public.visite (sessione_id, pagina, created_at);
+    ALTER TABLE public.visite ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY "Allow public insert to visite" ON public.visite FOR INSERT WITH CHECK (true);
+    CREATE POLICY "Allow service role read visite" ON public.visite FOR SELECT USING (true);
+    ```
+
 

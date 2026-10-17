@@ -10,6 +10,7 @@ import Carrello from './components/Carrello';
 import CheckoutPage from './pages/CheckoutPage';
 import ThankYouPage from './pages/ThankYouPage';
 import CookieBanner from './components/CookieBanner';
+import { trackPageView } from './lib/tracker';
 
 // Articoli predefiniti inseriti come seed se localStorage è vuoto
 const ARTICOLI_SEED = [
@@ -92,6 +93,14 @@ function MainApp() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Tracciamento visite anonimo e GDPR-friendly su navigazione utente
+  useEffect(() => {
+    if (currentPath.startsWith('/admin')) return;
+    const isProduct = currentPath.startsWith('/prodotto/');
+    const prodId = isProduct ? currentPath.replace('/prodotto/', '').split('/')[0] : null;
+    trackPageView(currentPath, prodId);
+  }, [currentPath]);
 
   const [cartOpen, setCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

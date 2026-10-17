@@ -59,6 +59,10 @@ const server = http.createServer(async (req, res) => {
       handlerPath = './api/admin/ordini/[id].js';
       query.id = id;
     }
+  } else if (pathname === '/api/visite' || pathname === '/api/visite/') {
+    handlerPath = './api/visite.js';
+  } else if (pathname === '/api/admin/statistiche' || pathname === '/api/admin/statistiche/') {
+    handlerPath = './api/admin/statistiche.js';
   } else if (pathname === '/api/admin/upload') {
     handlerPath = './api/admin/upload.js';
   } else if (pathname === '/api/admin/settings/password') {

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle } from 'lucide-react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle, BarChart3 } from 'lucide-react';
 import { supabase as supabaseClient } from '../lib/supabaseClient.js';
 import { BANK_DETAILS } from '../lib/bankDetails';
+import AdminStatistiche from '../components/admin/AdminStatistiche';
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '46', '48', 'Unica'];
 
@@ -1329,6 +1330,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
           </button>
 
           <button
+            className={`nav-item ${activeTab === 'statistiche' ? 'active' : ''}`}
+            onClick={() => setActiveTab('statistiche')}
+          >
+            <BarChart3 size={18} />
+            <span>Statistiche</span>
+          </button>
+
+          <button
             className={`nav-item ${activeTab === 'impostazioni' ? 'active' : ''}`}
             onClick={() => setActiveTab('impostazioni')}
           >
@@ -2432,6 +2441,11 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
             </div>
           </div>
         </div>
+      )}
+
+      {/* Tab 6: Statistiche */}
+      {activeTab === 'statistiche' && !loading && (
+        <AdminStatistiche adminPassword={password} />
       )}
     </main>
     <style>{`
