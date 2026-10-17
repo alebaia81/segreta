@@ -122,6 +122,7 @@ export default function ProductCard({ articolo, onAddToCart, onCardClick }) {
   const scontoPercent = matchSconto ? parseInt(matchSconto[1]) : 0;
   const cleanDescrizione = articolo.descrizione 
     ? articolo.descrizione
+        .replace(/\[IN_EVIDENZA\]/g, '')
         .replace(/\[SCONTO:\d+\]/g, '')
         .replace(/\[VARIANTI_B64:[A-Za-z0-9+/=]+\]/g, '')
         .replace(/\[VARIANTI:[\s\S]+?\](?=\s*$|\s+[A-Za-z0-9])/g, '')

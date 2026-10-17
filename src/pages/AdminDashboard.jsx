@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle, BarChart3 } from 'lucide-react';
+import { Package, ClipboardList, PlusCircle, Trash, ToggleLeft, ToggleRight, Lock, Upload, Loader, LogOut, Archive, Download, Pencil, Settings, ExternalLink, Home, MessageCircle, BarChart3, Star } from 'lucide-react';
 import { supabase as supabaseClient } from '../lib/supabaseClient.js';
 import { BANK_DETAILS } from '../lib/bankDetails';
 import AdminStatistiche from '../components/admin/AdminStatistiche';
@@ -278,7 +278,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     target: 'Donna',
     categoria: '',
     taglie: '',
-    sconto: ''
+    sconto: '',
+    in_evidenza: false
   });
 
   // Stato per la gestione delle varianti colore
@@ -723,7 +724,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       target: 'Donna',
       categoria: '',
       taglie: '',
-      sconto: ''
+      sconto: '',
+      in_evidenza: false
     });
     setSelectedSizes({});
     setCustomSizesList([]);
@@ -747,6 +749,9 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
 
     let descrizioneFinale = nuovoArticolo.descrizione || '';
+    if (nuovoArticolo.in_evidenza) {
+      descrizioneFinale = `[IN_EVIDENZA] ${descrizioneFinale}`.trim();
+    }
     const scontoNum = parseInt(nuovoArticolo.sconto);
     if (!isNaN(scontoNum) && scontoNum > 0) {
       descrizioneFinale = `[SCONTO:${scontoNum}] ${descrizioneFinale}`.trim();
@@ -857,6 +862,44 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
     }
   };
 
+  const handleToggleVetrina = async (artId) => {
+    const art = (articoliAPI || []).find(a => a.id === artId) || (articoli || []).find(a => a.id === artId);
+    if (!art) return;
+
+    const currentDesc = art.descrizione || '';
+    const isCurrentlyEvidenza = Boolean(art.in_evidenza || currentDesc.includes('[IN_EVIDENZA]'));
+    const nextDesc = isCurrentlyEvidenza
+      ? currentDesc.replace(/\[IN_EVIDENZA\]\s*/g, '').trim()
+      : `[IN_EVIDENZA] ${currentDesc}`.trim();
+
+    // Aggiornamento ottimistico dello stato locale
+    const updatedArt = { ...art, descrizione: nextDesc, in_evidenza: !isCurrentlyEvidenza };
+    setArticoliAPI(prev => prev.map(a => a.id === artId ? updatedArt : a));
+    if (onAddArticolo) onAddArticolo(updatedArt);
+
+    if (isAPIAvailable) {
+      try {
+        const pass = sessionStorage.getItem('segreta_admin_password') || password;
+        const response = await fetch(`/api/admin/prodotti/${artId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass
+          },
+          body: JSON.stringify({ action: 'toggle_evidenza' })
+        });
+        const json = await response.json();
+        if (json.success && json.descrizione !== undefined) {
+          setArticoliAPI(prev => prev.map(a => 
+            a.id === artId ? { ...a, descrizione: json.descrizione, in_evidenza: json.in_evidenza } : a
+          ));
+        }
+      } catch (err) {
+        console.error('Errore durante l\'aggiornamento dello stato vetrina su database.', err);
+      }
+    }
+  };
+
   const handleAvviaModifica = (art) => {
     setEditingId(art.id);
     let desc = art.descrizione || '';
@@ -881,9 +924,14 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       }
     }
 
+    const matchEvidenza = desc.includes('[IN_EVIDENZA]');
     const matchSconto = desc.match(/\[SCONTO:(\d+)\]/);
     const scontoValue = matchSconto ? matchSconto[1] : '';
-    const descrizionePulita = desc.replace(/\[SCONTO:\d+\]/g, '').replace(/\[VARIANTI_B64:[A-Za-z0-9+/=]+\]/g, '').trim();
+    const descrizionePulita = desc
+      .replace(/\[IN_EVIDENZA\]/g, '')
+      .replace(/\[SCONTO:\d+\]/g, '')
+      .replace(/\[VARIANTI_B64:[A-Za-z0-9+/=]+\]/g, '')
+      .trim();
 
     setNuovoArticolo({
       titolo: art.titolo,
@@ -893,7 +941,8 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       target: art.target || 'Donna',
       categoria: art.categoria || '',
       taglie: art.taglie || '',
-      sconto: scontoValue
+      sconto: scontoValue,
+      in_evidenza: Boolean(art.in_evidenza || matchEvidenza)
     });
 
     // Imposta le taglie selezionate
@@ -1732,6 +1781,59 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
       {/* Tab 4: Gestione Catalogo */}
       {activeTab === 'articoli' && !loading && (
         <div className="dashboard-content fade-in">
+          <div style={{
+            background: 'linear-gradient(135deg, #FFF5F7 0%, #FFFFFF 100%)',
+            border: '1.5px solid #F5D0DA',
+            borderRadius: '10px',
+            padding: '14px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: '0 2px 8px rgba(226, 149, 171, 0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#FDF2F4',
+                color: '#E295AB',
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #E295AB'
+              }}>
+                <Star size={22} fill="#E295AB" />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                  Personalizzazione "Ultimi Arrivi" in Home
+                </h4>
+                <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                  Clicca sulla stella <strong>"Vetrina"</strong> per scegliere quali capi mostrare in prima pagina.
+                </p>
+              </div>
+            </div>
+            <div style={{
+              background: '#FDF2F4',
+              color: '#B85D75',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              border: '1px solid #E295AB',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Star size={14} fill="#E295AB" color="#E295AB" />
+              {listaArticoliVisualizzati.filter(a => (a.attivo !== false) && (a.in_evidenza || (typeof a.descrizione === 'string' && a.descrizione.includes('[IN_EVIDENZA]')))).length} capi in Vetrina Home
+            </div>
+          </div>
+
           <div className="table-container">
             <table className="admin-table">
               <thead>
@@ -1742,6 +1844,7 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                   <th>Target</th>
                   <th>Prezzo</th>
                   <th>Taglie</th>
+                  <th style={{ textAlign: 'center' }}>Vetrina Home</th>
                   <th>Stato</th>
                   <th>Azioni</th>
                 </tr>
@@ -1787,6 +1890,39 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                       })()}
                     </td>
                     <td>{art.taglie || 'Unica'}</td>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      {(() => {
+                        const inVetrina = Boolean(art.in_evidenza || (typeof art.descrizione === 'string' && art.descrizione.includes('[IN_EVIDENZA]')));
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleVetrina(art.id)}
+                            title={inVetrina ? "Rimuovi questo capo dagli Ultimi Arrivi in Home" : "Metti questo capo tra gli Ultimi Arrivi in Home"}
+                            style={{
+                              background: inVetrina ? '#FDF2F4' : '#FAFAFA',
+                              border: `1.5px solid ${inVetrina ? '#E295AB' : '#D4D4D8'}`,
+                              color: inVetrina ? '#B85D75' : '#71717A',
+                              borderRadius: '20px',
+                              padding: '5px 12px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s ease',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <Star size={14} style={{
+                              color: inVetrina ? '#E295AB' : '#A1A1AA',
+                              fill: inVetrina ? '#E295AB' : 'none'
+                            }} />
+                            {inVetrina ? 'In Vetrina' : 'Metti in Vetrina'}
+                          </button>
+                        );
+                      })()}
+                    </td>
                     <td>
                       <button
                         className="toggle-active-btn"
@@ -2259,6 +2395,58 @@ export default function AdminDashboard({ articoli, onAddArticolo, onToggleArtico
                 onChange={(e) => setNuovoArticolo(prev => ({...prev, descrizione: e.target.value}))}
                 placeholder="Inserisci i dettagli del materiale, vestibilità..."
               ></textarea>
+            </div>
+
+            {/* Impostazione Vetrina "Ultimi Arrivi" in Home */}
+            <div
+              style={{
+                background: nuovoArticolo.in_evidenza ? '#FDF2F4' : '#F9F9FB',
+                border: `1.5px solid ${nuovoArticolo.in_evidenza ? '#E295AB' : '#E4E4E7'}`,
+                borderRadius: '10px',
+                padding: '14px 18px',
+                marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: nuovoArticolo.in_evidenza ? '0 2px 8px rgba(226, 149, 171, 0.15)' : 'none'
+              }}
+              onClick={() => setNuovoArticolo(prev => ({ ...prev, in_evidenza: !prev.in_evidenza }))}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{
+                  background: nuovoArticolo.in_evidenza ? '#E295AB' : '#E4E4E7',
+                  color: '#FFFFFF',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s ease'
+                }}>
+                  <Star size={20} fill={nuovoArticolo.in_evidenza ? '#FFFFFF' : 'none'} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-primary)' }}>
+                    Mostra in "Ultimi Arrivi" nella Home
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Attiva questa opzione per mettere questo capo in evidenza nella prima pagina del sito.
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                id="check_in_evidenza"
+                checked={Boolean(nuovoArticolo.in_evidenza)}
+                onChange={(e) => setNuovoArticolo(prev => ({ ...prev, in_evidenza: e.target.checked }))}
+                style={{ width: '22px', height: '22px', accentColor: '#E295AB', cursor: 'pointer' }}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Mostra in vetrina ultimi arrivi"
+              />
             </div>
 
             <button type="submit" className="btn-primary" disabled={uploading}>

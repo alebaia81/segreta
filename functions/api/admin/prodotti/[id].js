@@ -23,7 +23,46 @@ export async function onRequest({ request, env, params }) {
       const body = await request.json();
       const { action, titolo, descrizione, prezzo, immagine_url, target, categoria, taglie, varianti } = body || {};
 
-      if (action === 'toggle') {
+      if (action === 'toggle_evidenza') {
+        const { data: product, error: fetchErr } = await supabase
+          .from('articoli')
+          .select('descrizione')
+          .eq('id', productId)
+          .maybeSingle();
+
+        if (fetchErr) {
+          return new Response(JSON.stringify({ success: false, error: 'Errore fetch articolo: ' + fetchErr.message }), {
+            status: 500, headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (!product) {
+          return new Response(JSON.stringify({ success: false, error: 'Articolo non trovato.' }), {
+            status: 404, headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const currentDesc = product.descrizione || '';
+        const isEvidenza = currentDesc.includes('[IN_EVIDENZA]');
+        const nextDesc = isEvidenza
+          ? currentDesc.replace(/\[IN_EVIDENZA\]\s*/g, '').trim()
+          : `[IN_EVIDENZA] ${currentDesc}`.trim();
+
+        const { error: updateErr } = await supabase
+          .from('articoli')
+          .update({ descrizione: nextDesc })
+          .eq('id', productId);
+
+        if (updateErr) {
+          return new Response(JSON.stringify({ success: false, error: 'Errore update articolo: ' + updateErr.message }), {
+            status: 500, headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        return new Response(JSON.stringify({ success: true, id: productId, in_evidenza: !isEvidenza, descrizione: nextDesc }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+
+      } else if (action === 'toggle') {
         const { data: product, error: fetchErr } = await supabase
           .from('articoli')
           .select('attivo')

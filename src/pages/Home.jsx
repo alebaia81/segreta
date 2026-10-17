@@ -27,10 +27,23 @@ export default function Home({ articoli, onNavigateToShop, onNavigateToAdmin, on
 
 
 
-  // Ultimi 4 articoli attivi (ordinati per id decrescente come proxy per data)
-  const ultimiArrivi = articoli
-    .filter(a => a.attivo !== false && a.attivo !== 0 && a.attivo !== 'false' && a.attivo !== '0')
-    .slice(0, 4);
+  // Gestione "Ultimi Arrivi" (In Vetrina Home):
+  // Se Greta ha selezionato capi specifici contrassegnati con "In Vetrina" ([IN_EVIDENZA]),
+  // mostriamo prioritariamente la selezione curata da lei.
+  // Se ne seleziona meno di 4, completiamo i restanti posti con i capi attivi più recenti.
+  const isArticoloInVetrina = (a) => {
+    return Boolean(a.in_evidenza === true || (typeof a.descrizione === 'string' && a.descrizione.includes('[IN_EVIDENZA]')));
+  };
+
+  const attivi = articoli.filter(a => a.attivo !== false && a.attivo !== 0 && a.attivo !== 'false' && a.attivo !== '0');
+  const selezionatiVetrina = attivi.filter(isArticoloInVetrina);
+  const nonSelezionati = attivi.filter(a => !isArticoloInVetrina(a));
+
+  const ultimiArrivi = selezionatiVetrina.length > 0
+    ? (selezionatiVetrina.length >= 4
+        ? selezionatiVetrina.slice(0, 8)
+        : [...selezionatiVetrina, ...nonSelezionati].slice(0, 4))
+    : attivi.slice(0, 4);
   const { addToCart } = useCart();
 
   return (

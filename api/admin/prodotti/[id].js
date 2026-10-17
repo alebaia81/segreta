@@ -19,7 +19,40 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const { action, titolo, descrizione, prezzo, immagine_url, target, categoria, taglie } = req.body || {};
 
-      if (action === 'toggle') {
+      if (action === 'toggle_evidenza') {
+        if (!supabase) {
+          return res.status(500).json({ success: false, error: 'Supabase client non inizializzato' });
+        }
+
+        const { data: product, error: fetchErr } = await supabase
+          .from('articoli')
+          .select('descrizione')
+          .eq('id', productId)
+          .maybeSingle();
+
+        if (fetchErr) {
+          return res.status(500).json({ success: false, error: 'Errore fetch articolo: ' + fetchErr.message });
+        }
+        if (!product) {
+          return res.status(404).json({ success: false, error: 'Articolo non trovato.' });
+        }
+
+        const currentDesc = product.descrizione || '';
+        const isEvidenza = currentDesc.includes('[IN_EVIDENZA]');
+        const nextDesc = isEvidenza
+          ? currentDesc.replace(/\[IN_EVIDENZA\]\s*/g, '').trim()
+          : `[IN_EVIDENZA] ${currentDesc}`.trim();
+
+        const { error: updateErr } = await supabase
+          .from('articoli')
+          .update({ descrizione: nextDesc })
+          .eq('id', productId);
+
+        if (updateErr) {
+          return res.status(500).json({ success: false, error: 'Errore update articolo: ' + updateErr.message });
+        }
+        return res.json({ success: true, id: productId, in_evidenza: !isEvidenza, descrizione: nextDesc });
+      } else if (action === 'toggle') {
         if (!supabase) {
           return res.status(500).json({ success: false, error: 'Supabase client non inizializzato' });
         }
